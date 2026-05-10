@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advertise – New Lexington & Area Community Calendar</title>
+<meta name="description" content="Advertise your business on NewLexCalendar.com and reach the New Lexington community for just $25/month.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --amber:#BA7517;--amber-dk:#854F0B;--amber-lt:#FFF4E0;--amber-mid:#EF9F27;
+  --teal:#0F6E56;--navy:#1A2744;--navy2:#1E3260;--cream:#FAF8F4;
+  --border:rgba(0,0,0,0.10);--border-md:rgba(0,0,0,0.16);
+  --text:#1C1C1E;--text2:#5F5E5A;--text3:#888780;
+  --surface:#FFF;--surface2:#F5F3EE;
+  --danger:#A32D2D;--danger-bg:#FCEBEB;
+  --font-head:'Playfair Display',Georgia,serif;
+  --font-body:'Source Sans 3',system-ui,sans-serif;
+  --r:8px;--r-lg:14px;
+}
+html{font-size:16px}
+body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5}
+input,select,button{font-family:var(--font-body);font-size:15px}
+input,select{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+input::placeholder{color:var(--text3)}
+button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s;font-size:15px;font-weight:500}
+button:hover{background:var(--surface2)}
+button:active{opacity:.8}
+.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
+.btn-amber:hover{background:var(--amber-dk)}
+.btn-navy{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
+.btn-navy:hover{background:var(--navy2)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#F09595;font-weight:600}
+.btn-danger:hover{background:#FCDBDB}
+
+/* ── HEADER ── */
+nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-family:var(--font-head);font-size:18px;font-weight:700;color:#fff;text-decoration:none}
+.nav-brand span{color:var(--amber-mid)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-link{font-size:14px;color:rgba(255,255,255,.7);text-decoration:none;padding:6px 12px;border-radius:var(--r);transition:background .15s}
+.nav-link:hover{background:rgba(255,255,255,.10);color:#fff}
+.nav-user{font-size:14px;color:#fff;font-weight:600}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:60px 24px 50px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(186,117,23,.2);border:1px solid rgba(186,117,23,.4);color:var(--amber-mid);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 14px;border-radius:100px;margin-bottom:20px}
+.hero h1{font-family:var(--font-head);font-size:clamp(28px,5vw,46px);font-weight:700;color:#fff;line-height:1.15;margin-bottom:16px}
+.hero h1 span{color:var(--amber-mid)}
+.hero p{font-size:18px;color:rgba(255,255,255,.7);max-width:540px;margin:0 auto 32px}
+.hero-cta{display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* ── SECTIONS ── */
+.section{max-width:860px;margin:0 auto;padding:50px 24px}
+.section-title{font-family:var(--font-head);font-size:28px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.section-sub{font-size:16px;color:var(--text2);margin-bottom:32px}
+
+/* Benefits */
+.benefits{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:0}
+.benefit-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:22px 20px}
+.benefit-icon{font-size:28px;margin-bottom:10px}
+.benefit-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.benefit-text{font-size:14px;color:var(--text2);line-height:1.5}
+
+/* Sponsor preview */
+.preview-bar{background:var(--navy);border-radius:var(--r-lg);padding:16px 20px;display:flex;align-items:center;gap:12px;margin:20px 0}
+.preview-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);white-space:nowrap}
+.preview-card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:10px 16px;min-width:180px}
+.preview-card .p-name{font-size:14px;font-weight:700;color:#fff}
+.preview-card .p-tag{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.preview-card .p-url{font-size:11px;color:#EF9F27;font-weight:600;margin-top:3px;display:block}
+
+/* Pricing */
+.pricing-card{background:var(--surface);border:2px solid var(--amber);border-radius:var(--r-lg);padding:36px 32px;max-width:400px;margin:0 auto;text-align:center;box-shadow:0 8px 32px rgba(186,117,23,.12)}
+.price-amount{font-family:var(--font-head);font-size:56px;font-weight:700;color:var(--amber);line-height:1}
+.price-period{font-size:18px;color:var(--text2)}
+.price-features{list-style:none;margin:24px 0;text-align:left}
+.price-features li{font-size:15px;padding:7px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px}
+.price-features li:last-child{border-bottom:none}
+.price-features .check{color:var(--teal);font-weight:700;font-size:16px}
+
+/* ── PORTAL (auth + dashboard) ── */
+.portal-wrap{max-width:500px;margin:0 auto;padding:0 24px 60px}
+.portal-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:28px 28px 24px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.portal-title{font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:20px}
+.auth-tabs{display:flex;gap:6px;margin-bottom:20px}
+.auth-tab{flex:1;font-size:14px;padding:8px 0;border-radius:var(--r)}
+.auth-tab.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:700}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.field label .req{color:var(--danger)}
+.form-actions{display:flex;gap:10px;margin-top:18px}
+.form-actions button{flex:1;padding:11px 0}
+.err-msg{font-size:13px;color:var(--danger);margin-top:8px}
+.ok-msg{font-size:13px;color:var(--teal);margin-top:8px}
+
+/* Dashboard */
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:100px;margin-bottom:20px}
+.status-pill.active{background:#D1FAE5;color:#065F46}
+.status-pill.pending{background:#FEF3C7;color:#92400E}
+.status-pill.paused{background:#FEE2E2;color:#991B1B}
+.status-pill.cancelled{background:var(--surface2);color:var(--text3)}
+.dash-section{margin-bottom:24px}
+.dash-label{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.live-preview{background:var(--navy);border-radius:var(--r-lg);padding:14px 18px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.lp-label{font-size:10px;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:.08em;text-transform:uppercase;flex-shrink:0}
+.lp-card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:8px 14px;flex:1}
+.lp-name{font-size:14px;font-weight:700;color:#fff}
+.lp-tag{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.lp-url{font-size:11px;color:#EF9F27;font-weight:600;margin-top:2px}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* Alerts */
+.alert{border-radius:var(--r);padding:14px 16px;font-size:14px;margin-bottom:20px;line-height:1.5}
+.alert-success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
+.alert-warning{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+
+@media(max-width:600px){
+  .hero{padding:40px 16px 36px}
+  .section{padding:36px 16px}
+  .portal-wrap{padding:0 14px 48px}
+  .portal-card{padding:20px 16px 18px}
+  .pricing-card{padding:28px 20px}
+  .benefits{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-brand">NewLex<span>Calendar</span>.com</a>
+  <div class="nav-right">
+    <a href="/" class="nav-link">← Back to Calendar</a>
+    <span class="nav-user" id="navUser"></span>
+  </div>
+</nav>
+
+<!-- SUCCESS / CANCEL ALERTS -->
+<div id="alertBanner"></div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Advertise with Us</div>
+  <h1>Reach New Lexington<br>Every Single Day</h1>
+  <p>Your business on the sponsor bar of the community calendar — always visible, never missed.</p>
+  <div class="hero-cta">
+    <button class="btn-amber" style="font-size:17px;padding:12px 32px" onclick="scrollToPortal()">Get Started — $25/mo</button>
+    <button class="btn-ghost" style="color:rgba(255,255,255,.75);font-size:15px" onclick="document.getElementById('benefits').scrollIntoView({behavior:'smooth'})">See What You Get ↓</button>
+  </div>
+</div>
+
+<!-- BENEFITS -->
+<div class="section" id="benefits">
+  <div class="section-title">What You Get</div>
+  <div class="section-sub">Everything included — no setup fees, no contracts, cancel any time.</div>
+  <div class="benefits">
+    <div class="benefit-card">
+      <div class="benefit-icon">📌</div>
+      <div class="benefit-title">Always Visible</div>
+      <div class="benefit-text">Your card sits in the sponsor bar at the bottom of every page — visible without scrolling, every visit.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-icon">🏘️</div>
+      <div class="benefit-title">Targeted Community</div>
+      <div class="benefit-text">Every visitor is a New Lexington or Perry County resident actively engaging with local events.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-icon">🔗</div>
+      <div class="benefit-title">Link to Your Website</div>
+      <div class="benefit-text">Your business name, tagline, and a direct link to your website — all in one clean card.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-icon">✏️</div>
+      <div class="benefit-title">Edit Anytime</div>
+      <div class="benefit-text">Update your business name, tagline, or website link instantly from your dashboard — no waiting.</div>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div style="margin-top:32px">
+    <div class="dash-label">How your ad looks on the calendar</div>
+    <div class="preview-bar">
+      <span class="preview-label">📢 Sponsors</span>
+      <div class="preview-card">
+        <div class="p-name">Your Business Name</div>
+        <div class="p-tag">Your tagline goes right here</div>
+        <span class="p-url">Visit Website →</span>
+      </div>
+      <div class="preview-card" style="opacity:.4;border-style:dashed">
+        <div class="p-name" style="color:rgba(255,255,255,.5)">Another Sponsor</div>
+        <div class="p-tag">...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div style="background:var(--surface2);padding:50px 24px">
+  <div style="max-width:860px;margin:0 auto;text-align:center">
+    <div class="section-title" style="margin-bottom:8px">Simple Pricing</div>
+    <div class="section-sub" style="margin-bottom:32px">One price. Everything included. Cancel any time.</div>
+    <div class="pricing-card">
+      <div class="price-amount">$25</div>
+      <div class="price-period">per month</div>
+      <ul class="price-features">
+        <li><span class="check">✓</span> Sponsor card on every page</li>
+        <li><span class="check">✓</span> Business name + tagline</li>
+        <li><span class="check">✓</span> Link to your website</li>
+        <li><span class="check">✓</span> Edit your listing anytime</li>
+        <li><span class="check">✓</span> Goes live immediately after payment</li>
+        <li><span class="check">✓</span> Cancel anytime — no contracts</li>
+      </ul>
+      <button class="btn-amber" style="width:100%;font-size:16px;padding:13px 0" onclick="scrollToPortal()">Start Advertising Today</button>
+    </div>
+  </div>
+</div>
+
+<!-- PORTAL: AUTH OR DASHBOARD -->
+<div class="section" id="portalSection">
+  <div class="section-title" style="text-align:center" id="portalTitle">Create Your Account</div>
+  <div class="section-sub" style="text-align:center;margin-bottom:28px" id="portalSub">Sign up in under a minute, then complete payment to go live.</div>
+  <div class="portal-wrap" style="padding:0 0 0 0">
+    <div class="portal-card" id="portalCard">
+      <div style="text-align:center;color:var(--text3);font-size:14px;padding:20px">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px">
+  NewLexCalendar.com · <a href="/" style="color:var(--amber-mid);text-decoration:none">Back to Calendar</a> · <a href="mailto:hello@newlexcalendar.com" style="color:var(--amber-mid);text-decoration:none">hello@newlexcalendar.com</a>
+</footer>
+
+<script>
+const API = '';
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+let advToken    = localStorage.getItem('nlcc_adv_token') || null;
+let advertiser  = JSON.parse(localStorage.getItem('nlcc_adv') || 'null');
+
+async function api(path, opts={}) {
+  const h = {'Content-Type':'application/json', ...(opts.headers||{})};
+  if (advToken) h['Authorization'] = 'Bearer ' + advToken;
+  const r = await fetch(API + path, {...opts, headers: h});
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Request failed');
+  return d;
+}
+
+function setSession(token, adv) {
+  advToken   = token;
+  advertiser = adv;
+  localStorage.setItem('nlcc_adv_token', token);
+  localStorage.setItem('nlcc_adv', JSON.stringify(adv));
+}
+function clearSession() {
+  advToken   = null; advertiser = null;
+  localStorage.removeItem('nlcc_adv_token');
+  localStorage.removeItem('nlcc_adv');
+}
+
+// Check URL params for Stripe redirect
+function checkURLParams() {
+  const p = new URLSearchParams(window.location.search);
+  const banner = document.getElementById('alertBanner');
+  if (p.get('success') === 'true') {
+    banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Your ad is now live on the community calendar. It may take a minute to appear.</div>`;
+    // Refresh advertiser data
+    if (advToken) refreshAdvertiser();
+    window.history.replaceState({}, '', '/advertise');
+  }
+  if (p.get('cancelled') === 'true') {
+    banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment was cancelled. No charge was made. <a href="#portalSection" style="color:var(--amber-dk);font-weight:600">Try again</a></div>`;
+    window.history.replaceState({}, '', '/advertise');
+  }
+}
+
+async function refreshAdvertiser() {
+  try {
+    advertiser = await api('/api/advertiser/me');
+    localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    renderPortal();
+  } catch(e) {
+    if (e.message.includes('expired') || e.message.includes('required')) {
+      clearSession(); renderPortal();
+    }
+  }
+}
+
+function renderNav() {
+  const el = document.getElementById('navUser');
+  if (advertiser) {
+    el.innerHTML = `<span style="font-size:13px">${esc(advertiser.business_name)}</span> <button class="btn-ghost" style="color:rgba(255,255,255,.6);font-size:12px;padding:4px 10px;border-color:rgba(255,255,255,.2)" onclick="doLogout()">Sign out</button>`;
+  }
+}
+
+function renderPortal() {
+  renderNav();
+  if (!advertiser) {
+    renderAuthForm('register');
+  } else {
+    renderDashboard();
+  }
+}
+
+/* ── AUTH FORMS ── */
+function renderAuthForm(tab) {
+  document.getElementById('portalTitle').textContent = tab === 'register' ? 'Create Your Account' : 'Sign In';
+  document.getElementById('portalSub').textContent   = tab === 'register' ? 'Sign up in under a minute, then complete payment to go live.' : 'Welcome back. Sign in to manage your listing.';
+  document.getElementById('portalCard').innerHTML = `
+    <div class="auth-tabs">
+      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderAuthForm('register')">Create Account</button>
+      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderAuthForm('login')">Sign In</button>
+    </div>
+    ${tab === 'register' ? `
+      <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="aName" placeholder="Your full name"></div>
+      <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="aEmail" placeholder="business@email.com"></div>
+      <div class="field"><label>Password (6+ chars) <span class="req">*</span></label><input type="password" id="aPass"></div>
+      <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="aBiz" placeholder="Your business or organization name"></div>
+      <div class="field"><label>Tagline</label><input type="text" id="aTag" placeholder="Short description (shown under your name)"></div>
+      <div class="field"><label>Website URL</label><input type="text" id="aUrl" placeholder="https://yourbusiness.com"></div>
+      <div class="form-actions">
+        <button class="btn-amber" onclick="doRegister()">Create Account →</button>
+      </div>
+    ` : `
+      <div class="field"><label>Email</label><input type="email" id="aEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="aPass"></div>
+      <div class="form-actions">
+        <button class="btn-amber" onclick="doLogin()">Sign In →</button>
+      </div>
+    `}
+    <div class="err-msg" id="authErr"></div>`;
+}
+
+async function doRegister() {
+  try {
+    const payload = {
+      name: document.getElementById('aName').value.trim(),
+      email: document.getElementById('aEmail').value.trim(),
+      password: document.getElementById('aPass').value,
+      business_name: document.getElementById('aBiz').value.trim(),
+      tagline: document.getElementById('aTag').value.trim(),
+      url: document.getElementById('aUrl').value.trim(),
+    };
+    const { token, advertiser: adv } = await api('/api/advertiser/register', { method:'POST', body:JSON.stringify(payload) });
+    setSession(token, adv);
+    renderPortal();
+  } catch(e) { document.getElementById('authErr').textContent = e.message; }
+}
+
+async function doLogin() {
+  try {
+    const { token, advertiser: adv } = await api('/api/advertiser/login', { method:'POST', body:JSON.stringify({
+      email: document.getElementById('aEmail').value.trim(),
+      password: document.getElementById('aPass').value,
+    })});
+    setSession(token, adv);
+    renderPortal();
+  } catch(e) { document.getElementById('authErr').textContent = e.message; }
+}
+
+function doLogout() { clearSession(); renderPortal(); }
+
+/* ── DASHBOARD ── */
+function renderDashboard() {
+  document.getElementById('portalTitle').textContent = 'Your Advertiser Dashboard';
+  document.getElementById('portalSub').textContent   = 'Manage your listing and subscription.';
+
+  const adv    = advertiser;
+  const status = adv.status;
+  const statusLabels = { active:'● Live', pending:'● Pending Payment', paused:'● Payment Failed', cancelled:'● Cancelled' };
+  const statusClass  = { active:'active', pending:'pending', paused:'paused', cancelled:'cancelled' };
+
+  document.getElementById('portalCard').innerHTML = `
+    <span class="status-pill ${statusClass[status]||'pending'}">${statusLabels[status]||status}</span>
+
+    ${status === 'active' ? '' : `
+      <div class="alert alert-warning" style="margin-bottom:20px">
+        ${status === 'pending'   ? '💳 Your listing is ready — complete payment below to go live.' : ''}
+        ${status === 'paused'    ? '⚠️ Your last payment failed. Update your payment method to reactivate.' : ''}
+        ${status === 'cancelled' ? '🔄 Your subscription was cancelled. Subscribe again to go live.' : ''}
+      </div>
+    `}
+
+    <!-- Live Preview -->
+    <div class="dash-section">
+      <div class="dash-label">Live Preview</div>
+      <div class="live-preview">
+        <span class="lp-label">📢 Sponsors</span>
+        <div class="lp-card" id="previewCard">
+          <div class="lp-name" id="prevName">${esc(adv.business_name)}</div>
+          <div class="lp-tag" id="prevTag">${esc(adv.tagline||'')}</div>
+          ${adv.url?`<span class="lp-url" id="prevUrl">Visit Website →</span>`:'<span class="lp-url" id="prevUrl" style="display:none">Visit Website →</span>'}
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Edit Listing -->
+    <div class="dash-section">
+      <div class="dash-label">Edit Your Listing</div>
+      <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="eBiz" value="${esc(adv.business_name)}" oninput="updatePreview()"></div>
+      <div class="field"><label>Tagline</label><input type="text" id="eTag" value="${esc(adv.tagline||'')}" placeholder="Short description" oninput="updatePreview()"></div>
+      <div class="field"><label>Website URL</label><input type="text" id="eUrl" value="${esc(adv.url||'')}" placeholder="https://..."></div>
+      <button class="btn-navy" style="width:100%;margin-top:4px" onclick="saveEdits()">Save Changes</button>
+      <div class="ok-msg"  id="editOk"></div>
+      <div class="err-msg" id="editErr"></div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Subscription -->
+    <div class="dash-section">
+      <div class="dash-label">Subscription — $25 / month</div>
+      ${status === 'active' ? `
+        <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Your subscription is active. Your card is charged $25 on your billing date each month.</p>
+        <button class="btn-danger" onclick="confirmCancel()">Cancel Subscription</button>
+        <div class="err-msg" id="cancelErr"></div>
+      ` : `
+        <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Subscribe for $25/month to put your ad live on the calendar immediately.</p>
+        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0" onclick="startCheckout()">
+          ${status === 'paused' ? '🔄 Reactivate Subscription' : '💳 Subscribe — $25/month'}
+        </button>
+        <div class="err-msg" id="checkoutErr"></div>
+      `}
+    </div>`;
+}
+
+function updatePreview() {
+  const name = document.getElementById('eBiz')?.value || '';
+  const tag  = document.getElementById('eTag')?.value || '';
+  if (document.getElementById('prevName')) document.getElementById('prevName').textContent = name;
+  if (document.getElementById('prevTag'))  document.getElementById('prevTag').textContent  = tag;
+}
+
+async function saveEdits() {
+  try {
+    const updated = await api('/api/advertiser/me', { method:'PUT', body: JSON.stringify({
+      business_name: document.getElementById('eBiz').value.trim(),
+      tagline:       document.getElementById('eTag').value.trim(),
+      url:           document.getElementById('eUrl').value.trim(),
+    })});
+    advertiser = { ...advertiser, ...updated };
+    localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    document.getElementById('editOk').textContent  = '✓ Saved!';
+    document.getElementById('editErr').textContent = '';
+    setTimeout(() => { const el = document.getElementById('editOk'); if(el) el.textContent=''; }, 3000);
+  } catch(e) { document.getElementById('editErr').textContent = e.message; }
+}
+
+async function startCheckout() {
+  try {
+    const { url } = await api('/api/advertiser/checkout', { method:'POST' });
+    window.location.href = url;
+  } catch(e) {
+    const el = document.getElementById('checkoutErr');
+    if (el) el.textContent = e.message;
+  }
+}
+
+async function confirmCancel() {
+  if (!confirm('Cancel your subscription? Your ad will be removed at the end of the current billing period.')) return;
+  try {
+    await api('/api/advertiser/cancel', { method:'POST' });
+    advertiser.status = 'cancelled';
+    localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    renderPortal();
+  } catch(e) {
+    const el = document.getElementById('cancelErr');
+    if (el) el.textContent = e.message;
+  }
+}
+
+function scrollToPortal() {
+  document.getElementById('portalSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Init
+checkURLParams();
+if (advToken) {
+  refreshAdvertiser().then(renderPortal);
+} else {
+  renderPortal();
+}
+</script>
+</body>
+</html>
