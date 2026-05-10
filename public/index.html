@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Lexington Community Calendar – Perry County, Ohio</title>
+<meta name="description" content="The official community event calendar for New Lexington, Ohio and Perry County. Sports, church, government, fairs, and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --amber:      #BA7517;
+  --amber-dk:   #854F0B;
+  --amber-lt:   #FFF4E0;
+  --amber-mid:  #EF9F27;
+  --teal:       #0F6E56;
+  --navy:       #1A2744;
+  --cream:      #FAF8F4;
+  --border:     rgba(0,0,0,0.10);
+  --border-md:  rgba(0,0,0,0.17);
+  --text:       #1C1C1E;
+  --text-2:     #5F5E5A;
+  --text-3:     #888780;
+  --surface:    #FFFFFF;
+  --surface-2:  #F5F3EE;
+  --danger:     #A32D2D;
+  --danger-bg:  #FCEBEB;
+  --font-head:  'Playfair Display', Georgia, serif;
+  --font-body:  'Source Sans 3', system-ui, sans-serif;
+  --radius:     8px;
+  --radius-lg:  12px;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+input, select, textarea, button {
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(186,117,23,.12);
+}
+input::placeholder, textarea::placeholder { color: var(--text-3); }
+button {
+  cursor: pointer;
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  padding: 7px 14px;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+button:hover  { background: var(--surface-2); }
+button:active { opacity: .8; }
+button.primary {
+  background: var(--amber);
+  color: #fff;
+  border-color: var(--amber);
+  font-weight: 600;
+}
+button.primary:hover { background: var(--amber-dk); border-color: var(--amber-dk); }
+
+/* ── LAYOUT ───────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* ── HEADER ───────────────────────────────────── */
+#hdr {
+  background: var(--navy);
+  color: #fff;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  border-bottom: 3px solid var(--amber);
+}
+.hdr-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.hdr-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.6);
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.photos {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.photos img, .photo-ph {
+  width: 70px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255,255,255,.2);
+}
+.photo-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+  padding: 3px;
+}
+.ph-sports { background: #1D3E6B; color: #B5D4F4; }
+.ph-fair   { background: #8B4513; color: #FAC775; }
+.ph-church { background: #2E3D25; color: #C0DD97; }
+.ph-memorial { background: #3D2B2B; color: #F5C4B3; }
+.svc-pill {
+  margin-left: auto;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  color: rgba(255,255,255,.75);
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+.svc-pill strong { color: #fff; }
+.svc-pill a { color: var(--amber-mid); text-decoration: none; }
+.svc-pill a:hover { text-decoration: underline; }
+
+/* ── MAIN SPLIT ───────────────────────────────── */
+#main {
+  display: grid;
+  grid-template-columns: 306px 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ───────────────────────────────── */
+#lpanel {
+  background: var(--surface);
+  border-right: 0.5px solid var(--border);
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.panel-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.card {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 11px 13px;
+}
+.card input, .card select { margin-bottom: 6px; }
+
+/* Auth */
+.tab-row   { display: flex; gap: 4px; margin-bottom: 8px; }
+.tab-btn   { flex: 1; font-size: 12px; padding: 5px 0; }
+.tab-btn.on {
+  background: var(--amber-lt);
+  border-color: var(--amber);
+  color: var(--amber-dk);
+  font-weight: 600;
+}
+.user-row   { display: flex; align-items: center; gap: 9px; }
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--amber);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.u-name  { font-size: 13px; font-weight: 600; }
+.u-email { font-size: 10.5px; color: var(--text-2); }
+
+/* Form */
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+.frow input { margin-bottom: 0; }
+textarea { height: 56px; resize: none; }
+
+/* ── RIGHT PANEL ──────────────────────────────── */
+#rpanel { overflow-y: auto; padding: 12px; background: var(--cream); }
+
+.search-wrap { position: relative; margin-bottom: 8px; }
+.search-wrap input { padding-left: 32px; }
+.search-icon {
+  position: absolute; left: 10px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+  color: var(--text-3);
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  border: 0.5px solid var(--border-md);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .15s;
+  border-left: 3px solid var(--border-md);
+}
+.chip:hover { border-color: var(--border-md); background: var(--surface-2); }
+.chip.on {
+  background: var(--amber-lt);
+  border-color: var(--amber) !important;
+  color: var(--amber-dk);
+  font-weight: 600;
+}
+
+/* Event list */
+.date-head {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  padding: 10px 0 4px;
+  border-bottom: 0.5px solid var(--border);
+  margin-bottom: 5px;
+}
+.erow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+  background: var(--surface);
+  font-size: 12.5px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.erow:hover { border-color: var(--border-md); box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ename { font-weight: 600; color: var(--text); }
+.em    { color: var(--text-2); }
+.sep   { color: var(--border-md); }
+.pf    { color: var(--teal); font-weight: 500; }
+.pp    { color: var(--amber-dk); font-weight: 500; }
+.del-btn {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text-3);
+  padding: 2px 6px;
+  border: 0.5px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+}
+.del-btn:hover {
+  background: var(--danger-bg);
+  border-color: #F09595;
+  color: var(--danger);
+}
+
+.no-events {
+  text-align: center;
+  color: var(--text-2);
+  font-size: 13px;
+  padding: 40px 0;
+}
+.err-msg { font-size: 11px; color: var(--danger); margin-top: 4px; }
+.ok-msg  { font-size: 11px; color: var(--teal);   margin-top: 4px; }
+.note    { font-size: 11.5px; color: var(--text-2); text-align: center; padding: 7px 0; }
+.spin    { display: inline-block; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.event-count {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+
+/* ── RESPONSIVE ───────────────────────────────── */
+@media (max-width: 720px) {
+  .photos, .svc-pill { display: none; }
+  #main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  #lpanel { max-height: 50vh; }
+  .hdr-title { font-size: 16px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="hdr">
+    <div>
+      <div class="hdr-title">New Lexington Community Calendar</div>
+      <div class="hdr-sub">Perry County, Ohio &nbsp;·&nbsp; The Heart of Appalachian Ohio</div>
+    </div>
+
+    <div class="photos">
+      <img
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Perry_County_Courthouse_%282%29_%E2%80%94_New_Lexington%2C_Ohio.jpg/160px-Perry_County_Courthouse_%282%29_%E2%80%94_New_Lexington%2C_Ohio.jpg"
+        alt="Perry County Courthouse – Government Events"
+        title="Perry County Courthouse"
+        onerror="this.style.display='none'">
+      <div class="photo-ph ph-sports" title="NL Panthers Sports">Panthers<br>Football</div>
+      <div class="photo-ph ph-fair"   title="Perry County Fair">Perry Co.<br>Fair</div>
+      <div class="photo-ph ph-church" title="Church Events">Church<br>Events</div>
+    </div>
+
+    <div class="svc-pill">
+      Don't want to type?<br>
+      Call or text <strong><a href="sms:7403433326">(740) 343-3326</a></strong> — we'll post it for <strong>$5</strong>
+    </div>
+  </header>
+
+  <!-- MAIN SPLIT -->
+  <div id="main">
+
+    <!-- LEFT: Auth + Form -->
+    <aside id="lpanel">
+
+      <div>
+        <div class="panel-section-label">Your Account</div>
+        <div class="card" id="authCard">
+          <div style="color:var(--text-3);font-size:12px">Loading…</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-section-label">Post an Event</div>
+        <div class="card" id="formCard">
+          <div class="note">Sign in to post events.</div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT: Filter + Event List -->
+    <main id="rpanel">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="srchInput" placeholder="Search by event name, location, or category…">
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="event-count" id="evCount"></div>
+      <div id="evList"><div class="no-events"><span class="spin">⏳</span> Loading events…</div></div>
+    </main>
+
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────
+const API = '';  // same origin; change to full URL if hosting frontend separately
+
+// ── STATE ───────────────────────────────────────
+let token    = localStorage.getItem('nlcc_token')   || null;
+let authUser = JSON.parse(localStorage.getItem('nlcc_user') || 'null');
+let allEvs   = [];
+let catFilter = 'all';
+let srchQ     = '';
+
+// ── CATEGORIES ──────────────────────────────────
+const CATS = [
+  { id:'all',        label:'All Events',      c:'#888780' },
+  { id:'sports',     label:'Sports',          c:'#185FA5' },
+  { id:'government', label:'Government',      c:'#3B6D11' },
+  { id:'church',     label:'Church',          c:'#7F77DD' },
+  { id:'community',  label:'Community',       c:'#BA7517' },
+  { id:'arts',       label:'Arts & Culture',  c:'#D4537E' },
+  { id:'fair',       label:'Fair & Festival', c:'#D85A30' },
+  { id:'food',       label:'Market & Food',   c:'#1D9E75' },
+  { id:'other',      label:'Other',           c:'#5F5E5A' },
+];
+const catColor = id => (CATS.find(c => c.id === id) || CATS[8]).c;
+const catLabel = id => (CATS.find(c => c.id === id) || CATS[8]).label;
+
+const FREE_LABELS = ['free','free entry','free – bring a dish','free – public welcome',
+                     'free – open to public','free admission','free - bring a dish',
+                     'free - public welcome','free - open to public'];
+const isFree = p => FREE_LABELS.includes((p||'').toLowerCase());
+
+// ── API HELPERS ──────────────────────────────────
+async function apiFetch(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(API + path, { ...options, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ── EVENTS ──────────────────────────────────────
+async function loadEvents() {
+  try {
+    allEvs = await apiFetch('/api/events');
+    renderEvents();
+  } catch(e) {
+    document.getElementById('evList').innerHTML =
+      `<div class="no-events">Could not load events. Is the server running?<br><small>${e.message}</small></div>`;
+  }
+}
+
+async function deleteEvent(id) {
+  if (!authUser) return;
+  try {
+    await apiFetch(`/api/events/${id}`, { method: 'DELETE' });
+    allEvs = allEvs.filter(e => e.id !== id);
+    renderEvents();
+  } catch(e) { alert(e.message); }
+}
+
+// ── RENDER EVENTS ───────────────────────────────
+function renderEvents() {
+  const q   = srchQ.toLowerCase();
+  const cat = catFilter;
+
+  const filtered = allEvs.filter(e => {
+    const mc = cat === 'all' || e.cat === cat;
+    const mq = !q || e.name.toLowerCase().includes(q)
+                  || e.location.toLowerCase().includes(q)
+                  || catLabel(e.cat).toLowerCase().includes(q);
+    return mc && mq;
+  });
+
+  const cnt = document.getElementById('evCount');
+  cnt.textContent = filtered.length === 0
+    ? ''
+    : `${filtered.length} event${filtered.length !== 1 ? 's' : ''} found`;
+
+  const list = document.getElementById('evList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="no-events">No events match your search. Be the first to add one!</div>';
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  filtered.forEach(e => { (groups[e.date] = groups[e.date] || []).push(e); });
+
+  const fmtDate = d => {
+    const dt = new Date(d + 'T12:00:00');
+    return dt.toLocaleDateString('en-US',
+      { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  };
+
+  const isAdmin = authUser && authUser.is_admin;
+
+  list.innerHTML = Object.entries(groups)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([d, evs]) => `
+      <div class="date-head">${fmtDate(d)}</div>
+      ${evs.map(e => `
+        <div class="erow">
+          <span class="dot" style="background:${catColor(e.cat)}"></span>
+          <span class="ename">${esc(e.name)}</span>
+          <span class="sep">·</span>
+          <span class="em">${esc(e.location)}</span>
+          <span class="sep">·</span>
+          <span class="em">${esc(e.time)}</span>
+          <span class="sep">·</span>
+          <span class="${isFree(e.price) ? 'pf' : 'pp'}">${esc(e.price)}</span>
+          <span class="sep">·</span>
+          <span class="em">${esc(e.contact)}</span>
+          ${authUser && (e.added_by === authUser.id || isAdmin)
+            ? `<button class="del-btn" onclick="deleteEvent(${e.id})">remove</button>`
+            : ''}
+        </div>`).join('')}
+    `).join('');
+}
+
+// ── CHIPS ───────────────────────────────────────
+function renderChips() {
+  document.getElementById('chips').innerHTML = CATS.map(c => `
+    <span class="chip${catFilter === c.id ? ' on' : ''}"
+          style="${catFilter !== c.id ? `border-left-color:${c.c}` : ''}"
+          onclick="setFilter('${c.id}')">
+      ${c.label}
+    </span>`).join('');
+}
+
+function setFilter(id) { catFilter = id; renderChips(); renderEvents(); }
+
+// ── AUTH RENDERING ───────────────────────────────
+function renderAuth() {
+  const el = document.getElementById('authCard');
+
+  if (authUser) {
+    const ini = authUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    el.innerHTML = `
+      <div class="user-row">
+        <div class="avatar">${esc(ini)}</div>
+        <div>
+          <div class="u-name">${esc(authUser.name)}</div>
+          <div class="u-email">${esc(authUser.email)}</div>
+        </div>
+        <button onclick="doLogout()" style="margin-left:auto;font-size:11px;">Sign out</button>
+      </div>`;
+    renderForm();
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="tab-row">
+      <button class="tab-btn on" id="tsi" onclick="swTab('si')">Sign In</button>
+      <button class="tab-btn"    id="tsu" onclick="swTab('su')">Register</button>
+    </div>
+    <div id="siForm">
+      <input type="email"    id="liEm" placeholder="Email address" autocomplete="username">
+      <input type="password" id="liPw" placeholder="Password" autocomplete="current-password">
+      <button class="primary" style="width:100%" onclick="doLogin()">Sign In</button>
+      <div class="err-msg" id="liErr"></div>
+    </div>
+    <div id="suForm" style="display:none">
+      <input type="text"     id="rgNm" placeholder="Your full name">
+      <input type="email"    id="rgEm" placeholder="Email address" autocomplete="username">
+      <input type="password" id="rgPw" placeholder="Password (6+ characters)" autocomplete="new-password">
+      <button class="primary" style="width:100%" onclick="doRegister()">Create Account</button>
+      <div class="err-msg" id="rgErr"></div>
+    </div>`;
+
+  renderForm();
+}
+
+function swTab(t) {
+  document.getElementById('siForm').style.display = t === 'si' ? '' : 'none';
+  document.getElementById('suForm').style.display = t === 'su' ? '' : 'none';
+  document.getElementById('tsi').classList.toggle('on', t === 'si');
+  document.getElementById('tsu').classList.toggle('on', t === 'su');
+}
+
+async function doLogin() {
+  const email    = document.getElementById('liEm').value.trim();
+  const password = document.getElementById('liPw').value;
+  try {
+    const { token: tk, user } = await apiFetch('/api/auth/login', {
+      method: 'POST', body: JSON.stringify({ email, password })
+    });
+    setSession(tk, user);
+  } catch(e) {
+    document.getElementById('liErr').textContent = e.message;
+  }
+}
+
+async function doRegister() {
+  const name     = document.getElementById('rgNm').value.trim();
+  const email    = document.getElementById('rgEm').value.trim();
+  const password = document.getElementById('rgPw').value;
+  try {
+    const { token: tk, user } = await apiFetch('/api/auth/register', {
+      method: 'POST', body: JSON.stringify({ name, email, password })
+    });
+    setSession(tk, user);
+  } catch(e) {
+    document.getElementById('rgErr').textContent = e.message;
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('nlcc_token');
+  localStorage.removeItem('nlcc_user');
+  token = null; authUser = null;
+  renderAuth();
+  renderEvents();
+}
+
+function setSession(tk, user) {
+  token = tk; authUser = user;
+  localStorage.setItem('nlcc_token', tk);
+  localStorage.setItem('nlcc_user', JSON.stringify(user));
+  renderAuth();
+  renderEvents();
+}
+
+// ── FORM ─────────────────────────────────────────
+function renderForm() {
+  const fc = document.getElementById('formCard');
+  if (!authUser) {
+    fc.innerHTML = '<div class="note">Sign in to post events to the calendar.</div>';
+    return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  fc.innerHTML = `
+    <input type="text" id="fNm" placeholder="Event name *">
+    <input type="text" id="fLc" placeholder="Location / Address *">
+    <div class="frow">
+      <input type="date" id="fDt" value="${today}">
+      <input type="text" id="fTm" placeholder="Time (e.g. 7:00 PM)">
+    </div>
+    <div class="frow">
+      <input type="text" id="fPr" placeholder="Price or Free">
+      <input type="text" id="fCo" placeholder="Contact info">
+    </div>
+    <select id="fCt" style="margin-bottom:7px">
+      ${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
+    </select>
+    <button class="primary" style="width:100%;font-size:13px" onclick="doPost()">+ Post This Event</button>
+    <div class="err-msg" id="fErr"></div>
+    <div class="ok-msg"  id="fOk"></div>`;
+}
+
+async function doPost() {
+  const payload = {
+    cat:      document.getElementById('fCt').value,
+    name:     document.getElementById('fNm').value.trim(),
+    location: document.getElementById('fLc').value.trim(),
+    date:     document.getElementById('fDt').value,
+    time:     document.getElementById('fTm').value.trim() || 'TBD',
+    price:    document.getElementById('fPr').value.trim() || 'Free',
+    contact:  document.getElementById('fCo').value.trim() || '—',
+  };
+  document.getElementById('fErr').textContent = '';
+  document.getElementById('fOk').textContent  = '';
+
+  if (!payload.name || !payload.location || !payload.date) {
+    document.getElementById('fErr').textContent = 'Event name, location, and date are required.';
+    return;
+  }
+
+  try {
+    const newEv = await apiFetch('/api/events', { method:'POST', body: JSON.stringify(payload) });
+    allEvs.push(newEv);
+    allEvs.sort((a,b) => a.date.localeCompare(b.date));
+    document.getElementById('fOk').textContent = '✓ Event posted!';
+    ['fNm','fLc','fTm','fPr','fCo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fDt').value = new Date().toISOString().split('T')[0];
+    renderEvents();
+    setTimeout(() => { const ok = document.getElementById('fOk'); if(ok) ok.textContent = ''; }, 4000);
+  } catch(e) {
+    document.getElementById('fErr').textContent = e.message;
+  }
+}
+
+// ── UTILS ────────────────────────────────────────
+function esc(str) {
+  return String(str||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── SEARCH ───────────────────────────────────────
+document.getElementById('srchInput').addEventListener('input', function() {
+  srchQ = this.value;
+  renderEvents();
+});
+
+// ── INIT ─────────────────────────────────────────
+renderChips();
+renderAuth();
+loadEvents();
+</script>
+</body>
+</html>
