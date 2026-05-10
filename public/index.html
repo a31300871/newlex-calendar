@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>New Lexington Community Calendar</title>
+<title>New Lexington &amp; Area Community Calendar</title>
 <meta name="description" content="Free community event calendar for New Lexington and Perry County, Ohio. Sports, church, government, fairs, and more.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -212,7 +212,7 @@ button:active{opacity:.8}
     <button id="addEventBtn" onclick="clickAddEvent()">+ ADD EVENT</button>
   </div>
   <div class="hdr-center">
-    <div class="hdr-title">New Lexington<br>Community Calendar</div>
+    <div class="hdr-title">New Lexington &amp; Area<br>Community Calendar</div>
   </div>
   <div class="hdr-right" id="authArea"></div>
 </header>
@@ -222,6 +222,8 @@ button:active{opacity:.8}
   <span>📅 Free community events for New Lexington &amp; Perry County</span>
   <span class="about-dot">●</span>
   <span class="about-dot-text">Register free to post events</span>
+  <span class="about-dot">●</span>
+  <a href="/advertise" style="color:var(--amber-mid);text-decoration:none;font-weight:600">Advertise — $25/mo →</a>
 </div>
 
 <!-- TOAST -->
@@ -328,7 +330,7 @@ async function loadEvents(){
   catch(e){document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`;}
 }
 async function loadSponsors(){
-  try{allSponsors=await api('/api/sponsors');renderSponsors();}
+  try{allSponsors=await api('/api/display/sponsors');renderSponsors();}
   catch(e){console.error(e);}
 }
 
@@ -437,10 +439,11 @@ function openEventModal(ev){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('evModalContent').innerHTML=`
     <div class="modal-title">${ev?'Edit Event':'Post an Event'}</div>
-    <div class="field"><label>Event Name <span class="req">*</span></label><input type="text" id="fNm" value="${ev?esc(ev.name):''}" placeholder="Name of the event"></div>
+    <div class="field"><label>Event Name <span class="req">*</span></label><input type="text" id="fNm" value="${ev?esc(ev.name):''}" placeholder="Name of the event" oninput="checkDuplicate()"></div>
+    <div id="dupWarn" style="display:none;font-size:13px;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:6px;padding:8px 12px;margin-bottom:8px">⚠️ <span id="dupWarnText"></span></div>
     <div class="field"><label>Location / Address <span class="req">*</span></label><input type="text" id="fLc" value="${ev?esc(ev.location):''}" placeholder="Where is it?"></div>
     <div class="field frow">
-      <div><label>Date <span class="req">*</span></label><input type="date" id="fDt" value="${ev?ev.date:today}"></div>
+      <div><label>Date <span class="req">*</span></label><input type="date" id="fDt" value="${ev?ev.date:today}" onchange="checkDuplicate()"></div>
       <div><label>Time</label><input type="text" id="fTm" value="${ev&&ev.time!=='TBD'?esc(ev.time):''}" placeholder="e.g. 7:00 PM"></div>
     </div>
     <div class="field frow">
@@ -649,6 +652,45 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function modalOutsideClick(e,id){if(e.target.id===id)closeModal(id);}
 document.getElementById('srch').addEventListener('input',function(){srchQ=this.value;renderEvents();});
+
+/* ── DUPLICATE CHECK ── */
+function checkDuplicate() {
+  const nameEl = document.getElementById('fNm');
+  const dateEl = document.getElementById('fDt');
+  const warnEl = document.getElementById('dupWarn');
+  const warnTx = document.getElementById('dupWarnText');
+  if (!nameEl || !dateEl || !warnEl) return;
+
+  const name = nameEl.value.trim().toLowerCase();
+  const date = dateEl.value;
+  if (!name || !date) { warnEl.style.display='none'; return; }
+
+  const matches = allEvs.filter(e =>
+    e.name.trim().toLowerCase() === name && e.date === date &&
+    e.id !== editingId
+  );
+  const similar = allEvs.filter(e =>
+    e.name.trim().toLowerCase().includes(name.slice(0,10)) && e.id !== editingId &&
+    matches.length === 0
+  );
+
+  if (matches.length > 0) {
+    warnTx.textContent = 'This exact event already exists on that date.';
+    warnEl.style.display = 'block';
+    warnEl.style.background = '#FCEBEB';
+    warnEl.style.borderColor = '#F09595';
+    warnEl.style.color = '#A32D2D';
+  } else if (similar.length > 0) {
+    warnTx.textContent = 'Similar event found: "' + similar[0].name + '" on ' + new Date(similar[0].date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '. Make sure this isn't a duplicate.';
+    warnEl.style.display = 'block';
+    warnEl.style.background = '#FEF3C7';
+    warnEl.style.borderColor = '#FCD34D';
+    warnEl.style.color = '#92400E';
+  } else {
+    warnEl.style.display = 'none';
+  }
+}
+
 init();
 </script>
 </body>
