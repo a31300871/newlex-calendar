@@ -18,12 +18,19 @@
   --surface:#FFFFFF; --surface2:#F5F3EE;
   --danger:#A32D2D; --danger-bg:#FCEBEB;
   --blue:#2355B5; --blue-lt:#EEF4FF;
+  --blink1:#BA7517; --blink2:#0F6E56;
   --font-head:'Playfair Display',Georgia,serif;
   --font-body:'Source Sans 3',system-ui,sans-serif;
+  --hdr-h:72px; --spon-h:96px;
   --r:8px; --r-lg:14px;
 }
 html{font-size:16px}
-body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5}
+body{
+  font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5;
+  /* account for fixed header + fixed sponsor bar */
+  padding-top:var(--hdr-h);
+  padding-bottom:var(--spon-h);
+}
 input,select,textarea,button{font-family:var(--font-body);font-size:15px}
 input,select,textarea{
   width:100%;padding:10px 14px;border:1.5px solid var(--border-md);
@@ -41,53 +48,72 @@ button:active{opacity:.8}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
 .btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
 
-/* ── HEADER ── */
-#hdr{
-  background:var(--navy);padding:14px 24px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:4px solid var(--amber);position:sticky;top:0;z-index:100
+/* ── BLINK ANIMATION ── */
+@keyframes btnBlink{
+  0%,45%  {background:var(--blink1);border-color:var(--blink1);box-shadow:0 0 12px rgba(186,117,23,.6)}
+  50%,95% {background:var(--blink2);border-color:var(--blink2);box-shadow:0 0 12px rgba(15,110,86,.6)}
+  100%    {background:var(--blink1);border-color:var(--blink1);box-shadow:0 0 12px rgba(186,117,23,.6)}
 }
-.hdr-title{font-family:var(--font-head);font-size:24px;font-weight:700;color:#fff;line-height:1.15}
-.hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
-#authArea{display:flex;align-items:center;gap:8px}
+#addEventBtn{
+  animation:btnBlink 2s ease-in-out infinite;
+  color:#fff;font-weight:700;font-size:15px;padding:9px 20px;
+  border-radius:var(--r);border:1.5px solid var(--amber);
+  white-space:nowrap;flex-shrink:0
+}
+#addEventBtn:hover{animation-play-state:paused;background:var(--amber-dk);border-color:var(--amber-dk)}
+
+/* ── FIXED HEADER ── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:var(--hdr-h);
+  background:var(--navy);border-bottom:4px solid var(--amber);
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  padding:0 20px;gap:12px
+}
+.hdr-left{display:flex;align-items:center;justify-content:flex-start}
+.hdr-center{text-align:center}
+.hdr-title{
+  font-family:var(--font-head);font-size:22px;font-weight:700;
+  color:#fff;line-height:1.2;white-space:nowrap
+}
+.hdr-right{display:flex;align-items:center;justify-content:flex-end}
 .user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 14px 5px 8px}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .user-name{font-size:14px;font-weight:600;color:#fff}
-.sign-out-btn{font-size:13px;color:rgba(255,255,255,.6);background:transparent;border:none;padding:0;cursor:pointer}
+.sign-out-btn{font-size:13px;color:rgba(255,255,255,.6);background:transparent;border:none;padding:0;cursor:pointer;font-family:var(--font-body)}
 .sign-out-btn:hover{color:#fff;background:transparent}
-#addEventBtn{font-size:15px;padding:9px 20px;letter-spacing:.02em}
 
-/* ── PAGE BODY ── */
-#page{max-width:860px;margin:0 auto;padding:24px 20px 0}
-
-/* ── SEARCH & FILTERS ── */
+/* ── PAGE CONTENT ── */
+#page{max-width:900px;margin:0 auto;padding:24px 20px 0}
 .search-wrap{position:relative;margin-bottom:16px}
-.search-wrap input{padding-left:42px;font-size:16px;height:48px;border-radius:10px}
+.search-wrap input{padding-left:44px;font-size:16px;height:50px;border-radius:10px}
 .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text3);pointer-events:none}
-.filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
-.filter-label{font-size:13px;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-right:2px}
+.filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+.filter-label{font-size:13px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
 .chip{font-size:13px;padding:5px 14px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;user-select:none;border-left:4px solid var(--border-md)}
-.chip:hover{border-color:var(--border-md);background:var(--surface2)}
-.chip.on{border-color:var(--amber)!important;background:var(--amber-lt);color:var(--amber-dk);font-weight:600}
-.clear-chip{font-size:12px;padding:4px 10px;border-radius:100px;border:1.5px solid var(--amber);background:transparent;color:var(--amber-dk);cursor:pointer;font-weight:600}
+.chip:hover{background:var(--surface2)}
+.chip.on{border-color:var(--amber)!important;background:var(--amber-lt);color:var(--amber-dk);font-weight:700}
+.clear-chip{font-size:12px;padding:4px 12px;border-radius:100px;border:1.5px solid var(--amber);background:transparent;color:var(--amber-dk);cursor:pointer;font-weight:700}
 .clear-chip:hover{background:var(--amber-lt)}
-.ev-count{font-size:14px;color:var(--text3);margin-bottom:12px}
+.ev-count{font-size:14px;color:var(--text3);margin-bottom:14px}
 
-/* ── EVENT LIST ── */
+/* ── EVENT ROWS ── */
 .date-head{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:18px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px}
 .date-head:first-child{padding-top:0}
 .erow{
   display:flex;align-items:center;flex-wrap:wrap;gap:6px;
-  padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);
+  padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--r);
   margin-bottom:6px;background:var(--surface);font-size:14px;
   transition:border-color .15s,box-shadow .15s
 }
-.erow:hover{border-color:var(--border-md);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.erow:hover{border-color:var(--border-md);box-shadow:0 2px 8px rgba(0,0,0,.07)}
 .erow.is-editing{border-color:var(--blue);background:var(--blue-lt)}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .ename{font-weight:700;font-size:15px;color:var(--text)}
 .em{color:var(--text2);font-size:14px}
-.sep{color:var(--border-md);font-size:14px}
+.sep{color:var(--border-md)}
 .pf{color:var(--teal);font-weight:600;font-size:14px}
 .pp{color:var(--amber-dk);font-weight:600;font-size:14px}
 .row-actions{margin-left:auto;display:flex;gap:5px}
@@ -97,81 +123,99 @@ button:active{opacity:.8}
 .del-btn:hover{background:var(--danger-bg);border-color:#F09595;color:var(--danger)}
 .no-events{text-align:center;color:var(--text2);font-size:16px;padding:50px 0}
 
-/* ── MODAL OVERLAY ── */
-.modal-overlay{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
-  z-index:1000;align-items:center;justify-content:center;padding:16px
+/* ── FIXED SPONSOR BAR ── */
+#sponsorBar{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  height:var(--spon-h);
+  background:var(--navy);border-top:3px solid var(--amber);
+  display:flex;align-items:center;
+  padding:0 20px;gap:14px
 }
+.spon-label{
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);white-space:nowrap;flex-shrink:0;writing-mode:horizontal-tb
+}
+.spon-cards{
+  display:flex;gap:10px;flex:1;overflow-x:auto;align-items:stretch;
+  scrollbar-width:none
+}
+.spon-cards::-webkit-scrollbar{display:none}
+.spon-card{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  border-radius:8px;padding:8px 14px;min-width:180px;max-width:240px;
+  flex-shrink:0;position:relative;cursor:default;
+  transition:background .15s
+}
+.spon-card:hover{background:rgba(255,255,255,.11)}
+.spon-card.placeholder{border-style:dashed;border-color:rgba(255,255,255,.20)}
+.spon-name{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spon-tag{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spon-link{font-size:11px;color:var(--amber-lt);text-decoration:none;font-weight:600;display:inline-block;margin-top:2px}
+.spon-link:hover{text-decoration:underline}
+.spon-admin{position:absolute;top:5px;right:6px;display:flex;gap:3px}
+.s-edit-btn,.s-del-btn{font-size:10px;padding:1px 6px;border-radius:3px;border:none;cursor:pointer;font-family:var(--font-body)}
+.s-edit-btn{background:rgba(255,255,255,.15);color:#fff}
+.s-edit-btn:hover{background:rgba(255,255,255,.25)}
+.s-del-btn{background:rgba(180,40,40,.3);color:#ffb3b3}
+.s-del-btn:hover{background:rgba(180,40,40,.5)}
+#addSponsorBarBtn{
+  font-size:12px;padding:6px 12px;white-space:nowrap;flex-shrink:0;
+  background:rgba(255,255,255,.10);border:1px dashed rgba(255,255,255,.30);
+  color:rgba(255,255,255,.7);border-radius:var(--r)
+}
+#addSponsorBarBtn:hover{background:rgba(255,255,255,.18);color:#fff}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:16px}
 .modal-overlay.open{display:flex}
-.modal-box{
-  background:var(--surface);border-radius:16px;padding:28px 28px 24px;
-  width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);
-  position:relative;max-height:90vh;overflow-y:auto
-}
+.modal-box{background:var(--surface);border-radius:16px;padding:28px 28px 24px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;max-height:90vh;overflow-y:auto}
 .modal-title{font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:20px;color:var(--text)}
-.modal-close{position:absolute;top:16px;right:16px;background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2)}
 .modal-close:hover{background:var(--border);color:var(--text)}
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
-.frow input{margin-bottom:0}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.03em}
 .modal-actions{display:flex;gap:10px;margin-top:20px}
 .modal-actions button{flex:1;padding:11px 0;font-size:15px}
 .err-msg{font-size:13px;color:var(--danger);margin-top:8px}
 .ok-msg{font-size:13px;color:var(--teal);margin-top:8px}
-
-/* ── AUTH in MODAL ── */
 .auth-tabs{display:flex;gap:6px;margin-bottom:20px}
 .auth-tab{flex:1;font-size:14px;padding:8px 0;border-radius:var(--r)}
 .auth-tab.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:700}
 
-/* ── SPONSOR FOOTER ── */
-#sponsorSection{
-  max-width:860px;margin:32px auto 0;padding:0 20px 40px
-}
-.sponsor-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  border-top:2px solid var(--border-md);padding-top:20px;margin-bottom:16px
-}
-.sponsor-label{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
-.sponsor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-.sponsor-card{
-  background:var(--surface);border:1.5px dashed var(--border-md);
-  border-radius:var(--r-lg);padding:18px 20px;position:relative;min-height:90px
-}
-.sponsor-card.filled{border-style:solid;border-color:var(--border)}
-.sponsor-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
-.sponsor-tag{font-size:13px;color:var(--text2);line-height:1.4}
-.sponsor-link{font-size:13px;color:var(--blue);text-decoration:none;display:inline-block;margin-top:6px;font-weight:600}
-.sponsor-link:hover{text-decoration:underline}
-.sponsor-actions{position:absolute;top:10px;right:10px;display:flex;gap:4px}
-.s-edit-btn{font-size:11px;padding:2px 7px;border-radius:4px;color:var(--blue);border-color:transparent;background:transparent}
-.s-edit-btn:hover{background:var(--blue-lt);border-color:#9AB5F0}
-.s-del-btn{font-size:11px;padding:2px 7px;border-radius:4px;color:var(--text3);border-color:transparent;background:transparent}
-.s-del-btn:hover{background:var(--danger-bg);border-color:#F09595;color:var(--danger)}
-#addSponsorBtn{font-size:13px;padding:6px 14px}
-
-@media(max-width:600px){
-  .hdr-title{font-size:18px}
-  #addEventBtn{font-size:13px;padding:7px 14px}
-  #page,#sponsorSection{padding-left:14px;padding-right:14px}
-  .modal-box{padding:20px 18px 18px}
+/* ── RESPONSIVE ── */
+@media(max-width:640px){
+  :root{--hdr-h:64px;--spon-h:80px}
+  .hdr-title{font-size:16px}
+  #addEventBtn{font-size:13px;padding:7px 12px}
+  #page{padding-left:14px;padding-right:14px}
+  .modal-box{padding:20px 16px 18px}
   .frow{grid-template-columns:1fr}
+  .spon-card{min-width:150px}
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- FIXED HEADER -->
 <header id="hdr">
-  <div class="hdr-title">New Lexington<br>Community Calendar</div>
+  <!-- LEFT: blinking ADD EVENT -->
+  <div class="hdr-left">
+    <button id="addEventBtn" onclick="clickAddEvent()">+ ADD EVENT</button>
+  </div>
+
+  <!-- CENTER: title -->
+  <div class="hdr-center">
+    <div class="hdr-title">New Lexington<br>Community Calendar</div>
+  </div>
+
+  <!-- RIGHT: auth -->
   <div class="hdr-right">
     <div id="authArea"></div>
-    <button class="btn-amber" id="addEventBtn" onclick="clickAddEvent()">+ ADD EVENT</button>
   </div>
 </header>
 
-<!-- MAIN PAGE -->
+<!-- PAGE BODY -->
 <div id="page">
   <div class="search-wrap" style="margin-top:20px">
     <span class="search-icon">🔍</span>
@@ -182,13 +226,11 @@ button:active{opacity:.8}
   <div id="evList"><div class="no-events">⏳ Loading events…</div></div>
 </div>
 
-<!-- SPONSOR SECTION -->
-<div id="sponsorSection">
-  <div class="sponsor-bar">
-    <span class="sponsor-label">📢 Community Sponsors</span>
-    <button id="addSponsorBtn" class="btn-amber" onclick="openSponsorModal(null)" style="display:none">+ Add Sponsor</button>
-  </div>
-  <div class="sponsor-grid" id="sponsorGrid"><div style="color:var(--text3);font-size:14px">Loading…</div></div>
+<!-- FIXED SPONSOR BAR (always visible at bottom) -->
+<div id="sponsorBar">
+  <span class="spon-label">📢 Sponsors</span>
+  <div class="spon-cards" id="sponCards"></div>
+  <button id="addSponsorBarBtn" onclick="openSponsorModal(null)" style="display:none">+ Add Sponsor</button>
 </div>
 
 <!-- EVENT MODAL -->
@@ -201,7 +243,7 @@ button:active{opacity:.8}
 
 <!-- SPONSOR MODAL -->
 <div class="modal-overlay" id="spModal" onclick="modalOutsideClick(event,'spModal')">
-  <div class="modal-box" id="spModalBox">
+  <div class="modal-box">
     <button class="modal-close" onclick="closeModal('spModal')">✕</button>
     <div id="spModalContent"></div>
   </div>
@@ -240,88 +282,78 @@ async function api(path,opts={}){
   return d;
 }
 
-// ── INIT ──
 async function init(){
-  renderAuth();
-  renderChips();
-  await Promise.all([loadEvents(), loadSponsors()]);
+  renderAuth(); renderChips();
+  await Promise.all([loadEvents(),loadSponsors()]);
 }
 
 async function loadEvents(){
-  try{ allEvs=await api('/api/events'); renderEvents(); }
-  catch(e){ document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`; }
+  try{allEvs=await api('/api/events');renderEvents();}
+  catch(e){document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`;}
 }
 
 async function loadSponsors(){
-  try{ allSponsors=await api('/api/sponsors'); renderSponsors(); }
-  catch(e){ console.error(e); }
+  try{allSponsors=await api('/api/sponsors');renderSponsors();}
+  catch(e){console.error(e);}
 }
 
-// ── AUTH ──
+/* ── AUTH ── */
 function renderAuth(){
   const el=document.getElementById('authArea');
+  const isAdm=authUser&&authUser.is_admin;
   if(authUser){
     const ini=authUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     el.innerHTML=`<div class="user-pill"><div class="avatar">${esc(ini)}</div><span class="user-name">${esc(authUser.name)}</span><button class="sign-out-btn" onclick="doLogout()">Sign out</button></div>`;
-    document.getElementById('addSponsorBtn').style.display=authUser.is_admin?'':'none';
   } else {
     el.innerHTML=`<button onclick="openAuthModal()" style="font-size:14px;padding:7px 16px;color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);">Sign In</button>`;
-    document.getElementById('addSponsorBtn').style.display='none';
   }
+  document.getElementById('addSponsorBarBtn').style.display=isAdm?'':'none';
   renderSponsors();
 }
 
-function setSession(tk,user){ token=tk; authUser=user; localStorage.setItem('nlcc_token',tk); localStorage.setItem('nlcc_user',JSON.stringify(user)); renderAuth(); renderEvents(); }
-function doLogout(){ token=null; authUser=null; localStorage.removeItem('nlcc_token'); localStorage.removeItem('nlcc_user'); renderAuth(); renderEvents(); }
+function setSession(tk,user){token=tk;authUser=user;localStorage.setItem('nlcc_token',tk);localStorage.setItem('nlcc_user',JSON.stringify(user));renderAuth();renderEvents();}
+function doLogout(){token=null;authUser=null;localStorage.removeItem('nlcc_token');localStorage.removeItem('nlcc_user');renderAuth();renderEvents();}
 
-// ── AUTH MODAL ──
+/* ── AUTH MODAL ── */
 function openAuthModal(){
   document.getElementById('evModalContent').innerHTML=buildAuthForm('si');
   openModal('evModal');
 }
 function buildAuthForm(tab){
-  return `
-    <div class="modal-title">Welcome Back</div>
+  return`<div class="modal-title">Welcome Back</div>
     <div class="auth-tabs">
       <button class="auth-tab ${tab==='si'?'on':''}" onclick="switchAuthTab('si')">Sign In</button>
       <button class="auth-tab ${tab==='su'?'on':''}" onclick="switchAuthTab('su')">Register</button>
     </div>
     <div id="siPanel" style="display:${tab==='si'?'block':'none'}">
       <div class="field"><label>Email</label><input type="email" id="liEm" placeholder="your@email.com" autocomplete="username"></div>
-      <div class="field"><label>Password</label><input type="password" id="liPw" placeholder="Password" autocomplete="current-password"></div>
+      <div class="field"><label>Password</label><input type="password" id="liPw" autocomplete="current-password"></div>
       <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doLogin()">Sign In</button></div>
       <div class="err-msg" id="liErr"></div>
     </div>
     <div id="suPanel" style="display:${tab==='su'?'block':'none'}">
-      <div class="field"><label>Full Name</label><input type="text" id="rgNm" placeholder="Your name"></div>
-      <div class="field"><label>Email</label><input type="email" id="rgEm" placeholder="your@email.com" autocomplete="username"></div>
-      <div class="field"><label>Password (6+ characters)</label><input type="password" id="rgPw" placeholder="Password" autocomplete="new-password"></div>
+      <div class="field"><label>Full Name</label><input type="text" id="rgNm"></div>
+      <div class="field"><label>Email</label><input type="email" id="rgEm" autocomplete="username"></div>
+      <div class="field"><label>Password (6+ chars)</label><input type="password" id="rgPw" autocomplete="new-password"></div>
       <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doRegister()">Create Account</button></div>
       <div class="err-msg" id="rgErr"></div>
     </div>`;
 }
-function switchAuthTab(t){
-  document.getElementById('evModalContent').innerHTML=buildAuthForm(t);
-}
+function switchAuthTab(t){document.getElementById('evModalContent').innerHTML=buildAuthForm(t);}
 async function doLogin(){
-  try{
-    const {token:tk,user}=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:document.getElementById('liEm').value,password:document.getElementById('liPw').value})});
-    setSession(tk,user); closeModal('evModal');
-  }catch(e){document.getElementById('liErr').textContent=e.message;}
+  try{const {token:tk,user}=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:document.getElementById('liEm').value,password:document.getElementById('liPw').value})});setSession(tk,user);closeModal('evModal');}
+  catch(e){document.getElementById('liErr').textContent=e.message;}
 }
 async function doRegister(){
-  try{
-    const {token:tk,user}=await api('/api/auth/register',{method:'POST',body:JSON.stringify({name:document.getElementById('rgNm').value,email:document.getElementById('rgEm').value,password:document.getElementById('rgPw').value})});
-    setSession(tk,user); closeModal('evModal');
-  }catch(e){document.getElementById('rgErr').textContent=e.message;}
+  try{const {token:tk,user}=await api('/api/auth/register',{method:'POST',body:JSON.stringify({name:document.getElementById('rgNm').value,email:document.getElementById('rgEm').value,password:document.getElementById('rgPw').value})});setSession(tk,user);closeModal('evModal');}
+  catch(e){document.getElementById('rgErr').textContent=e.message;}
 }
 
-// ── EVENT MODAL ──
+/* ── EVENT MODAL ── */
 function clickAddEvent(){
-  if(!authUser){ openAuthModal(); return; }
+  if(!authUser){openAuthModal();return;}
   openEventModal(null);
 }
-
 function openEventModal(ev){
   editingId=ev?ev.id:null;
   const today=new Date().toISOString().split('T')[0];
@@ -335,22 +367,18 @@ function openEventModal(ev){
     </div>
     <div class="field frow">
       <div><label>Price</label><input type="text" id="fPr" value="${ev?esc(ev.price):''}" placeholder="Free or $5"></div>
-      <div><label>Contact Info</label><input type="text" id="fCo" value="${ev&&ev.contact!=='-'?esc(ev.contact):''}" placeholder="Phone or email"></div>
+      <div><label>Contact</label><input type="text" id="fCo" value="${ev&&ev.contact!=='-'?esc(ev.contact):''}" placeholder="Phone or email"></div>
     </div>
     <div class="field"><label>Category</label>
-      <select id="fCt">
-        ${CATS.map(c=>`<option value="${c.id}"${(ev?ev.cat:'')==c.id?' selected':''}>${c.label}</option>`).join('')}
-      </select>
+      <select id="fCt">${CATS.map(c=>`<option value="${c.id}"${(ev?ev.cat:'')==c.id?' selected':''}>${c.label}</option>`).join('')}</select>
     </div>
     <div class="modal-actions">
       <button class="${ev?'btn-blue':'btn-amber'}" onclick="doSubmitEvent()">${ev?'Save Changes':'Post Event'}</button>
       <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
     </div>
-    <div class="err-msg" id="fErr"></div>
-    <div class="ok-msg"  id="fOk"></div>`;
+    <div class="err-msg" id="fErr"></div><div class="ok-msg" id="fOk"></div>`;
   openModal('evModal');
 }
-
 async function doSubmitEvent(){
   const payload={
     cat:document.getElementById('fCt').value,
@@ -361,35 +389,29 @@ async function doSubmitEvent(){
     price:document.getElementById('fPr').value.trim()||'Free',
     contact:document.getElementById('fCo').value.trim()||'-',
   };
-  if(!payload.name||!payload.location||!payload.date){
-    document.getElementById('fErr').textContent='Name, location, and date are required.'; return;
-  }
+  if(!payload.name||!payload.location||!payload.date){document.getElementById('fErr').textContent='Name, location, and date are required.';return;}
   try{
     if(editingId){
-      const updated=await api('/api/events/'+editingId,{method:'PUT',body:JSON.stringify(payload)});
-      allEvs=allEvs.map(e=>e.id===editingId?updated:e);
+      const u=await api('/api/events/'+editingId,{method:'PUT',body:JSON.stringify(payload)});
+      allEvs=allEvs.map(e=>e.id===editingId?u:e);
       document.getElementById('fOk').textContent='✓ Event updated!';
-    } else {
-      const newEv=await api('/api/events',{method:'POST',body:JSON.stringify(payload)});
-      allEvs.push(newEv);
+    }else{
+      const n=await api('/api/events',{method:'POST',body:JSON.stringify(payload)});
+      allEvs.push(n);
       document.getElementById('fOk').textContent='✓ Event posted!';
     }
     allEvs.sort((a,b)=>a.date.localeCompare(b.date));
     renderEvents();
     setTimeout(()=>closeModal('evModal'),1200);
-  }catch(e){ document.getElementById('fErr').textContent=e.message; }
+  }catch(e){document.getElementById('fErr').textContent=e.message;}
 }
-
 async function deleteEvent(id){
-  if(!authUser||!confirm('Remove this event?')) return;
-  try{
-    await api('/api/events/'+id,{method:'DELETE'});
-    allEvs=allEvs.filter(e=>e.id!==id);
-    renderEvents();
-  }catch(e){alert(e.message);}
+  if(!authUser||!confirm('Remove this event?'))return;
+  try{await api('/api/events/'+id,{method:'DELETE'});allEvs=allEvs.filter(e=>e.id!==id);renderEvents();}
+  catch(e){alert(e.message);}
 }
 
-// ── RENDER EVENTS ──
+/* ── RENDER EVENTS ── */
 function renderEvents(){
   const q=srchQ.toLowerCase();
   const f=allEvs.filter(e=>{
@@ -397,12 +419,10 @@ function renderEvents(){
     const mq=!q||e.name.toLowerCase().includes(q)||e.location.toLowerCase().includes(q)||cl(e.cat).toLowerCase().includes(q);
     return mc&&mq;
   });
-  const cnt=document.getElementById('evCount');
-  cnt.textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
+  document.getElementById('evCount').textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
   const list=document.getElementById('evList');
   if(!f.length){list.innerHTML='<div class="no-events">No events found. Tap <strong>+ ADD EVENT</strong> to be the first!</div>';return;}
-  const grp={};
-  f.forEach(e=>{(grp[e.date]=grp[e.date]||[]).push(e);});
+  const grp={};f.forEach(e=>{(grp[e.date]=grp[e.date]||[]).push(e);});
   const fmtD=d=>{const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});};
   const isAdm=authUser&&authUser.is_admin;
   const canAct=e=>authUser&&(e.added_by===authUser.id||isAdm);
@@ -417,43 +437,40 @@ function renderEvents(){
         <span class="sep">·</span><span class="${isFree(e.price)?'pf':'pp'}">${esc(e.price)}</span>
         <span class="sep">·</span><span class="em">${esc(e.contact)}</span>
         ${canAct(e)?`<div class="row-actions">
-          <button class="edit-btn" onclick="openEventModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">edit</button>
-          <button class="del-btn"  onclick="deleteEvent(${e.id})">remove</button>
+          <button class="edit-btn" onclick='openEventModal(${JSON.stringify(e)})'>edit</button>
+          <button class="del-btn" onclick="deleteEvent(${e.id})">remove</button>
         </div>`:''}
       </div>`).join('')}
   `).join('');
 }
 
-// ── FILTERS ──
+/* ── FILTERS ── */
 function renderChips(){
-  const row=document.getElementById('filterRow');
   let html=`<span class="filter-label">Filter:</span>`;
-  CATS.forEach(c=>{
-    html+=`<span class="chip${activeFilters.has(c.id)?' on':''}" style="${!activeFilters.has(c.id)?`border-left-color:${c.c}`:''}" onclick="toggleFilter('${c.id}')">${c.label}</span>`;
-  });
-  if(activeFilters.size>0) html+=`<button class="clear-chip" onclick="clearFilters()">✕ Clear</button>`;
-  row.innerHTML=html;
+  CATS.forEach(c=>{html+=`<span class="chip${activeFilters.has(c.id)?' on':''}" style="${!activeFilters.has(c.id)?`border-left-color:${c.c}`:''}" onclick="toggleFilter('${c.id}')">${c.label}</span>`;});
+  if(activeFilters.size>0)html+=`<button class="clear-chip" onclick="clearFilters()">✕ Clear</button>`;
+  document.getElementById('filterRow').innerHTML=html;
 }
-function toggleFilter(id){
-  if(activeFilters.has(id)) activeFilters.delete(id); else activeFilters.add(id);
-  renderChips(); renderEvents();
-}
-function clearFilters(){ activeFilters.clear(); renderChips(); renderEvents(); }
+function toggleFilter(id){if(activeFilters.has(id))activeFilters.delete(id);else activeFilters.add(id);renderChips();renderEvents();}
+function clearFilters(){activeFilters.clear();renderChips();renderEvents();}
 
-// ── SPONSORS ──
+/* ── SPONSOR BAR ── */
 function renderSponsors(){
-  const grid=document.getElementById('sponsorGrid');
   const isAdm=authUser&&authUser.is_admin;
-  if(!allSponsors.length){grid.innerHTML='<div style="color:var(--text3);font-size:14px">No sponsors yet.</div>';return;}
-  grid.innerHTML=allSponsors.map(s=>`
-    <div class="sponsor-card filled">
-      ${isAdm?`<div class="sponsor-actions">
+  const cards=document.getElementById('sponCards');
+  if(!allSponsors.length){
+    cards.innerHTML=`<div class="spon-card placeholder"><div class="spon-name" style="color:rgba(255,255,255,.4)">Your Business Here</div><div class="spon-tag">Contact us to advertise</div></div>`;
+    return;
+  }
+  cards.innerHTML=allSponsors.map(s=>`
+    <div class="spon-card${s.name?'':' placeholder'}">
+      ${isAdm?`<div class="spon-admin">
         <button class="s-edit-btn" onclick="openSponsorModal(${s.id})">edit</button>
-        <button class="s-del-btn" onclick="deleteSponsor(${s.id})">delete</button>
+        <button class="s-del-btn" onclick="deleteSponsor(${s.id})">del</button>
       </div>`:''}
-      <div class="sponsor-name">${esc(s.name)}</div>
-      ${s.tagline?`<div class="sponsor-tag">${esc(s.tagline)}</div>`:''}
-      ${s.url?`<a class="sponsor-link" href="${esc(s.url)}" target="_blank" rel="noopener">Visit Website →</a>`:''}
+      <div class="spon-name">${esc(s.name)}</div>
+      ${s.tagline?`<div class="spon-tag">${esc(s.tagline)}</div>`:''}
+      ${s.url?`<a class="spon-link" href="${esc(s.url)}" target="_blank" rel="noopener">Visit →</a>`:''}
     </div>`).join('');
 }
 
@@ -471,39 +488,27 @@ function openSponsorModal(id){
     <div class="err-msg" id="spErr"></div>`;
   openModal('spModal');
 }
-
 async function doSponsorSubmit(id){
   const payload={name:document.getElementById('spNm').value.trim(),tagline:document.getElementById('spTg').value.trim(),url:document.getElementById('spUrl').value.trim()};
   if(!payload.name){document.getElementById('spErr').textContent='Business name is required.';return;}
   try{
-    if(id){
-      const updated=await api('/api/sponsors/'+id,{method:'PUT',body:JSON.stringify(payload)});
-      allSponsors=allSponsors.map(s=>s.id===id?updated:s);
-    } else {
-      const newSp=await api('/api/sponsors',{method:'POST',body:JSON.stringify(payload)});
-      allSponsors.push(newSp);
-    }
-    renderSponsors(); closeModal('spModal');
+    if(id){const u=await api('/api/sponsors/'+id,{method:'PUT',body:JSON.stringify(payload)});allSponsors=allSponsors.map(s=>s.id===id?u:s);}
+    else{const n=await api('/api/sponsors',{method:'POST',body:JSON.stringify(payload)});allSponsors.push(n);}
+    renderSponsors();closeModal('spModal');
   }catch(e){document.getElementById('spErr').textContent=e.message;}
 }
-
 async function deleteSponsor(id){
-  if(!confirm('Delete this sponsor?')) return;
-  try{
-    await api('/api/sponsors/'+id,{method:'DELETE'});
-    allSponsors=allSponsors.filter(s=>s.id!==id);
-    renderSponsors();
-  }catch(e){alert(e.message);}
+  if(!confirm('Delete this sponsor?'))return;
+  try{await api('/api/sponsors/'+id,{method:'DELETE'});allSponsors=allSponsors.filter(s=>s.id!==id);renderSponsors();}
+  catch(e){alert(e.message);}
 }
 
-// ── MODAL HELPERS ──
+/* ── MODAL HELPERS ── */
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function modalOutsideClick(e,id){if(e.target.id===id)closeModal(id);}
 
-// ── SEARCH ──
 document.getElementById('srch').addEventListener('input',function(){srchQ=this.value;renderEvents();});
-
 init();
 </script>
 </body>
