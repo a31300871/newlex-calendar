@@ -3,683 +3,508 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>New Lexington Community Calendar – Perry County, Ohio</title>
-<meta name="description" content="The official community event calendar for New Lexington, Ohio and Perry County. Sports, church, government, fairs, and more.">
+<title>New Lexington Community Calendar</title>
+<meta name="description" content="New Lexington, Ohio community events — sports, church, government, fairs, and more.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── RESET & BASE ─────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --amber:      #BA7517;
-  --amber-dk:   #854F0B;
-  --amber-lt:   #FFF4E0;
-  --amber-mid:  #EF9F27;
-  --teal:       #0F6E56;
-  --navy:       #1A2744;
-  --cream:      #FAF8F4;
-  --border:     rgba(0,0,0,0.10);
-  --border-md:  rgba(0,0,0,0.17);
-  --text:       #1C1C1E;
-  --text-2:     #5F5E5A;
-  --text-3:     #888780;
-  --surface:    #FFFFFF;
-  --surface-2:  #F5F3EE;
-  --danger:     #A32D2D;
-  --danger-bg:  #FCEBEB;
-  --font-head:  'Playfair Display', Georgia, serif;
-  --font-body:  'Source Sans 3', system-ui, sans-serif;
-  --radius:     8px;
-  --radius-lg:  12px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --amber:#BA7517; --amber-dk:#854F0B; --amber-lt:#FFF4E0;
+  --teal:#0F6E56; --navy:#1A2744; --cream:#FAF8F4;
+  --border:rgba(0,0,0,0.10); --border-md:rgba(0,0,0,0.18);
+  --text:#1C1C1E; --text2:#5F5E5A; --text3:#888780;
+  --surface:#FFFFFF; --surface2:#F5F3EE;
+  --danger:#A32D2D; --danger-bg:#FCEBEB;
+  --blue:#2355B5; --blue-lt:#EEF4FF;
+  --font-head:'Playfair Display',Georgia,serif;
+  --font-body:'Source Sans 3',system-ui,sans-serif;
+  --r:8px; --r-lg:14px;
 }
+html{font-size:16px}
+body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5}
+input,select,textarea,button{font-family:var(--font-body);font-size:15px}
+input,select,textarea{
+  width:100%;padding:10px 14px;border:1.5px solid var(--border-md);
+  border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s
+}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s,opacity .15s;font-size:15px;font-weight:500}
+button:hover{background:var(--surface2)}
+button:active{opacity:.8}
+.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
+.btn-amber:hover{background:var(--amber-dk);border-color:var(--amber-dk)}
+.btn-blue{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700}
+.btn-blue:hover{background:#1A3E8A;border-color:#1A3E8A}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
 
-html, body { height: 100%; }
-body {
-  font-family: var(--font-body);
-  background: var(--cream);
-  color: var(--text);
-  font-size: 14px;
-  line-height: 1.5;
+/* ── HEADER ── */
+#hdr{
+  background:var(--navy);padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:4px solid var(--amber);position:sticky;top:0;z-index:100
 }
+.hdr-title{font-family:var(--font-head);font-size:24px;font-weight:700;color:#fff;line-height:1.15}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+#authArea{display:flex;align-items:center;gap:8px}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 14px 5px 8px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user-name{font-size:14px;font-weight:600;color:#fff}
+.sign-out-btn{font-size:13px;color:rgba(255,255,255,.6);background:transparent;border:none;padding:0;cursor:pointer}
+.sign-out-btn:hover{color:#fff;background:transparent}
+#addEventBtn{font-size:15px;padding:9px 20px;letter-spacing:.02em}
 
-input, select, textarea, button {
-  font-family: var(--font-body);
-  font-size: 13px;
-}
-input, select, textarea {
-  width: 100%;
-  padding: 7px 10px;
-  border: 0.5px solid var(--border-md);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  outline: none;
-  transition: border-color .15s;
-}
-input:focus, select:focus, textarea:focus {
-  border-color: var(--amber);
-  box-shadow: 0 0 0 3px rgba(186,117,23,.12);
-}
-input::placeholder, textarea::placeholder { color: var(--text-3); }
-button {
-  cursor: pointer;
-  border: 0.5px solid var(--border-md);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  padding: 7px 14px;
-  transition: background .15s, border-color .15s, opacity .15s;
-}
-button:hover  { background: var(--surface-2); }
-button:active { opacity: .8; }
-button.primary {
-  background: var(--amber);
-  color: #fff;
-  border-color: var(--amber);
-  font-weight: 600;
-}
-button.primary:hover { background: var(--amber-dk); border-color: var(--amber-dk); }
+/* ── PAGE BODY ── */
+#page{max-width:860px;margin:0 auto;padding:24px 20px 0}
 
-/* ── LAYOUT ───────────────────────────────────── */
-#app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+/* ── SEARCH & FILTERS ── */
+.search-wrap{position:relative;margin-bottom:16px}
+.search-wrap input{padding-left:42px;font-size:16px;height:48px;border-radius:10px}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text3);pointer-events:none}
+.filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.filter-label{font-size:13px;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-right:2px}
+.chip{font-size:13px;padding:5px 14px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;user-select:none;border-left:4px solid var(--border-md)}
+.chip:hover{border-color:var(--border-md);background:var(--surface2)}
+.chip.on{border-color:var(--amber)!important;background:var(--amber-lt);color:var(--amber-dk);font-weight:600}
+.clear-chip{font-size:12px;padding:4px 10px;border-radius:100px;border:1.5px solid var(--amber);background:transparent;color:var(--amber-dk);cursor:pointer;font-weight:600}
+.clear-chip:hover{background:var(--amber-lt)}
+.ev-count{font-size:14px;color:var(--text3);margin-bottom:12px}
 
-/* ── HEADER ───────────────────────────────────── */
-#hdr {
-  background: var(--navy);
-  color: #fff;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
-  border-bottom: 3px solid var(--amber);
+/* ── EVENT LIST ── */
+.date-head{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:18px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px}
+.date-head:first-child{padding-top:0}
+.erow{
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);
+  margin-bottom:6px;background:var(--surface);font-size:14px;
+  transition:border-color .15s,box-shadow .15s
 }
-.hdr-title {
-  font-family: var(--font-head);
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-.hdr-sub {
-  font-size: 11px;
-  color: rgba(255,255,255,.6);
-  margin-top: 1px;
-  white-space: nowrap;
-}
-.photos {
-  display: flex;
-  gap: 5px;
-  flex-shrink: 0;
-}
-.photos img, .photo-ph {
-  width: 70px;
-  height: 52px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1.5px solid rgba(255,255,255,.2);
-}
-.photo-ph {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1.3;
-  padding: 3px;
-}
-.ph-sports { background: #1D3E6B; color: #B5D4F4; }
-.ph-fair   { background: #8B4513; color: #FAC775; }
-.ph-church { background: #2E3D25; color: #C0DD97; }
-.ph-memorial { background: #3D2B2B; color: #F5C4B3; }
-.svc-pill {
-  margin-left: auto;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 11.5px;
-  color: rgba(255,255,255,.75);
-  line-height: 1.5;
-  flex-shrink: 0;
-}
-.svc-pill strong { color: #fff; }
-.svc-pill a { color: var(--amber-mid); text-decoration: none; }
-.svc-pill a:hover { text-decoration: underline; }
+.erow:hover{border-color:var(--border-md);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.erow.is-editing{border-color:var(--blue);background:var(--blue-lt)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ename{font-weight:700;font-size:15px;color:var(--text)}
+.em{color:var(--text2);font-size:14px}
+.sep{color:var(--border-md);font-size:14px}
+.pf{color:var(--teal);font-weight:600;font-size:14px}
+.pp{color:var(--amber-dk);font-weight:600;font-size:14px}
+.row-actions{margin-left:auto;display:flex;gap:5px}
+.edit-btn{font-size:12px;color:var(--blue);padding:3px 8px;border:1.5px solid transparent;border-radius:5px;background:transparent}
+.edit-btn:hover{background:var(--blue-lt);border-color:#9AB5F0}
+.del-btn{font-size:12px;color:var(--text3);padding:3px 8px;border:1.5px solid transparent;border-radius:5px;background:transparent}
+.del-btn:hover{background:var(--danger-bg);border-color:#F09595;color:var(--danger)}
+.no-events{text-align:center;color:var(--text2);font-size:16px;padding:50px 0}
 
-/* ── MAIN SPLIT ───────────────────────────────── */
-#main {
-  display: grid;
-  grid-template-columns: 306px 1fr;
-  flex: 1;
-  overflow: hidden;
+/* ── MODAL OVERLAY ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:1000;align-items:center;justify-content:center;padding:16px
 }
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--surface);border-radius:16px;padding:28px 28px 24px;
+  width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);
+  position:relative;max-height:90vh;overflow-y:auto
+}
+.modal-title{font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:20px;color:var(--text)}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
+.frow input{margin-bottom:0}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.03em}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-actions button{flex:1;padding:11px 0;font-size:15px}
+.err-msg{font-size:13px;color:var(--danger);margin-top:8px}
+.ok-msg{font-size:13px;color:var(--teal);margin-top:8px}
 
-/* ── LEFT PANEL ───────────────────────────────── */
-#lpanel {
-  background: var(--surface);
-  border-right: 0.5px solid var(--border);
-  overflow-y: auto;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.panel-section-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--text-3);
-  margin-bottom: 6px;
-}
-.card {
-  background: var(--surface-2);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 11px 13px;
-}
-.card input, .card select { margin-bottom: 6px; }
+/* ── AUTH in MODAL ── */
+.auth-tabs{display:flex;gap:6px;margin-bottom:20px}
+.auth-tab{flex:1;font-size:14px;padding:8px 0;border-radius:var(--r)}
+.auth-tab.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:700}
 
-/* Auth */
-.tab-row   { display: flex; gap: 4px; margin-bottom: 8px; }
-.tab-btn   { flex: 1; font-size: 12px; padding: 5px 0; }
-.tab-btn.on {
-  background: var(--amber-lt);
-  border-color: var(--amber);
-  color: var(--amber-dk);
-  font-weight: 600;
+/* ── SPONSOR FOOTER ── */
+#sponsorSection{
+  max-width:860px;margin:32px auto 0;padding:0 20px 40px
 }
-.user-row   { display: flex; align-items: center; gap: 9px; }
-.avatar {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  background: var(--amber);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+.sponsor-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  border-top:2px solid var(--border-md);padding-top:20px;margin-bottom:16px
 }
-.u-name  { font-size: 13px; font-weight: 600; }
-.u-email { font-size: 10.5px; color: var(--text-2); }
+.sponsor-label{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.sponsor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.sponsor-card{
+  background:var(--surface);border:1.5px dashed var(--border-md);
+  border-radius:var(--r-lg);padding:18px 20px;position:relative;min-height:90px
+}
+.sponsor-card.filled{border-style:solid;border-color:var(--border)}
+.sponsor-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.sponsor-tag{font-size:13px;color:var(--text2);line-height:1.4}
+.sponsor-link{font-size:13px;color:var(--blue);text-decoration:none;display:inline-block;margin-top:6px;font-weight:600}
+.sponsor-link:hover{text-decoration:underline}
+.sponsor-actions{position:absolute;top:10px;right:10px;display:flex;gap:4px}
+.s-edit-btn{font-size:11px;padding:2px 7px;border-radius:4px;color:var(--blue);border-color:transparent;background:transparent}
+.s-edit-btn:hover{background:var(--blue-lt);border-color:#9AB5F0}
+.s-del-btn{font-size:11px;padding:2px 7px;border-radius:4px;color:var(--text3);border-color:transparent;background:transparent}
+.s-del-btn:hover{background:var(--danger-bg);border-color:#F09595;color:var(--danger)}
+#addSponsorBtn{font-size:13px;padding:6px 14px}
 
-/* Form */
-.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
-.frow input { margin-bottom: 0; }
-textarea { height: 56px; resize: none; }
-
-/* ── RIGHT PANEL ──────────────────────────────── */
-#rpanel { overflow-y: auto; padding: 12px; background: var(--cream); }
-
-.search-wrap { position: relative; margin-bottom: 8px; }
-.search-wrap input { padding-left: 32px; }
-.search-icon {
-  position: absolute; left: 10px; top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  pointer-events: none;
-  color: var(--text-3);
-}
-
-.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-.chip {
-  font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 100px;
-  border: 0.5px solid var(--border-md);
-  background: var(--surface);
-  color: var(--text-2);
-  cursor: pointer;
-  transition: all .15s;
-  border-left: 3px solid var(--border-md);
-}
-.chip:hover { border-color: var(--border-md); background: var(--surface-2); }
-.chip.on {
-  background: var(--amber-lt);
-  border-color: var(--amber) !important;
-  color: var(--amber-dk);
-  font-weight: 600;
-}
-
-/* Event list */
-.date-head {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--text-2);
-  padding: 10px 0 4px;
-  border-bottom: 0.5px solid var(--border);
-  margin-bottom: 5px;
-}
-.erow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 7px 10px;
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: 4px;
-  background: var(--surface);
-  font-size: 12.5px;
-  transition: border-color .15s, box-shadow .15s;
-}
-.erow:hover { border-color: var(--border-md); box-shadow: 0 1px 4px rgba(0,0,0,.05); }
-.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.ename { font-weight: 600; color: var(--text); }
-.em    { color: var(--text-2); }
-.sep   { color: var(--border-md); }
-.pf    { color: var(--teal); font-weight: 500; }
-.pp    { color: var(--amber-dk); font-weight: 500; }
-.del-btn {
-  margin-left: auto;
-  font-size: 10.5px;
-  color: var(--text-3);
-  padding: 2px 6px;
-  border: 0.5px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-}
-.del-btn:hover {
-  background: var(--danger-bg);
-  border-color: #F09595;
-  color: var(--danger);
-}
-
-.no-events {
-  text-align: center;
-  color: var(--text-2);
-  font-size: 13px;
-  padding: 40px 0;
-}
-.err-msg { font-size: 11px; color: var(--danger); margin-top: 4px; }
-.ok-msg  { font-size: 11px; color: var(--teal);   margin-top: 4px; }
-.note    { font-size: 11.5px; color: var(--text-2); text-align: center; padding: 7px 0; }
-.spin    { display: inline-block; animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.event-count {
-  font-size: 11px;
-  color: var(--text-3);
-  margin-bottom: 6px;
-}
-
-/* ── RESPONSIVE ───────────────────────────────── */
-@media (max-width: 720px) {
-  .photos, .svc-pill { display: none; }
-  #main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  #lpanel { max-height: 50vh; }
-  .hdr-title { font-size: 16px; }
+@media(max-width:600px){
+  .hdr-title{font-size:18px}
+  #addEventBtn{font-size:13px;padding:7px 14px}
+  #page,#sponsorSection{padding-left:14px;padding-right:14px}
+  .modal-box{padding:20px 18px 18px}
+  .frow{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-<div id="app">
 
-  <!-- HEADER -->
-  <header id="hdr">
-    <div>
-      <div class="hdr-title">New Lexington Community Calendar</div>
-      <div class="hdr-sub">Perry County, Ohio &nbsp;·&nbsp; The Heart of Appalachian Ohio</div>
-    </div>
+<!-- HEADER -->
+<header id="hdr">
+  <div class="hdr-title">New Lexington<br>Community Calendar</div>
+  <div class="hdr-right">
+    <div id="authArea"></div>
+    <button class="btn-amber" id="addEventBtn" onclick="clickAddEvent()">+ ADD EVENT</button>
+  </div>
+</header>
 
-    <div class="photos">
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Perry_County_Courthouse_%282%29_%E2%80%94_New_Lexington%2C_Ohio.jpg/160px-Perry_County_Courthouse_%282%29_%E2%80%94_New_Lexington%2C_Ohio.jpg"
-        alt="Perry County Courthouse – Government Events"
-        title="Perry County Courthouse"
-        onerror="this.style.display='none'">
-      <div class="photo-ph ph-sports" title="NL Panthers Sports">Panthers<br>Football</div>
-      <div class="photo-ph ph-fair"   title="Perry County Fair">Perry Co.<br>Fair</div>
-      <div class="photo-ph ph-church" title="Church Events">Church<br>Events</div>
-    </div>
+<!-- MAIN PAGE -->
+<div id="page">
+  <div class="search-wrap" style="margin-top:20px">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="srch" placeholder="Search events…">
+  </div>
+  <div class="filter-row" id="filterRow"></div>
+  <div class="ev-count" id="evCount"></div>
+  <div id="evList"><div class="no-events">⏳ Loading events…</div></div>
+</div>
 
-    <div class="svc-pill">
-      Don't want to type?<br>
-      Call or text <strong><a href="sms:7403433326">(740) 343-3326</a></strong> — we'll post it for <strong>$5</strong>
-    </div>
-  </header>
+<!-- SPONSOR SECTION -->
+<div id="sponsorSection">
+  <div class="sponsor-bar">
+    <span class="sponsor-label">📢 Community Sponsors</span>
+    <button id="addSponsorBtn" class="btn-amber" onclick="openSponsorModal(null)" style="display:none">+ Add Sponsor</button>
+  </div>
+  <div class="sponsor-grid" id="sponsorGrid"><div style="color:var(--text3);font-size:14px">Loading…</div></div>
+</div>
 
-  <!-- MAIN SPLIT -->
-  <div id="main">
+<!-- EVENT MODAL -->
+<div class="modal-overlay" id="evModal" onclick="modalOutsideClick(event,'evModal')">
+  <div class="modal-box" id="evModalBox">
+    <button class="modal-close" onclick="closeModal('evModal')">✕</button>
+    <div id="evModalContent"></div>
+  </div>
+</div>
 
-    <!-- LEFT: Auth + Form -->
-    <aside id="lpanel">
-
-      <div>
-        <div class="panel-section-label">Your Account</div>
-        <div class="card" id="authCard">
-          <div style="color:var(--text-3);font-size:12px">Loading…</div>
-        </div>
-      </div>
-
-      <div>
-        <div class="panel-section-label">Post an Event</div>
-        <div class="card" id="formCard">
-          <div class="note">Sign in to post events.</div>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- RIGHT: Filter + Event List -->
-    <main id="rpanel">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="srchInput" placeholder="Search by event name, location, or category…">
-      </div>
-      <div class="chips" id="chips"></div>
-      <div class="event-count" id="evCount"></div>
-      <div id="evList"><div class="no-events"><span class="spin">⏳</span> Loading events…</div></div>
-    </main>
-
+<!-- SPONSOR MODAL -->
+<div class="modal-overlay" id="spModal" onclick="modalOutsideClick(event,'spModal')">
+  <div class="modal-box" id="spModalBox">
+    <button class="modal-close" onclick="closeModal('spModal')">✕</button>
+    <div id="spModalContent"></div>
   </div>
 </div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────
-const API = '';  // same origin; change to full URL if hosting frontend separately
-
-// ── STATE ───────────────────────────────────────
-let token    = localStorage.getItem('nlcc_token')   || null;
-let authUser = JSON.parse(localStorage.getItem('nlcc_user') || 'null');
-let allEvs   = [];
-let catFilter = 'all';
-let srchQ     = '';
-
-// ── CATEGORIES ──────────────────────────────────
-const CATS = [
-  { id:'all',        label:'All Events',      c:'#888780' },
-  { id:'sports',     label:'Sports',          c:'#185FA5' },
-  { id:'government', label:'Government',      c:'#3B6D11' },
-  { id:'church',     label:'Church',          c:'#7F77DD' },
-  { id:'community',  label:'Community',       c:'#BA7517' },
-  { id:'arts',       label:'Arts & Culture',  c:'#D4537E' },
-  { id:'fair',       label:'Fair & Festival', c:'#D85A30' },
-  { id:'food',       label:'Market & Food',   c:'#1D9E75' },
-  { id:'other',      label:'Other',           c:'#5F5E5A' },
+const API='';
+const CATS=[
+  {id:'sports',    label:'Sports',          c:'#185FA5'},
+  {id:'government',label:'Government',      c:'#3B6D11'},
+  {id:'church',    label:'Church',          c:'#7F77DD'},
+  {id:'community', label:'Community',       c:'#BA7517'},
+  {id:'arts',      label:'Arts & Culture',  c:'#D4537E'},
+  {id:'fair',      label:'Fair & Festival', c:'#D85A30'},
+  {id:'food',      label:'Market & Food',   c:'#1D9E75'},
+  {id:'other',     label:'Other',           c:'#5F5E5A'},
 ];
-const catColor = id => (CATS.find(c => c.id === id) || CATS[8]).c;
-const catLabel = id => (CATS.find(c => c.id === id) || CATS[8]).label;
+const cc=id=>(CATS.find(c=>c.id===id)||CATS[7]).c;
+const cl=id=>(CATS.find(c=>c.id===id)||CATS[7]).label;
+const FREE=['free','free entry','free - bring a dish','free - public welcome','free - open to public','free admission'];
+const isFree=p=>FREE.includes((p||'').toLowerCase());
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-const FREE_LABELS = ['free','free entry','free – bring a dish','free – public welcome',
-                     'free – open to public','free admission','free - bring a dish',
-                     'free - public welcome','free - open to public'];
-const isFree = p => FREE_LABELS.includes((p||'').toLowerCase());
+let token=localStorage.getItem('nlcc_token')||null;
+let authUser=JSON.parse(localStorage.getItem('nlcc_user')||'null');
+let allEvs=[]; let allSponsors=[];
+let activeFilters=new Set();
+let srchQ=''; let editingId=null;
 
-// ── API HELPERS ──────────────────────────────────
-async function apiFetch(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(API + path, { ...options, headers });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
+async function api(path,opts={}){
+  const h={'Content-Type':'application/json',...(opts.headers||{})};
+  if(token) h['Authorization']='Bearer '+token;
+  const r=await fetch(API+path,{...opts,headers:h});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||'Request failed');
+  return d;
 }
 
-// ── EVENTS ──────────────────────────────────────
-async function loadEvents() {
-  try {
-    allEvs = await apiFetch('/api/events');
-    renderEvents();
-  } catch(e) {
-    document.getElementById('evList').innerHTML =
-      `<div class="no-events">Could not load events. Is the server running?<br><small>${e.message}</small></div>`;
+// ── INIT ──
+async function init(){
+  renderAuth();
+  renderChips();
+  await Promise.all([loadEvents(), loadSponsors()]);
+}
+
+async function loadEvents(){
+  try{ allEvs=await api('/api/events'); renderEvents(); }
+  catch(e){ document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`; }
+}
+
+async function loadSponsors(){
+  try{ allSponsors=await api('/api/sponsors'); renderSponsors(); }
+  catch(e){ console.error(e); }
+}
+
+// ── AUTH ──
+function renderAuth(){
+  const el=document.getElementById('authArea');
+  if(authUser){
+    const ini=authUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    el.innerHTML=`<div class="user-pill"><div class="avatar">${esc(ini)}</div><span class="user-name">${esc(authUser.name)}</span><button class="sign-out-btn" onclick="doLogout()">Sign out</button></div>`;
+    document.getElementById('addSponsorBtn').style.display=authUser.is_admin?'':'none';
+  } else {
+    el.innerHTML=`<button onclick="openAuthModal()" style="font-size:14px;padding:7px 16px;color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);">Sign In</button>`;
+    document.getElementById('addSponsorBtn').style.display='none';
   }
+  renderSponsors();
 }
 
-async function deleteEvent(id) {
-  if (!authUser) return;
-  try {
-    await apiFetch(`/api/events/${id}`, { method: 'DELETE' });
-    allEvs = allEvs.filter(e => e.id !== id);
-    renderEvents();
-  } catch(e) { alert(e.message); }
+function setSession(tk,user){ token=tk; authUser=user; localStorage.setItem('nlcc_token',tk); localStorage.setItem('nlcc_user',JSON.stringify(user)); renderAuth(); renderEvents(); }
+function doLogout(){ token=null; authUser=null; localStorage.removeItem('nlcc_token'); localStorage.removeItem('nlcc_user'); renderAuth(); renderEvents(); }
+
+// ── AUTH MODAL ──
+function openAuthModal(){
+  document.getElementById('evModalContent').innerHTML=buildAuthForm('si');
+  openModal('evModal');
 }
-
-// ── RENDER EVENTS ───────────────────────────────
-function renderEvents() {
-  const q   = srchQ.toLowerCase();
-  const cat = catFilter;
-
-  const filtered = allEvs.filter(e => {
-    const mc = cat === 'all' || e.cat === cat;
-    const mq = !q || e.name.toLowerCase().includes(q)
-                  || e.location.toLowerCase().includes(q)
-                  || catLabel(e.cat).toLowerCase().includes(q);
-    return mc && mq;
-  });
-
-  const cnt = document.getElementById('evCount');
-  cnt.textContent = filtered.length === 0
-    ? ''
-    : `${filtered.length} event${filtered.length !== 1 ? 's' : ''} found`;
-
-  const list = document.getElementById('evList');
-  if (!filtered.length) {
-    list.innerHTML = '<div class="no-events">No events match your search. Be the first to add one!</div>';
-    return;
-  }
-
-  // Group by date
-  const groups = {};
-  filtered.forEach(e => { (groups[e.date] = groups[e.date] || []).push(e); });
-
-  const fmtDate = d => {
-    const dt = new Date(d + 'T12:00:00');
-    return dt.toLocaleDateString('en-US',
-      { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-  };
-
-  const isAdmin = authUser && authUser.is_admin;
-
-  list.innerHTML = Object.entries(groups)
-    .sort(([a],[b]) => a.localeCompare(b))
-    .map(([d, evs]) => `
-      <div class="date-head">${fmtDate(d)}</div>
-      ${evs.map(e => `
-        <div class="erow">
-          <span class="dot" style="background:${catColor(e.cat)}"></span>
-          <span class="ename">${esc(e.name)}</span>
-          <span class="sep">·</span>
-          <span class="em">${esc(e.location)}</span>
-          <span class="sep">·</span>
-          <span class="em">${esc(e.time)}</span>
-          <span class="sep">·</span>
-          <span class="${isFree(e.price) ? 'pf' : 'pp'}">${esc(e.price)}</span>
-          <span class="sep">·</span>
-          <span class="em">${esc(e.contact)}</span>
-          ${authUser && (e.added_by === authUser.id || isAdmin)
-            ? `<button class="del-btn" onclick="deleteEvent(${e.id})">remove</button>`
-            : ''}
-        </div>`).join('')}
-    `).join('');
-}
-
-// ── CHIPS ───────────────────────────────────────
-function renderChips() {
-  document.getElementById('chips').innerHTML = CATS.map(c => `
-    <span class="chip${catFilter === c.id ? ' on' : ''}"
-          style="${catFilter !== c.id ? `border-left-color:${c.c}` : ''}"
-          onclick="setFilter('${c.id}')">
-      ${c.label}
-    </span>`).join('');
-}
-
-function setFilter(id) { catFilter = id; renderChips(); renderEvents(); }
-
-// ── AUTH RENDERING ───────────────────────────────
-function renderAuth() {
-  const el = document.getElementById('authCard');
-
-  if (authUser) {
-    const ini = authUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-    el.innerHTML = `
-      <div class="user-row">
-        <div class="avatar">${esc(ini)}</div>
-        <div>
-          <div class="u-name">${esc(authUser.name)}</div>
-          <div class="u-email">${esc(authUser.email)}</div>
-        </div>
-        <button onclick="doLogout()" style="margin-left:auto;font-size:11px;">Sign out</button>
-      </div>`;
-    renderForm();
-    return;
-  }
-
-  el.innerHTML = `
-    <div class="tab-row">
-      <button class="tab-btn on" id="tsi" onclick="swTab('si')">Sign In</button>
-      <button class="tab-btn"    id="tsu" onclick="swTab('su')">Register</button>
+function buildAuthForm(tab){
+  return `
+    <div class="modal-title">Welcome Back</div>
+    <div class="auth-tabs">
+      <button class="auth-tab ${tab==='si'?'on':''}" onclick="switchAuthTab('si')">Sign In</button>
+      <button class="auth-tab ${tab==='su'?'on':''}" onclick="switchAuthTab('su')">Register</button>
     </div>
-    <div id="siForm">
-      <input type="email"    id="liEm" placeholder="Email address" autocomplete="username">
-      <input type="password" id="liPw" placeholder="Password" autocomplete="current-password">
-      <button class="primary" style="width:100%" onclick="doLogin()">Sign In</button>
+    <div id="siPanel" style="display:${tab==='si'?'block':'none'}">
+      <div class="field"><label>Email</label><input type="email" id="liEm" placeholder="your@email.com" autocomplete="username"></div>
+      <div class="field"><label>Password</label><input type="password" id="liPw" placeholder="Password" autocomplete="current-password"></div>
+      <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doLogin()">Sign In</button></div>
       <div class="err-msg" id="liErr"></div>
     </div>
-    <div id="suForm" style="display:none">
-      <input type="text"     id="rgNm" placeholder="Your full name">
-      <input type="email"    id="rgEm" placeholder="Email address" autocomplete="username">
-      <input type="password" id="rgPw" placeholder="Password (6+ characters)" autocomplete="new-password">
-      <button class="primary" style="width:100%" onclick="doRegister()">Create Account</button>
+    <div id="suPanel" style="display:${tab==='su'?'block':'none'}">
+      <div class="field"><label>Full Name</label><input type="text" id="rgNm" placeholder="Your name"></div>
+      <div class="field"><label>Email</label><input type="email" id="rgEm" placeholder="your@email.com" autocomplete="username"></div>
+      <div class="field"><label>Password (6+ characters)</label><input type="password" id="rgPw" placeholder="Password" autocomplete="new-password"></div>
+      <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doRegister()">Create Account</button></div>
       <div class="err-msg" id="rgErr"></div>
     </div>`;
-
-  renderForm();
+}
+function switchAuthTab(t){
+  document.getElementById('evModalContent').innerHTML=buildAuthForm(t);
+}
+async function doLogin(){
+  try{
+    const {token:tk,user}=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:document.getElementById('liEm').value,password:document.getElementById('liPw').value})});
+    setSession(tk,user); closeModal('evModal');
+  }catch(e){document.getElementById('liErr').textContent=e.message;}
+}
+async function doRegister(){
+  try{
+    const {token:tk,user}=await api('/api/auth/register',{method:'POST',body:JSON.stringify({name:document.getElementById('rgNm').value,email:document.getElementById('rgEm').value,password:document.getElementById('rgPw').value})});
+    setSession(tk,user); closeModal('evModal');
+  }catch(e){document.getElementById('rgErr').textContent=e.message;}
 }
 
-function swTab(t) {
-  document.getElementById('siForm').style.display = t === 'si' ? '' : 'none';
-  document.getElementById('suForm').style.display = t === 'su' ? '' : 'none';
-  document.getElementById('tsi').classList.toggle('on', t === 'si');
-  document.getElementById('tsu').classList.toggle('on', t === 'su');
+// ── EVENT MODAL ──
+function clickAddEvent(){
+  if(!authUser){ openAuthModal(); return; }
+  openEventModal(null);
 }
 
-async function doLogin() {
-  const email    = document.getElementById('liEm').value.trim();
-  const password = document.getElementById('liPw').value;
-  try {
-    const { token: tk, user } = await apiFetch('/api/auth/login', {
-      method: 'POST', body: JSON.stringify({ email, password })
-    });
-    setSession(tk, user);
-  } catch(e) {
-    document.getElementById('liErr').textContent = e.message;
-  }
-}
-
-async function doRegister() {
-  const name     = document.getElementById('rgNm').value.trim();
-  const email    = document.getElementById('rgEm').value.trim();
-  const password = document.getElementById('rgPw').value;
-  try {
-    const { token: tk, user } = await apiFetch('/api/auth/register', {
-      method: 'POST', body: JSON.stringify({ name, email, password })
-    });
-    setSession(tk, user);
-  } catch(e) {
-    document.getElementById('rgErr').textContent = e.message;
-  }
-}
-
-function doLogout() {
-  localStorage.removeItem('nlcc_token');
-  localStorage.removeItem('nlcc_user');
-  token = null; authUser = null;
-  renderAuth();
-  renderEvents();
-}
-
-function setSession(tk, user) {
-  token = tk; authUser = user;
-  localStorage.setItem('nlcc_token', tk);
-  localStorage.setItem('nlcc_user', JSON.stringify(user));
-  renderAuth();
-  renderEvents();
-}
-
-// ── FORM ─────────────────────────────────────────
-function renderForm() {
-  const fc = document.getElementById('formCard');
-  if (!authUser) {
-    fc.innerHTML = '<div class="note">Sign in to post events to the calendar.</div>';
-    return;
-  }
-  const today = new Date().toISOString().split('T')[0];
-  fc.innerHTML = `
-    <input type="text" id="fNm" placeholder="Event name *">
-    <input type="text" id="fLc" placeholder="Location / Address *">
-    <div class="frow">
-      <input type="date" id="fDt" value="${today}">
-      <input type="text" id="fTm" placeholder="Time (e.g. 7:00 PM)">
+function openEventModal(ev){
+  editingId=ev?ev.id:null;
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('evModalContent').innerHTML=`
+    <div class="modal-title">${ev?'Edit Event':'Post an Event'}</div>
+    <div class="field"><label>Event Name *</label><input type="text" id="fNm" value="${ev?esc(ev.name):''}" placeholder="Name of the event"></div>
+    <div class="field"><label>Location / Address *</label><input type="text" id="fLc" value="${ev?esc(ev.location):''}" placeholder="Where is it?"></div>
+    <div class="field frow">
+      <div><label>Date *</label><input type="date" id="fDt" value="${ev?ev.date:today}"></div>
+      <div><label>Time</label><input type="text" id="fTm" value="${ev&&ev.time!=='TBD'?esc(ev.time):''}" placeholder="e.g. 7:00 PM"></div>
     </div>
-    <div class="frow">
-      <input type="text" id="fPr" placeholder="Price or Free">
-      <input type="text" id="fCo" placeholder="Contact info">
+    <div class="field frow">
+      <div><label>Price</label><input type="text" id="fPr" value="${ev?esc(ev.price):''}" placeholder="Free or $5"></div>
+      <div><label>Contact Info</label><input type="text" id="fCo" value="${ev&&ev.contact!=='-'?esc(ev.contact):''}" placeholder="Phone or email"></div>
     </div>
-    <select id="fCt" style="margin-bottom:7px">
-      ${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
-    </select>
-    <button class="primary" style="width:100%;font-size:13px" onclick="doPost()">+ Post This Event</button>
+    <div class="field"><label>Category</label>
+      <select id="fCt">
+        ${CATS.map(c=>`<option value="${c.id}"${(ev?ev.cat:'')==c.id?' selected':''}>${c.label}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="${ev?'btn-blue':'btn-amber'}" onclick="doSubmitEvent()">${ev?'Save Changes':'Post Event'}</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+    </div>
     <div class="err-msg" id="fErr"></div>
     <div class="ok-msg"  id="fOk"></div>`;
+  openModal('evModal');
 }
 
-async function doPost() {
-  const payload = {
-    cat:      document.getElementById('fCt').value,
-    name:     document.getElementById('fNm').value.trim(),
-    location: document.getElementById('fLc').value.trim(),
-    date:     document.getElementById('fDt').value,
-    time:     document.getElementById('fTm').value.trim() || 'TBD',
-    price:    document.getElementById('fPr').value.trim() || 'Free',
-    contact:  document.getElementById('fCo').value.trim() || '—',
+async function doSubmitEvent(){
+  const payload={
+    cat:document.getElementById('fCt').value,
+    name:document.getElementById('fNm').value.trim(),
+    location:document.getElementById('fLc').value.trim(),
+    date:document.getElementById('fDt').value,
+    time:document.getElementById('fTm').value.trim()||'TBD',
+    price:document.getElementById('fPr').value.trim()||'Free',
+    contact:document.getElementById('fCo').value.trim()||'-',
   };
-  document.getElementById('fErr').textContent = '';
-  document.getElementById('fOk').textContent  = '';
-
-  if (!payload.name || !payload.location || !payload.date) {
-    document.getElementById('fErr').textContent = 'Event name, location, and date are required.';
-    return;
+  if(!payload.name||!payload.location||!payload.date){
+    document.getElementById('fErr').textContent='Name, location, and date are required.'; return;
   }
-
-  try {
-    const newEv = await apiFetch('/api/events', { method:'POST', body: JSON.stringify(payload) });
-    allEvs.push(newEv);
-    allEvs.sort((a,b) => a.date.localeCompare(b.date));
-    document.getElementById('fOk').textContent = '✓ Event posted!';
-    ['fNm','fLc','fTm','fPr','fCo'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('fDt').value = new Date().toISOString().split('T')[0];
+  try{
+    if(editingId){
+      const updated=await api('/api/events/'+editingId,{method:'PUT',body:JSON.stringify(payload)});
+      allEvs=allEvs.map(e=>e.id===editingId?updated:e);
+      document.getElementById('fOk').textContent='✓ Event updated!';
+    } else {
+      const newEv=await api('/api/events',{method:'POST',body:JSON.stringify(payload)});
+      allEvs.push(newEv);
+      document.getElementById('fOk').textContent='✓ Event posted!';
+    }
+    allEvs.sort((a,b)=>a.date.localeCompare(b.date));
     renderEvents();
-    setTimeout(() => { const ok = document.getElementById('fOk'); if(ok) ok.textContent = ''; }, 4000);
-  } catch(e) {
-    document.getElementById('fErr').textContent = e.message;
-  }
+    setTimeout(()=>closeModal('evModal'),1200);
+  }catch(e){ document.getElementById('fErr').textContent=e.message; }
 }
 
-// ── UTILS ────────────────────────────────────────
-function esc(str) {
-  return String(str||'')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+async function deleteEvent(id){
+  if(!authUser||!confirm('Remove this event?')) return;
+  try{
+    await api('/api/events/'+id,{method:'DELETE'});
+    allEvs=allEvs.filter(e=>e.id!==id);
+    renderEvents();
+  }catch(e){alert(e.message);}
 }
 
-// ── SEARCH ───────────────────────────────────────
-document.getElementById('srchInput').addEventListener('input', function() {
-  srchQ = this.value;
-  renderEvents();
-});
+// ── RENDER EVENTS ──
+function renderEvents(){
+  const q=srchQ.toLowerCase();
+  const f=allEvs.filter(e=>{
+    const mc=activeFilters.size===0||activeFilters.has(e.cat);
+    const mq=!q||e.name.toLowerCase().includes(q)||e.location.toLowerCase().includes(q)||cl(e.cat).toLowerCase().includes(q);
+    return mc&&mq;
+  });
+  const cnt=document.getElementById('evCount');
+  cnt.textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
+  const list=document.getElementById('evList');
+  if(!f.length){list.innerHTML='<div class="no-events">No events found. Tap <strong>+ ADD EVENT</strong> to be the first!</div>';return;}
+  const grp={};
+  f.forEach(e=>{(grp[e.date]=grp[e.date]||[]).push(e);});
+  const fmtD=d=>{const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});};
+  const isAdm=authUser&&authUser.is_admin;
+  const canAct=e=>authUser&&(e.added_by===authUser.id||isAdm);
+  list.innerHTML=Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>`
+    <div class="date-head">${fmtD(d)}</div>
+    ${evs.map(e=>`
+      <div class="erow">
+        <span class="dot" style="background:${cc(e.cat)}"></span>
+        <span class="ename">${esc(e.name)}</span>
+        <span class="sep">·</span><span class="em">${esc(e.location)}</span>
+        <span class="sep">·</span><span class="em">${esc(e.time)}</span>
+        <span class="sep">·</span><span class="${isFree(e.price)?'pf':'pp'}">${esc(e.price)}</span>
+        <span class="sep">·</span><span class="em">${esc(e.contact)}</span>
+        ${canAct(e)?`<div class="row-actions">
+          <button class="edit-btn" onclick="openEventModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">edit</button>
+          <button class="del-btn"  onclick="deleteEvent(${e.id})">remove</button>
+        </div>`:''}
+      </div>`).join('')}
+  `).join('');
+}
 
-// ── INIT ─────────────────────────────────────────
-renderChips();
-renderAuth();
-loadEvents();
+// ── FILTERS ──
+function renderChips(){
+  const row=document.getElementById('filterRow');
+  let html=`<span class="filter-label">Filter:</span>`;
+  CATS.forEach(c=>{
+    html+=`<span class="chip${activeFilters.has(c.id)?' on':''}" style="${!activeFilters.has(c.id)?`border-left-color:${c.c}`:''}" onclick="toggleFilter('${c.id}')">${c.label}</span>`;
+  });
+  if(activeFilters.size>0) html+=`<button class="clear-chip" onclick="clearFilters()">✕ Clear</button>`;
+  row.innerHTML=html;
+}
+function toggleFilter(id){
+  if(activeFilters.has(id)) activeFilters.delete(id); else activeFilters.add(id);
+  renderChips(); renderEvents();
+}
+function clearFilters(){ activeFilters.clear(); renderChips(); renderEvents(); }
+
+// ── SPONSORS ──
+function renderSponsors(){
+  const grid=document.getElementById('sponsorGrid');
+  const isAdm=authUser&&authUser.is_admin;
+  if(!allSponsors.length){grid.innerHTML='<div style="color:var(--text3);font-size:14px">No sponsors yet.</div>';return;}
+  grid.innerHTML=allSponsors.map(s=>`
+    <div class="sponsor-card filled">
+      ${isAdm?`<div class="sponsor-actions">
+        <button class="s-edit-btn" onclick="openSponsorModal(${s.id})">edit</button>
+        <button class="s-del-btn" onclick="deleteSponsor(${s.id})">delete</button>
+      </div>`:''}
+      <div class="sponsor-name">${esc(s.name)}</div>
+      ${s.tagline?`<div class="sponsor-tag">${esc(s.tagline)}</div>`:''}
+      ${s.url?`<a class="sponsor-link" href="${esc(s.url)}" target="_blank" rel="noopener">Visit Website →</a>`:''}
+    </div>`).join('');
+}
+
+function openSponsorModal(id){
+  const sp=id?allSponsors.find(s=>s.id===id):null;
+  document.getElementById('spModalContent').innerHTML=`
+    <div class="modal-title">${sp?'Edit Sponsor':'Add Sponsor'}</div>
+    <div class="field"><label>Business Name *</label><input type="text" id="spNm" value="${sp?esc(sp.name):''}" placeholder="Business or organization name"></div>
+    <div class="field"><label>Tagline</label><input type="text" id="spTg" value="${sp?esc(sp.tagline||''):''}" placeholder="Short description or slogan"></div>
+    <div class="field"><label>Website URL</label><input type="text" id="spUrl" value="${sp?esc(sp.url||''):''}" placeholder="https://..."></div>
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="doSponsorSubmit(${id||0})">${sp?'Save Changes':'Add Sponsor'}</button>
+      <button class="btn-ghost" onclick="closeModal('spModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="spErr"></div>`;
+  openModal('spModal');
+}
+
+async function doSponsorSubmit(id){
+  const payload={name:document.getElementById('spNm').value.trim(),tagline:document.getElementById('spTg').value.trim(),url:document.getElementById('spUrl').value.trim()};
+  if(!payload.name){document.getElementById('spErr').textContent='Business name is required.';return;}
+  try{
+    if(id){
+      const updated=await api('/api/sponsors/'+id,{method:'PUT',body:JSON.stringify(payload)});
+      allSponsors=allSponsors.map(s=>s.id===id?updated:s);
+    } else {
+      const newSp=await api('/api/sponsors',{method:'POST',body:JSON.stringify(payload)});
+      allSponsors.push(newSp);
+    }
+    renderSponsors(); closeModal('spModal');
+  }catch(e){document.getElementById('spErr').textContent=e.message;}
+}
+
+async function deleteSponsor(id){
+  if(!confirm('Delete this sponsor?')) return;
+  try{
+    await api('/api/sponsors/'+id,{method:'DELETE'});
+    allSponsors=allSponsors.filter(s=>s.id!==id);
+    renderSponsors();
+  }catch(e){alert(e.message);}
+}
+
+// ── MODAL HELPERS ──
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function modalOutsideClick(e,id){if(e.target.id===id)closeModal(id);}
+
+// ── SEARCH ──
+document.getElementById('srch').addEventListener('input',function(){srchQ=this.value;renderEvents();});
+
+init();
 </script>
 </body>
 </html>
