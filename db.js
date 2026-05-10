@@ -1,0 +1,84 @@
+// db.js – SQLite database setup for New Lexington Community Calendar
+const Database = require('better-sqlite3');
+const path = require('path');
+const bcrypt = require('bcryptjs');
+
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'calendar.db');
+const db = new Database(DB_PATH);
+
+// WAL mode for better concurrent read performance
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
+
+// ──────────────────────────────────────────────
+//  SCHEMA
+// ──────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT    NOT NULL,
+    email        TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+    password_hash TEXT   NOT NULL,
+    is_admin     INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    cat        TEXT    NOT NULL DEFAULT 'other',
+    name       TEXT    NOT NULL,
+    location   TEXT    NOT NULL,
+    date       TEXT    NOT NULL,
+    time       TEXT    NOT NULL DEFAULT 'TBD',
+    price      TEXT    NOT NULL DEFAULT 'Free',
+    contact    TEXT    NOT NULL DEFAULT '—',
+    added_by   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_events_date ON events(date);
+  CREATE INDEX IF NOT EXISTS idx_events_cat  ON events(cat);
+`);
+
+// ──────────────────────────────────────────────
+//  SEED: first-run only
+// ──────────────────────────────────────────────
+const count = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
+
+if (count === 0) {
+  const ADMIN_EMAIL = 'admin@newlexington.com';
+  const ADMIN_PASS  = process.env.ADMIN_PASSWORD || 'admin2024!';
+  const adminHash   = bcrypt.hashSync(ADMIN_PASS, 10);
+
+  const adminId = db.prepare(
+    "INSERT INTO users (name, email, password_hash, is_admin) VALUES ('NL Admin', ?, ?, 1)"
+  ).run(ADMIN_EMAIL, adminHash).lastInsertRowid;
+
+  const ins = db.prepare(
+    'INSERT INTO events (cat, name, location, date, time, price, contact, added_by) VALUES (?,?,?,?,?,?,?,?)'
+  );
+
+  const seed = [
+    ['sports',     'Panthers Varsity Football vs. Caldwell',         'NL Stadium, 101 Panther Dr',                 '2026-09-04', '7:00 PM',            'Free',                 '(740) 342-4174'],
+    ['fair',       'Perry County Fair',                              'Perry Co. Fairgrounds, New Lexington',       '2026-08-10', 'All Day (Mon–Sat)',   '$8 / day',             '(740) 342-4011'],
+    ['arts',       'MacGahan Heritage Festival & Memorial',          'McDougal Park, N. Main St',                  '2026-06-14', '10:00 AM – 4:00 PM', 'Free',                 'village@newlexingtonohio.gov'],
+    ['government', 'Village Council Regular Meeting',                'Village Hall, 215 S. Main St',               '2026-05-12', '6:00 PM',            'Free – Public Welcome','(740) 342-1633'],
+    ['church',     'First Baptist Potluck & Fellowship Dinner',      'First Baptist Church, 400 Lincoln Ave',      '2026-05-18', '5:30 PM',            'Free – Bring a Dish',  '(740) 342-2020'],
+    ['community',  'Red Cross Community Blood Drive',                'Perry Co. District Library, 117 S. Main St','2026-05-15', '9:00 AM – 2:00 PM',  'Free',                 '1-800-RED-CROSS'],
+    ['sports',     'Panthers Girls Track & Field Invitational',      'NL Track, Panther Dr',                       '2026-05-16', '9:00 AM',            '$3',                   '(740) 342-4174'],
+    ['other',      'Community Memorial: John A. Thomas',             'New Lexington Cemetery, Swigart St',         '2026-05-20', '11:00 AM',           'Free',                 'Haning Funeral Home (740) 342-2424'],
+    ['food',       'Perry County Farmers Market',                    'Downtown New Lexington – Main St',           '2026-05-16', '8:00 AM – Noon',     'Free Entry',           'perrycountyfarm@gmail.com'],
+    ['government', 'Perry County Commissioner Meeting',             'Perry Co. Courthouse, 121 W. Brown St',      '2026-05-13', '9:30 AM',            'Free – Open to Public','(740) 342-1995'],
+    ['church',     "St. Mary's Annual Church Bazaar",               "St. Mary's Catholic Church, 218 N. Main St", '2026-07-12', '10:00 AM – 5:00 PM', 'Free Admission',       '(740) 342-3223'],
+    ['community',  'New Lexington National Night Out',               'City Park, New Lexington',                   '2026-08-04', '6:00 PM – 9:00 PM',  'Free',                 '(740) 342-1633'],
+    ['sports',     'NL Panthers JV Football Scrimmage',              'NL Stadium, 101 Panther Dr',                 '2026-08-21', '6:00 PM',            'Free',                 '(740) 342-4174'],
+  ];
+
+  seed.forEach(r => ins.run(...r, adminId));
+
+  console.log('✅  Database seeded.');
+  console.log(`📧  Admin login → ${ADMIN_EMAIL} / ${ADMIN_PASS}`);
+  console.log('    (Set ADMIN_PASSWORD in .env before first run to change this.)');
+}
+
+module.exports = db;
