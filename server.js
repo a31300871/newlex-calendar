@@ -1,24 +1,75 @@
 require('dotenv').config();
-const express = require('express');
-const cors    = require('cors');
-const bcrypt  = require('bcryptjs');
-const jwt     = require('jsonwebtoken');
-const path    = require('path');
+const express  = require('express');
+const cors     = require('cors');
+const bcrypt   = require('bcryptjs');
+const jwt      = require('jsonwebtoken');
+const path     = require('path');
 const { getDb } = require('./db');
 
 const app    = express();
 const PORT   = process.env.PORT || 3000;
-const SECRET = process.env.JWT_SECRET || 'newlex-calendar-jwt-secret-change-me';
+const SECRET = process.env.JWT_SECRET || 'newlex-secret-change-me';
+const STRIPE_SECRET  = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_PRICE   = process.env.STRIPE_PRICE_ID   || '';
+const STRIPE_WEBHOOK = process.env.STRIPE_WEBHOOK_SECRET || '';
+const SITE_URL = process.env.SITE_URL || 'https://www.newlexcalendar.com';
+
+const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
+
+// ── STRIPE WEBHOOK (raw body — MUST be before express.json) ──
+app.post('/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    if (!stripe || !STRIPE_WEBHOOK) return res.sendStatus(400);
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK);
+    } catch (e) {
+      console.error('Webhook signature failed:', e.message);
+      return res.sendStatus(400);
+    }
+    try {
+      const db = await getDb();
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const advId   = session.metadata?.advertiser_id;
+        if (advId && session.payment_status === 'paid') {
+          await db.run(
+            "UPDATE advertisers SET status='active', stripe_customer_id=?, stripe_subscription_id=? WHERE id=?",
+            [session.customer, session.subscription, advId]
+          );
+          console.log('Advertiser activated:', advId);
+        }
+      }
+      if (event.type === 'invoice.payment_failed') {
+        const custId = event.data.object.customer;
+        await db.run("UPDATE advertisers SET status='paused' WHERE stripe_customer_id=?", [custId]);
+      }
+      if (event.type === 'customer.subscription.deleted') {
+        const custId = event.data.object.customer;
+        await db.run("UPDATE advertisers SET status='cancelled', stripe_subscription_id='' WHERE stripe_customer_id=?", [custId]);
+      }
+      if (event.type === 'invoice.payment_succeeded') {
+        const custId = event.data.object.customer;
+        await db.run("UPDATE advertisers SET status='active' WHERE stripe_customer_id=? AND status='paused'", [custId]);
+      }
+    } catch (e) {
+      console.error('Webhook handler error:', e.message);
+    }
+    res.sendStatus(200);
+  }
+);
 
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── AUTH HELPERS ──
 function requireAuth(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
-  try { req.user = jwt.verify(header.split(' ')[1], SECRET); next(); }
-  catch { res.status(401).json({ error: 'Session expired. Please sign in again.' }); }
+  const h = req.headers.authorization;
+  if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
+  try { req.user = jwt.verify(h.split(' ')[1], SECRET); next(); }
+  catch { res.status(401).json({ error: 'Session expired.' }); }
 }
 function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {
@@ -26,8 +77,18 @@ function requireAdmin(req, res, next) {
     next();
   });
 }
+function requireAdvertiser(req, res, next) {
+  const h = req.headers.authorization;
+  if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
+  try {
+    const decoded = jwt.verify(h.split(' ')[1], SECRET);
+    if (decoded.type !== 'advertiser') return res.status(403).json({ error: 'Advertiser access required.' });
+    req.advertiser = decoded;
+    next();
+  } catch { res.status(401).json({ error: 'Session expired.' }); }
+}
 
-// ── AUTH ──
+// ── USER AUTH ──
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, address } = req.body || {};
@@ -35,10 +96,10 @@ app.post('/api/auth/register', async (req, res) => {
     if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
     if (!address?.trim()) return res.status(400).json({ error: 'Address is required.' });
     const db = await getDb();
-    if (await db.get('SELECT id FROM users WHERE email=?', [email.toLowerCase()])) return res.status(409).json({ error: 'That email is already registered.' });
+    if (await db.get('SELECT id FROM users WHERE email=?', [email.toLowerCase()])) return res.status(409).json({ error: 'Email already registered.' });
     const hash = bcrypt.hashSync(password, 10);
-    const result = await db.run('INSERT INTO users (name,email,password_hash,address) VALUES (?,?,?,?)', [name.trim(), email.toLowerCase(), hash, address.trim()]);
-    const user = { id: result.lastID, name: name.trim(), email: email.toLowerCase(), is_admin: 0 };
+    const r = await db.run('INSERT INTO users (name,email,password_hash,address) VALUES (?,?,?,?)', [name.trim(), email.toLowerCase(), hash, address.trim()]);
+    const user = { id: r.lastID, name: name.trim(), email: email.toLowerCase(), is_admin: 0 };
     res.status(201).json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -67,22 +128,31 @@ app.post('/api/events', requireAuth, async (req, res) => {
     const { cat, name, location, date, time, price, contact } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
-    const result = await db.run('INSERT INTO events (cat,name,location,date,time,price,contact,added_by) VALUES (?,?,?,?,?,?,?,?)',
+    const dup = await db.get(
+      "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=?",
+      [name.trim(), date]
+    );
+    if (dup) return res.status(409).json({ error: "An event with that name already exists on that date. Check the calendar to avoid duplicates." });
+    const r = await db.run('INSERT INTO events (cat,name,location,date,time,price,contact,added_by) VALUES (?,?,?,?,?,?,?,?)',
       [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', req.user.id]);
-    res.status(201).json(await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [result.lastID]));
+    res.status(201).json(await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Bulk import
 app.post('/api/events/bulk', requireAuth, async (req, res) => {
   try {
     const { events } = req.body || {};
-    if (!Array.isArray(events) || events.length === 0) return res.status(400).json({ error: 'No events provided.' });
+    if (!Array.isArray(events) || !events.length) return res.status(400).json({ error: 'No events provided.' });
     if (events.length > 200) return res.status(400).json({ error: 'Maximum 200 events per import.' });
     const db = await getDb();
     let imported = 0;
     for (const ev of events) {
       if (!ev.name?.trim() || !ev.location?.trim() || !ev.date) continue;
+      const dup = await db.get(
+        "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=?",
+        [ev.name.trim(), ev.date]
+      );
+      if (dup) continue; // skip duplicates silently in bulk import
       await db.run('INSERT INTO events (cat,name,location,date,time,price,contact,added_by) VALUES (?,?,?,?,?,?,?,?)',
         [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time||'TBD', ev.price||'Free', ev.contact||'-', req.user.id]);
       imported++;
@@ -116,26 +186,25 @@ app.delete('/api/events/:id', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── SPONSORS ──
+// ── MANUAL SPONSORS (admin) ──
 app.get('/api/sponsors', async (req, res) => {
-  try { const db = await getDb(); res.json(await db.all('SELECT * FROM sponsors ORDER BY id ASC')); }
+  try { const db = await getDb(); res.json(await db.all('SELECT * FROM sponsors ORDER BY id')); }
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/sponsors', requireAdmin, async (req, res) => {
   try {
     const { name, tagline, url } = req.body || {};
-    if (!name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    if (!name?.trim()) return res.status(400).json({ error: 'Name required.' });
     const db = await getDb();
-    const result = await db.run('INSERT INTO sponsors (name,tagline,url) VALUES (?,?,?)', [name.trim(), tagline?.trim()||'', url?.trim()||'']);
-    res.status(201).json(await db.get('SELECT * FROM sponsors WHERE id=?', [result.lastID]));
+    const r = await db.run('INSERT INTO sponsors (name,tagline,url) VALUES (?,?,?)', [name.trim(), tagline||'', url||'']);
+    res.status(201).json(await db.get('SELECT * FROM sponsors WHERE id=?', [r.lastID]));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.put('/api/sponsors/:id', requireAdmin, async (req, res) => {
   try {
     const { name, tagline, url } = req.body || {};
-    if (!name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const db = await getDb();
-    await db.run('UPDATE sponsors SET name=?,tagline=?,url=? WHERE id=?', [name.trim(), tagline?.trim()||'', url?.trim()||'', req.params.id]);
+    await db.run('UPDATE sponsors SET name=?,tagline=?,url=? WHERE id=?', [name||'', tagline||'', url||'', req.params.id]);
     res.json(await db.get('SELECT * FROM sponsors WHERE id=?', [req.params.id]));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -143,12 +212,127 @@ app.delete('/api/sponsors/:id', requireAdmin, async (req, res) => {
   try {
     const db = await getDb();
     await db.run('DELETE FROM sponsors WHERE id=?', [req.params.id]);
-    res.json({ success: true, id: Number(req.params.id) });
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── COMBINED DISPLAY SPONSORS (manual + active advertisers) ──
+app.get('/api/display/sponsors', async (req, res) => {
+  try {
+    const db = await getDb();
+    const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
+    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, 'advertiser' AS source FROM advertisers WHERE status='active' ORDER BY id");
+    res.json([...manual, ...paid]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADVERTISER AUTH ──
+app.post('/api/advertiser/register', async (req, res) => {
+  try {
+    const { name, email, password, business_name, tagline, url } = req.body || {};
+    if (!name?.trim() || !email?.trim() || !password || !business_name?.trim())
+      return res.status(400).json({ error: 'Name, email, password, and business name are required.' });
+    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    const db = await getDb();
+    if (await db.get('SELECT id FROM advertisers WHERE email=?', [email.toLowerCase()]))
+      return res.status(409).json({ error: 'That email is already registered.' });
+    const hash = bcrypt.hashSync(password, 10);
+    const r = await db.run(
+      'INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url) VALUES (?,?,?,?,?,?)',
+      [name.trim(), email.toLowerCase(), hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'']
+    );
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [r.lastID]);
+    const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
+    res.status(201).json({ token, advertiser: safeAdv(adv) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/advertiser/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const db = await getDb();
+    const adv = await db.get('SELECT * FROM advertisers WHERE email=?', [email?.toLowerCase()]);
+    if (!adv || !bcrypt.compareSync(password||'', adv.password_hash))
+      return res.status(401).json({ error: 'Incorrect email or password.' });
+    const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
+    res.json({ token, advertiser: safeAdv(adv) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/advertiser/me', requireAdvertiser, async (req, res) => {
+  try {
+    const db = await getDb();
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
+    if (!adv) return res.status(404).json({ error: 'Account not found.' });
+    res.json(safeAdv(adv));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/advertiser/me', requireAdvertiser, async (req, res) => {
+  try {
+    const { business_name, tagline, url } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const db = await getDb();
+    await db.run('UPDATE advertisers SET business_name=?,tagline=?,url=? WHERE id=?',
+      [business_name.trim(), tagline?.trim()||'', url?.trim()||'', req.advertiser.id]);
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
+    res.json(safeAdv(adv));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create Stripe checkout session
+app.post('/api/advertiser/checkout', requireAdvertiser, async (req, res) => {
+  if (!stripe || !STRIPE_PRICE) return res.status(503).json({ error: 'Payment system not configured.' });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: STRIPE_PRICE, quantity: 1 }],
+      metadata: { advertiser_id: String(req.advertiser.id) },
+      success_url: `${SITE_URL}/advertise?success=true`,
+      cancel_url:  `${SITE_URL}/advertise?cancelled=true`,
+    });
+    res.json({ url: session.url });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Cancel subscription
+app.post('/api/advertiser/cancel', requireAdvertiser, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
+  try {
+    const db  = await getDb();
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
+    if (!adv?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
+    await stripe.subscriptions.cancel(adv.stripe_subscription_id);
+    await db.run("UPDATE advertisers SET status='cancelled', stripe_subscription_id='' WHERE id=?", [req.advertiser.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN: ADVERTISER MANAGEMENT ──
+app.get('/api/admin/advertisers', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,status,stripe_customer_id,created_at FROM advertisers ORDER BY created_at DESC');
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body || {};
+    if (!['pending','active','paused','cancelled'].includes(status)) return res.status(400).json({ error: 'Invalid status.' });
+    const db = await getDb();
+    await db.run('UPDATE advertisers SET status=? WHERE id=?', [status, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+function safeAdv(a) {
+  return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, status:a.status, created_at:a.created_at };
+}
+
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-getDb().then(() => {
-  app.listen(PORT, () => console.log('New Lexington Community Calendar on port ' + PORT));
-}).catch(err => { console.error('DB init failed:', err); process.exit(1); });
+getDb().then(() => app.listen(PORT, () => console.log('NewLex Calendar on port ' + PORT)))
+  .catch(err => { console.error('DB init failed:', err); process.exit(1); });
