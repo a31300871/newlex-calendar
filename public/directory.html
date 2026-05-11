@@ -414,9 +414,20 @@ document.getElementById('dirSearch').addEventListener('input', function() {
 function renderNav() {
   const el = document.getElementById('navUser');
   if (listingUser) {
-    el.innerHTML = `<span style="font-size:13px;color:rgba(255,255,255,.8)">${esc(listingUser.business_name)}</span>
-      <button onclick="openDashboard()" style="font-size:12px;padding:5px 12px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">My Listing</button>`;
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 14px">
+        <span style="font-size:13px;color:#fff;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(listingUser.business_name)}</span>
+        <button onclick="openDashboard()" style="font-size:11px;padding:4px 10px;background:var(--amber);border:none;color:#fff;border-radius:100px;font-weight:600">My Listing</button>
+        <button onclick="doLogout()" title="Sign out" style="font-size:11px;padding:4px 8px;background:transparent;border:none;color:rgba(255,255,255,.6);cursor:pointer">✕</button>
+      </div>`;
+  } else {
+    el.innerHTML = `<button onclick="openSignIn()" style="font-size:13px;padding:6px 14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:var(--r)">Sign In</button>`;
   }
+}
+
+function openSignIn() {
+  document.getElementById('listingModal').classList.add('open');
+  renderListingModal('login');
 }
 
 // Modal helpers
