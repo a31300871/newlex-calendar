@@ -221,7 +221,7 @@ app.get('/api/display/sponsors', async (req, res) => {
   try {
     const db = await getDb();
     const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
-    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, 'advertiser' AS source FROM advertisers WHERE status='active' ORDER BY id");
+    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, phone, 'advertiser' AS source FROM advertisers WHERE status='active' ORDER BY id");
     res.json([...manual, ...paid]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -229,17 +229,19 @@ app.get('/api/display/sponsors', async (req, res) => {
 // ── ADVERTISER AUTH ──
 app.post('/api/advertiser/register', async (req, res) => {
   try {
-    const { name, email, password, business_name, tagline, url } = req.body || {};
+    const { name, email, password, business_name, tagline, url, phone } = req.body || {};
     if (!name?.trim() || !email?.trim() || !password || !business_name?.trim())
       return res.status(400).json({ error: 'Name, email, password, and business name are required.' });
     if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
     const db = await getDb();
     if (await db.get('SELECT id FROM advertisers WHERE email=?', [email.toLowerCase()]))
       return res.status(409).json({ error: 'That email is already registered.' });
+    // Enforce 5-spot limit for event popup ads
+    const activeCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active'")).c;
     const hash = bcrypt.hashSync(password, 10);
     const r = await db.run(
-      'INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url) VALUES (?,?,?,?,?,?)',
-      [name.trim(), email.toLowerCase(), hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'']
+      'INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url,phone) VALUES (?,?,?,?,?,?,?)',
+      [name.trim(), email.toLowerCase(), hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'']
     );
     const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [r.lastID]);
     const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
@@ -270,11 +272,11 @@ app.get('/api/advertiser/me', requireAdvertiser, async (req, res) => {
 
 app.put('/api/advertiser/me', requireAdvertiser, async (req, res) => {
   try {
-    const { business_name, tagline, url } = req.body || {};
+    const { business_name, tagline, url, phone } = req.body || {};
     if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const db = await getDb();
-    await db.run('UPDATE advertisers SET business_name=?,tagline=?,url=? WHERE id=?',
-      [business_name.trim(), tagline?.trim()||'', url?.trim()||'', req.advertiser.id]);
+    await db.run('UPDATE advertisers SET business_name=?,tagline=?,url=?,phone=? WHERE id=?',
+      [business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'', req.advertiser.id]);
     const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
     res.json(safeAdv(adv));
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -284,6 +286,9 @@ app.put('/api/advertiser/me', requireAdvertiser, async (req, res) => {
 app.post('/api/advertiser/checkout', requireAdvertiser, async (req, res) => {
   if (!stripe || !STRIPE_PRICE) return res.status(503).json({ error: 'Payment system not configured.' });
   try {
+    const db = await getDb();
+    const activeCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active'")).c;
+    if (activeCount >= 5) return res.status(409).json({ error: 'All 5 ad spots are currently taken. Please join the waitlist.' });
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -329,7 +334,7 @@ app.patch('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
 });
 
 function safeAdv(a) {
-  return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, status:a.status, created_at:a.created_at };
+  return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, phone:a.phone||'', status:a.status, created_at:a.created_at };
 }
 
 app.get('/advertise', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
