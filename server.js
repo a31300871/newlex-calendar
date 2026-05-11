@@ -18,21 +18,18 @@ const SITE_URL = process.env.SITE_URL || 'https://www.newlexcalendar.com';
 
 const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
 
-// ── STRIPE WEBHOOK (raw body — MUST be before express.json) ──
-app.post('/api/stripe/webhook',
-  express.raw({ type: '*/*' }),
-  async (req, res) => {
+// ── STRIPE WEBHOOK ──
+app.post('/api/stripe/webhook', async (req, res) => {
     if (!stripe || !STRIPE_WEBHOOK) return res.status(400).send('Webhook not configured');
+    const sig = req.headers['stripe-signature'];
+    if (!sig) return res.status(400).send('No stripe-signature header');
     let event;
     try {
-      const payload = req.body;
-      const sig     = req.headers['stripe-signature'];
-      event = stripe.webhooks.constructEvent(payload, sig, STRIPE_WEBHOOK);
+      event = stripe.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK);
     } catch (e) {
       console.error('Webhook signature failed:', e.message);
       return res.status(400).send(`Webhook Error: ${e.message}`);
     }
-    // Acknowledge receipt immediately
     res.status(200).json({ received: true });
     try {
       const db = await getDb();
@@ -76,7 +73,9 @@ app.post('/api/stripe/webhook',
 );
 
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => { req.rawBody = buf; }
+}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── AUTH HELPERS ──
