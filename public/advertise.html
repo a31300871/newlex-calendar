@@ -311,6 +311,7 @@ function renderPortal() {
     renderAuthForm('register');
   } else {
     renderDashboard();
+    loadSpotsRemaining();
   }
 }
 
@@ -330,6 +331,7 @@ function renderAuthForm(tab) {
       <div class="field"><label>Password (6+ chars) <span class="req">*</span></label><input type="password" id="aPass"></div>
       <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="aBiz" placeholder="Your business or organization name"></div>
       <div class="field"><label>Tagline</label><input type="text" id="aTag" placeholder="Short description shown under your business name"></div>
+      <div class="field"><label>Business Phone</label><input type="tel" id="aPhone" placeholder="(740) 555-1234"></div>
       <div class="field"><label>Website URL</label><input type="text" id="aUrl" placeholder="https://yourbusiness.com"></div>
       <div class="form-actions">
         <button class="btn-amber" onclick="doRegister()">Register My Business →</button>
@@ -353,6 +355,7 @@ async function doRegister() {
       password: document.getElementById('aPass').value,
       business_name: document.getElementById('aBiz').value.trim(),
       tagline: document.getElementById('aTag').value.trim(),
+      phone: document.getElementById('aPhone')?.value.trim() || '',
       url: document.getElementById('aUrl').value.trim(),
     };
     const { token, advertiser: adv } = await api('/api/advertiser/register', { method:'POST', body:JSON.stringify(payload) });
@@ -415,6 +418,7 @@ function renderDashboard() {
       <div class="dash-label">Edit Your Listing</div>
       <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="eBiz" value="${esc(adv.business_name)}" oninput="updatePreview()"></div>
       <div class="field"><label>Tagline</label><input type="text" id="eTag" value="${esc(adv.tagline||'')}" placeholder="Short description" oninput="updatePreview()"></div>
+      <div class="field"><label>Business Phone</label><input type="tel" id="ePh" value="${esc(adv.phone||'')}" placeholder="(740) 555-1234"></div>
       <div class="field"><label>Website URL</label><input type="text" id="eUrl" value="${esc(adv.url||'')}" placeholder="https://..."></div>
       <button class="btn-navy" style="width:100%;margin-top:4px" onclick="saveEdits()">Save Changes</button>
       <div class="ok-msg"  id="editOk"></div>
@@ -432,7 +436,8 @@ function renderDashboard() {
         <button class="btn-danger" style="width:100%" onclick="confirmCancel()">Cancel My Subscription</button>
         <div class="err-msg" id="cancelErr"></div>
       ` : `
-        <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Subscribe for $25/month to put your ad live on the calendar immediately.</p>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:6px">Subscribe to put your ad live on the calendar immediately. Your ad appears every time someone clicks an event.</p>
+        <p style="font-size:13px;font-weight:700;color:var(--amber-dk);margin-bottom:14px" id="spotsRemaining">⚡ Limited to 5 ad spots — checking availability…</p>
         <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0" onclick="startCheckout()">
           ${status === 'paused' ? '🔄 Reactivate Subscription' : '💳 Subscribe — $25/month'}
         </button>
@@ -456,6 +461,7 @@ async function saveEdits() {
     const updated = await api('/api/advertiser/me', { method:'PUT', body: JSON.stringify({
       business_name: document.getElementById('eBiz').value.trim(),
       tagline:       document.getElementById('eTag').value.trim(),
+      phone:         document.getElementById('ePh')?.value.trim() || '',
       url:           document.getElementById('eUrl').value.trim(),
     })});
     advertiser = { ...advertiser, ...updated };
@@ -464,6 +470,24 @@ async function saveEdits() {
     document.getElementById('editErr').textContent = '';
     setTimeout(() => { const el = document.getElementById('editOk'); if(el) el.textContent=''; }, 3000);
   } catch(e) { document.getElementById('editErr').textContent = e.message; }
+}
+
+async function loadSpotsRemaining() {
+  try {
+    const all = await fetch('/api/display/sponsors').then(r=>r.json());
+    const taken = all.filter(s => s.source === 'advertiser').length;
+    const remaining = 5 - taken;
+    const el = document.getElementById('spotsRemaining');
+    if (el) {
+      if (remaining <= 0) {
+        el.textContent = '🔴 All 5 spots are currently taken — join the waitlist below.';
+        el.style.color = 'var(--danger)';
+      } else {
+        el.textContent = `⚡ Only ${remaining} of 5 ad spot${remaining===1?'':'s'} remaining!`;
+        el.style.color = remaining <= 2 ? 'var(--danger)' : 'var(--amber-dk)';
+      }
+    }
+  } catch(e) { console.error(e); }
 }
 
 async function startCheckout() {
