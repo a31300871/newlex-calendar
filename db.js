@@ -59,12 +59,33 @@ async function getDb() {
     CREATE INDEX IF NOT EXISTS idx_events_date    ON events(date);
     CREATE INDEX IF NOT EXISTS idx_events_cat     ON events(cat);
     CREATE INDEX IF NOT EXISTS idx_adv_status     ON advertisers(status);
+
+    CREATE TABLE IF NOT EXISTS listings (
+      id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_name             TEXT NOT NULL,
+      owner_email            TEXT UNIQUE NOT NULL COLLATE NOCASE,
+      password_hash          TEXT NOT NULL,
+      business_name          TEXT NOT NULL,
+      category               TEXT NOT NULL DEFAULT 'other',
+      phone                  TEXT DEFAULT '',
+      website                TEXT DEFAULT '',
+      address                TEXT DEFAULT '',
+      description            TEXT DEFAULT '',
+      status                 TEXT NOT NULL DEFAULT 'pending',
+      stripe_customer_id     TEXT DEFAULT '',
+      stripe_subscription_id TEXT DEFAULT '',
+      expires_at             TEXT DEFAULT '',
+      created_at             TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_listings_status   ON listings(status);
+    CREATE INDEX IF NOT EXISTS idx_listings_category ON listings(category);
   `);
 
   // Migrations for existing DBs
   try { await _db.run("ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN phone TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN tier TEXT NOT NULL DEFAULT 'basic'"); } catch(_) {}
+  // listings table is created above if not exists
 
   const { c } = await _db.get('SELECT COUNT(*) AS c FROM users');
   if (c === 0) {
