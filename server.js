@@ -19,10 +19,23 @@ const SITE_URL = process.env.SITE_URL || 'https://www.newlexcalendar.com';
 const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
 
 
+// Capture raw body for ALL requests before any other middleware
+app.use((req, res, next) => {
+  const chunks = [];
+  req.on('data', chunk => chunks.push(chunk));
+  req.on('end', () => {
+    req.rawBody = Buffer.concat(chunks);
+    next();
+  });
+  req.on('error', next);
+});
+
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
-app.use(express.json({
-  verify: (req, res, buf) => { req.rawBody = buf; }
-}));
+app.use((req, res, next) => {
+  // Parse JSON for non-webhook routes using the already-captured raw body
+  if (req.path === '/api/stripe/webhook') return next();
+  express.json()(req, res, next);
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── STRIPE WEBHOOK ──
