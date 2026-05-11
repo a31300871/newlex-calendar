@@ -12,6 +12,7 @@ const SECRET = process.env.JWT_SECRET || 'newlex-secret-change-me';
 const STRIPE_SECRET        = process.env.STRIPE_SECRET_KEY     || '';
 const STRIPE_PRICE_BASIC   = process.env.STRIPE_PRICE_ID      || '';
 const STRIPE_PRICE_PREMIUM = process.env.STRIPE_PRICE_PREMIUM || '';
+const STRIPE_PRICE_LISTING = process.env.STRIPE_PRICE_LISTING || '';
 const STRIPE_WEBHOOK       = process.env.STRIPE_WEBHOOK_SECRET || '';
 const SITE_URL = process.env.SITE_URL || 'https://www.newlexcalendar.com';
 
@@ -33,13 +34,23 @@ app.post('/api/stripe/webhook',
       const db = await getDb();
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        const advId   = session.metadata?.advertiser_id;
+        const advId     = session.metadata?.advertiser_id;
+        const listingId = session.metadata?.listing_id;
         if (advId && session.payment_status === 'paid') {
           await db.run(
             "UPDATE advertisers SET status='active', stripe_customer_id=?, stripe_subscription_id=? WHERE id=?",
             [session.customer, session.subscription, advId]
           );
           console.log('Advertiser activated:', advId);
+        }
+        if (listingId && session.payment_status === 'paid') {
+          const expires = new Date();
+          expires.setFullYear(expires.getFullYear() + 1);
+          await db.run(
+            "UPDATE listings SET status='active', stripe_customer_id=?, expires_at=? WHERE id=?",
+            [session.customer, expires.toISOString(), listingId]
+          );
+          console.log('Listing activated:', listingId);
         }
       }
       if (event.type === 'invoice.payment_failed') {
@@ -351,7 +362,129 @@ function safeAdv(a) {
   return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, phone:a.phone||'', tier:a.tier||'basic', status:a.status, created_at:a.created_at };
 }
 
-app.get('/advertise', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
+app.get('/advertise',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
+app.get('/directory',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'directory.html')));
+
+// ── LISTING AUTH ──
+function requireListing(req, res, next) {
+  const h = req.headers.authorization;
+  if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
+  try {
+    const decoded = jwt.verify(h.split(' ')[1], SECRET);
+    if (decoded.type !== 'listing') return res.status(403).json({ error: 'Listing access required.' });
+    req.listing = decoded;
+    next();
+  } catch { res.status(401).json({ error: 'Session expired.' }); }
+}
+
+// GET /api/listings (public)
+app.get('/api/listings', async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all("SELECT id,business_name,category,phone,website,address,description,created_at FROM listings WHERE status='active' ORDER BY business_name ASC");
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/register
+app.post('/api/listings/register', async (req, res) => {
+  try {
+    const { owner_name, owner_email, password, business_name, category, phone, website, address, description } = req.body || {};
+    if (!owner_name?.trim() || !owner_email?.trim() || !password || !business_name?.trim())
+      return res.status(400).json({ error: 'Name, email, password, and business name are required.' });
+    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    const db = await getDb();
+    if (await db.get('SELECT id FROM listings WHERE owner_email=?', [owner_email.toLowerCase()]))
+      return res.status(409).json({ error: 'That email is already registered.' });
+    const hash = bcrypt.hashSync(password, 10);
+    const r = await db.run(
+      'INSERT INTO listings (owner_name,owner_email,password_hash,business_name,category,phone,website,address,description) VALUES (?,?,?,?,?,?,?,?,?)',
+      [owner_name.trim(), owner_email.toLowerCase(), hash, business_name.trim(),
+       category||'other', phone?.trim()||'', website?.trim()||'', address?.trim()||'', description?.trim()||'']
+    );
+    const listing = await db.get('SELECT * FROM listings WHERE id=?', [r.lastID]);
+    const token = jwt.sign({ type:'listing', id: listing.id, email: listing.owner_email, business_name: listing.business_name }, SECRET, { expiresIn: '30d' });
+    res.status(201).json({ token, listing: safeListing(listing) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/login
+app.post('/api/listings/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const db = await getDb();
+    const listing = await db.get('SELECT * FROM listings WHERE owner_email=?', [email?.toLowerCase()]);
+    if (!listing || !bcrypt.compareSync(password||'', listing.password_hash))
+      return res.status(401).json({ error: 'Incorrect email or password.' });
+    const token = jwt.sign({ type:'listing', id: listing.id, email: listing.owner_email, business_name: listing.business_name }, SECRET, { expiresIn: '30d' });
+    res.json({ token, listing: safeListing(listing) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/listings/me
+app.get('/api/listings/me', requireListing, async (req, res) => {
+  try {
+    const db = await getDb();
+    const listing = await db.get('SELECT * FROM listings WHERE id=?', [req.listing.id]);
+    if (!listing) return res.status(404).json({ error: 'Listing not found.' });
+    res.json(safeListing(listing));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/listings/me
+app.put('/api/listings/me', requireListing, async (req, res) => {
+  try {
+    const { business_name, category, phone, website, address, description } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const db = await getDb();
+    await db.run(
+      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=? WHERE id=?',
+      [business_name.trim(), category||'other', phone?.trim()||'', website?.trim()||'', address?.trim()||'', description?.trim()||'', req.listing.id]
+    );
+    const listing = await db.get('SELECT * FROM listings WHERE id=?', [req.listing.id]);
+    res.json(safeListing(listing));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/checkout (one-time payment)
+app.post('/api/listings/checkout', requireListing, async (req, res) => {
+  if (!stripe || !STRIPE_PRICE_LISTING) return res.status(503).json({ error: 'Payment not configured. Contact hello@newlexcalendar.com' });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{ price: STRIPE_PRICE_LISTING, quantity: 1 }],
+      metadata: { listing_id: String(req.listing.id) },
+      success_url: `${SITE_URL}/directory?success=true`,
+      cancel_url:  `${SITE_URL}/directory?cancelled=true`,
+    });
+    res.json({ url: session.url });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/cancel (marks as expired - no subscription to cancel)
+app.post('/api/listings/cancel', requireListing, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE listings SET status='expired' WHERE id=?", [req.listing.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: get all listings
+app.get('/api/admin/listings', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    res.json(await db.all('SELECT * FROM listings ORDER BY created_at DESC'));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+function safeListing(l) {
+  return { id:l.id, owner_name:l.owner_name, owner_email:l.owner_email, business_name:l.business_name,
+    category:l.category, phone:l.phone||'', website:l.website||'', address:l.address||'',
+    description:l.description||'', status:l.status, expires_at:l.expires_at||'', created_at:l.created_at };
+}
+
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 getDb().then(() => app.listen(PORT, () => console.log('NewLex Calendar on port ' + PORT)))
