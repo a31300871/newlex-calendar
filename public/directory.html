@@ -277,18 +277,41 @@ function clearSession() {
   localStorage.removeItem('nlcc_listing');
 }
 
-// Check URL params
+// Check URL params - verify session and activate listing
 function checkURLParams() {
   const p = new URLSearchParams(window.location.search);
   const b = document.getElementById('alertBanner');
   if (p.get('success') === 'true') {
-    b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your business listing is now live in the directory!</div>`;
-    if (listToken) refreshListing();
+    const sessionId = p.get('session_id');
+    if (sessionId && listToken) {
+      verifySession(sessionId);
+    } else {
+      b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your listing is being activated…</div>`;
+      if (listToken) refreshListing();
+    }
     window.history.replaceState({}, '', '/directory');
   }
   if (p.get('cancelled') === 'true') {
     b.innerHTML = `<div class="alert alert-warning">Payment cancelled. No charge was made.</div>`;
     window.history.replaceState({}, '', '/directory');
+  }
+}
+
+// Verify the Stripe session and activate the listing
+async function verifySession(sessionId) {
+  const b = document.getElementById('alertBanner');
+  b.innerHTML = `<div class="alert alert-success">⏳ Activating your listing…</div>`;
+  try {
+    const result = await api('/api/listings/verify-session', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId })
+    });
+    listingUser = result.listing;
+    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
+    await loadAll();
+    b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your business listing is now live in the directory!</div>`;
+  } catch(e) {
+    b.innerHTML = `<div class="alert alert-warning">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@newlexcalendar.com">hello@newlexcalendar.com</a> with your business name and we will activate it manually.</div>`;
   }
 }
 
