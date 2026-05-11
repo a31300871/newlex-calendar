@@ -332,6 +332,7 @@ function safeAdv(a) {
   return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, status:a.status, created_at:a.created_at };
 }
 
+app.get('/advertise', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 getDb().then(() => app.listen(PORT, () => console.log('NewLex Calendar on port ' + PORT)))
