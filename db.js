@@ -50,6 +50,7 @@ async function getDb() {
       tagline                TEXT DEFAULT '',
       url                    TEXT DEFAULT '',
       status                 TEXT NOT NULL DEFAULT 'pending',
+      tier                   TEXT NOT NULL DEFAULT 'basic',
       phone                  TEXT DEFAULT '',
       stripe_customer_id     TEXT DEFAULT '',
       stripe_subscription_id TEXT DEFAULT '',
@@ -63,6 +64,7 @@ async function getDb() {
   // Migrations for existing DBs
   try { await _db.run("ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN phone TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE advertisers ADD COLUMN tier TEXT NOT NULL DEFAULT 'basic'"); } catch(_) {}
 
   const { c } = await _db.get('SELECT COUNT(*) AS c FROM users');
   if (c === 0) {
