@@ -347,7 +347,7 @@ app.post('/api/advertiser/checkout', requireAdvertiser, async (req, res) => {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { advertiser_id: String(req.advertiser.id), tier: isPremium ? 'premium' : 'basic' },
-      success_url: `${SITE_URL}/advertise?success=true`,
+      success_url: `${SITE_URL}/advertise?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${SITE_URL}/advertise?cancelled=true`,
     });
     res.json({ url: session.url });
@@ -483,7 +483,7 @@ app.post('/api/listings/checkout', requireListing, async (req, res) => {
       payment_method_types: ['card'],
       line_items: [{ price: STRIPE_PRICE_LISTING, quantity: 1 }],
       metadata: { listing_id: String(req.listing.id) },
-      success_url: `${SITE_URL}/directory?success=true`,
+      success_url: `${SITE_URL}/directory?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${SITE_URL}/directory?cancelled=true`,
     });
     res.json({ url: session.url });
@@ -512,6 +512,51 @@ function safeListing(l) {
     category:l.category, phone:l.phone||'', website:l.website||'', address:l.address||'',
     description:l.description||'', status:l.status, expires_at:l.expires_at||'', created_at:l.created_at };
 }
+
+// ── SESSION VERIFICATION (replaces webhook reliance) ──
+// Verify listing payment after Stripe redirect
+app.post('/api/listings/verify-session', requireListing, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
+  try {
+    const { session_id } = req.body || {};
+    if (!session_id) return res.status(400).json({ error: 'Session ID required.' });
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (session.metadata?.listing_id !== String(req.listing.id))
+      return res.status(403).json({ error: 'Session does not match this listing.' });
+    if (session.payment_status !== 'paid')
+      return res.status(400).json({ error: 'Payment not completed yet.' });
+    const db = await getDb();
+    const expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 1);
+    await db.run(
+      "UPDATE listings SET status='active', stripe_customer_id=?, expires_at=? WHERE id=?",
+      [session.customer || '', expires.toISOString(), req.listing.id]
+    );
+    const listing = await db.get('SELECT * FROM listings WHERE id=?', [req.listing.id]);
+    res.json({ success: true, listing: safeListing(listing) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Verify advertiser payment after Stripe redirect
+app.post('/api/advertiser/verify-session', requireAdvertiser, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
+  try {
+    const { session_id } = req.body || {};
+    if (!session_id) return res.status(400).json({ error: 'Session ID required.' });
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (session.metadata?.advertiser_id !== String(req.advertiser.id))
+      return res.status(403).json({ error: 'Session does not match this advertiser.' });
+    if (session.payment_status !== 'paid')
+      return res.status(400).json({ error: 'Payment not completed yet.' });
+    const db = await getDb();
+    await db.run(
+      "UPDATE advertisers SET status='active', stripe_customer_id=?, stripe_subscription_id=? WHERE id=?",
+      [session.customer || '', session.subscription || '', req.advertiser.id]
+    );
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
+    res.json({ success: true, advertiser: safeAdv(adv) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
