@@ -9,9 +9,10 @@ const { getDb } = require('./db');
 const app    = express();
 const PORT   = process.env.PORT || 3000;
 const SECRET = process.env.JWT_SECRET || 'newlex-secret-change-me';
-const STRIPE_SECRET  = process.env.STRIPE_SECRET_KEY || '';
-const STRIPE_PRICE   = process.env.STRIPE_PRICE_ID   || '';
-const STRIPE_WEBHOOK = process.env.STRIPE_WEBHOOK_SECRET || '';
+const STRIPE_SECRET        = process.env.STRIPE_SECRET_KEY     || '';
+const STRIPE_PRICE_BASIC   = process.env.STRIPE_PRICE_ID      || '';
+const STRIPE_PRICE_PREMIUM = process.env.STRIPE_PRICE_PREMIUM || '';
+const STRIPE_WEBHOOK       = process.env.STRIPE_WEBHOOK_SECRET || '';
 const SITE_URL = process.env.SITE_URL || 'https://www.newlexcalendar.com';
 
 const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
@@ -221,7 +222,7 @@ app.get('/api/display/sponsors', async (req, res) => {
   try {
     const db = await getDb();
     const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
-    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, phone, 'advertiser' AS source FROM advertisers WHERE status='active' ORDER BY id");
+    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status='active' ORDER BY id");
     res.json([...manual, ...paid]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -284,16 +285,29 @@ app.put('/api/advertiser/me', requireAdvertiser, async (req, res) => {
 
 // Create Stripe checkout session
 app.post('/api/advertiser/checkout', requireAdvertiser, async (req, res) => {
-  if (!stripe || !STRIPE_PRICE) return res.status(503).json({ error: 'Payment system not configured.' });
+  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
   try {
+    const { tier } = req.body || {};
+    const isPremium = tier === 'premium';
+    const priceId   = isPremium ? STRIPE_PRICE_PREMIUM : STRIPE_PRICE_BASIC;
+    if (!priceId) return res.status(503).json({ error: `Price not configured for ${tier} tier.` });
+
     const db = await getDb();
-    const activeCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active'")).c;
-    if (activeCount >= 5) return res.status(409).json({ error: 'All 5 ad spots are currently taken. Please join the waitlist.' });
+
+    // Premium tier: enforce 5-spot limit
+    if (isPremium) {
+      const premCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='premium'")).c;
+      if (premCount >= 5) return res.status(409).json({ error: 'All 5 premium ad spots are taken. Please join the waitlist.' });
+    }
+
+    // Update advertiser tier before checkout
+    await db.run('UPDATE advertisers SET tier=? WHERE id=?', [isPremium ? 'premium' : 'basic', req.advertiser.id]);
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [{ price: STRIPE_PRICE, quantity: 1 }],
-      metadata: { advertiser_id: String(req.advertiser.id) },
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { advertiser_id: String(req.advertiser.id), tier: isPremium ? 'premium' : 'basic' },
       success_url: `${SITE_URL}/advertise?success=true`,
       cancel_url:  `${SITE_URL}/advertise?cancelled=true`,
     });
@@ -334,7 +348,7 @@ app.patch('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
 });
 
 function safeAdv(a) {
-  return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, phone:a.phone||'', status:a.status, created_at:a.created_at };
+  return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, phone:a.phone||'', tier:a.tier||'basic', status:a.status, created_at:a.created_at };
 }
 
 app.get('/advertise', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
