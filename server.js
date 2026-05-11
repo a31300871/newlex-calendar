@@ -20,16 +20,20 @@ const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
 
 // ── STRIPE WEBHOOK (raw body — MUST be before express.json) ──
 app.post('/api/stripe/webhook',
-  express.raw({ type: 'application/json' }),
+  express.raw({ type: '*/*' }),
   async (req, res) => {
-    if (!stripe || !STRIPE_WEBHOOK) return res.sendStatus(400);
+    if (!stripe || !STRIPE_WEBHOOK) return res.status(400).send('Webhook not configured');
     let event;
     try {
-      event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], STRIPE_WEBHOOK);
+      const payload = req.body;
+      const sig     = req.headers['stripe-signature'];
+      event = stripe.webhooks.constructEvent(payload, sig, STRIPE_WEBHOOK);
     } catch (e) {
       console.error('Webhook signature failed:', e.message);
-      return res.sendStatus(400);
+      return res.status(400).send(`Webhook Error: ${e.message}`);
     }
+    // Acknowledge receipt immediately
+    res.status(200).json({ received: true });
     try {
       const db = await getDb();
       if (event.type === 'checkout.session.completed') {
@@ -68,7 +72,6 @@ app.post('/api/stripe/webhook',
     } catch (e) {
       console.error('Webhook handler error:', e.message);
     }
-    res.sendStatus(200);
   }
 );
 
