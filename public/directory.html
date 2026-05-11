@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Business Directory – New Lexington & Area</title>
+<meta name="description" content="Find local businesses in New Lexington and Perry County, Ohio. List your business for just $1 one-time.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --amber:#BA7517;--amber-dk:#854F0B;--amber-lt:#FFF4E0;--amber-mid:#EF9F27;
+  --teal:#0F6E56;--navy:#1A2744;--navy2:#1E3260;--cream:#FAF8F4;
+  --border:rgba(0,0,0,0.09);--border-md:rgba(0,0,0,0.16);
+  --text:#1C1C1E;--text2:#5F5E5A;--text3:#888780;
+  --surface:#FFF;--surface2:#F5F3EE;
+  --danger:#A32D2D;--danger-bg:#FCEBEB;
+  --font-head:'Playfair Display',Georgia,serif;
+  --font-body:'Source Sans 3',system-ui,sans-serif;
+  --r:8px;--r-lg:14px;
+}
+html{font-size:16px}
+body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5}
+input,select,textarea,button{font-family:var(--font-body);font-size:15px}
+input,select,textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s;font-size:15px;font-weight:500}
+button:hover{background:var(--surface2)}
+button:active{opacity:.8}
+.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
+.btn-amber:hover{background:var(--amber-dk)}
+.btn-navy{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
+.btn-navy:hover{background:var(--navy2)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#F09595;font-weight:600}
+
+/* ── NAV ── */
+nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-brand{font-family:var(--font-head);font-size:18px;font-weight:700;color:#fff;text-decoration:none;line-height:1.2}
+.nav-brand span{color:var(--amber-mid)}
+.nav-links{display:flex;align-items:center;gap:10px}
+.nav-link{font-size:13px;color:rgba(255,255,255,.7);text-decoration:none;padding:6px 12px;border-radius:var(--r);transition:background .15s}
+.nav-link:hover{background:rgba(255,255,255,.10);color:#fff}
+.nav-user{font-size:13px;color:#fff;font-weight:600}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:48px 24px 40px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(186,117,23,.2);border:1px solid rgba(186,117,23,.4);color:var(--amber-mid);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px}
+.hero h1{font-family:var(--font-head);font-size:clamp(24px,4vw,40px);font-weight:700;color:#fff;line-height:1.2;margin-bottom:10px}
+.hero p{font-size:16px;color:rgba(255,255,255,.7);max-width:500px;margin:0 auto 28px}
+.hero-cta{display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* ── ALERT BANNER ── */
+.alert{padding:14px 20px;font-size:14px;line-height:1.5;text-align:center}
+.alert-success{background:#D1FAE5;color:#065F46;border-bottom:1px solid #6EE7B7}
+.alert-warning{background:#FEF3C7;color:#92400E;border-bottom:1px solid #FCD34D}
+
+/* ── SECTION ── */
+.section{max-width:960px;margin:0 auto;padding:40px 20px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.section-title{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--text)}
+.section-sub{font-size:14px;color:var(--text3);margin-top:2px}
+
+/* ── FEATURED ADVERTISERS GRID ── */
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:10px}
+.adv-card{background:var(--navy);border-radius:var(--r-lg);padding:20px;position:relative;transition:transform .15s,box-shadow .15s}
+.adv-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,39,68,.3)}
+.adv-card-tag{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px}
+.adv-card-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.2}
+.adv-card-tag2{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px;line-height:1.4}
+.adv-card-phone{font-size:14px;color:var(--amber-mid);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:8px}
+.adv-card-phone:hover{color:#fff}
+.adv-card-btn{display:block;text-align:center;background:var(--amber);color:#fff;font-weight:700;font-size:13px;padding:8px 0;border-radius:var(--r);text-decoration:none;transition:background .15s}
+.adv-card-btn:hover{background:var(--amber-dk)}
+.adv-placeholder{border:2px dashed rgba(255,255,255,.15);background:rgba(255,255,255,.03)}
+.adv-placeholder .adv-card-name{color:rgba(255,255,255,.3);font-size:15px}
+.adv-placeholder .adv-card-tag2{color:rgba(255,255,255,.25)}
+
+/* ── DIRECTORY ── */
+.dir-controls{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.dir-search{flex:1;min-width:200px;position:relative}
+.dir-search input{padding-left:38px}
+.dir-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);pointer-events:none}
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.cat-chip{font-size:12px;padding:4px 12px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
+.cat-chip:hover{background:var(--surface2)}
+.cat-chip.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:600}
+
+/* Listing cards */
+.listing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.listing-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px 18px 14px;transition:border-color .15s,box-shadow .15s}
+.listing-card:hover{border-color:var(--border-md);box-shadow:0 2px 10px rgba(0,0,0,.07)}
+.listing-cat{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:3px 10px;margin-bottom:10px}
+.listing-name{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.2}
+.listing-desc{font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5}
+.listing-meta{display:flex;flex-direction:column;gap:4px}
+.listing-meta a{font-size:13px;color:var(--blue);text-decoration:none;font-weight:500}
+.listing-meta a:hover{text-decoration:underline}
+.listing-meta span{font-size:13px;color:var(--text2)}
+.no-listings{text-align:center;color:var(--text2);font-size:15px;padding:40px 0;grid-column:1/-1}
+
+/* ── CTA BANNER ── */
+.cta-banner{background:var(--navy);padding:40px 24px;text-align:center;margin-top:0}
+.cta-banner h2{font-family:var(--font-head);font-size:26px;font-weight:700;color:#fff;margin-bottom:8px}
+.cta-banner p{font-size:15px;color:rgba(255,255,255,.7);margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto}
+.price-tag{display:inline-block;background:var(--amber);color:#fff;font-size:28px;font-weight:700;font-family:var(--font-head);padding:8px 24px;border-radius:var(--r-lg);margin-bottom:20px}
+.price-sub{font-size:14px;color:rgba(255,255,255,.6);margin-top:-16px;margin-bottom:20px}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:14px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--surface);border-radius:16px;padding:26px 24px 22px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;max-height:92vh;overflow-y:auto}
+.modal-title{font-family:var(--font-head);font-size:21px;font-weight:700;margin-bottom:18px;color:var(--text)}
+.modal-close{position:absolute;top:14px;right:14px;background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.field label .req{color:var(--danger)}
+.modal-actions{display:flex;gap:10px;margin-top:18px}
+.modal-actions button{flex:1;padding:11px 0;font-size:15px}
+.err-msg{font-size:13px;color:var(--danger);margin-top:7px}
+.ok-msg{font-size:13px;color:var(--teal);margin-top:7px}
+.auth-tabs{display:flex;gap:6px;margin-bottom:18px}
+.auth-tab{flex:1;font-size:14px;padding:8px 0;border-radius:var(--r)}
+.auth-tab.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:700}
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:100px;margin-bottom:16px}
+.status-active{background:#D1FAE5;color:#065F46}
+.status-pending{background:#FEF3C7;color:#92400E}
+.status-expired{background:var(--surface2);color:var(--text3)}
+.divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+.upgrade-box{background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:var(--r-lg);padding:14px 16px;margin-top:16px}
+.upgrade-box p{font-size:13px;color:var(--amber-dk);line-height:1.5;margin-bottom:10px}
+
+@media(max-width:600px){
+  .hero{padding:32px 16px 28px}
+  .section{padding:28px 14px}
+  .modal-box{padding:20px 16px 18px}
+  .adv-grid{grid-template-columns:1fr}
+  .listing-grid{grid-template-columns:1fr}
+  nav{padding:12px 16px}
+  .nav-brand{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-brand">NewLex<span>Calendar</span>.com</a>
+  <div class="nav-links">
+    <a href="/" class="nav-link">📅 Calendar</a>
+    <a href="/advertise" class="nav-link">📢 Advertise</a>
+    <span class="nav-user" id="navUser"></span>
+    <button class="btn-amber" style="font-size:13px;padding:7px 14px" onclick="openModal('listingModal')">+ List My Business</button>
+  </div>
+</nav>
+
+<!-- ALERTS -->
+<div id="alertBanner"></div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Local Business Directory</div>
+  <h1>New Lexington &amp; Area<br>Business Directory</h1>
+  <p>Find local businesses in Perry County. Get your business listed for just $1 one-time.</p>
+  <div class="hero-cta">
+    <button class="btn-amber" style="font-size:16px;padding:11px 28px" onclick="openModal('listingModal')">+ List My Business — $1 one-time</button>
+    <a href="/advertise" style="font-size:14px;color:rgba(255,255,255,.7);text-decoration:none;padding:11px 20px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r);display:inline-block">📢 Premium Advertising →</a>
+  </div>
+</div>
+
+<!-- FEATURED ADVERTISERS -->
+<div style="background:var(--navy2);padding:36px 0 28px">
+  <div class="section" style="padding-top:0;padding-bottom:0">
+    <div class="section-head">
+      <div>
+        <div class="section-title" style="color:#fff">⭐ Featured Businesses</div>
+        <div class="section-sub" style="color:rgba(255,255,255,.5)">Premium advertisers — always at the top</div>
+      </div>
+      <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber-mid);text-decoration:none;font-weight:600">Claim a featured spot — $50/mo →</a>
+    </div>
+    <div class="adv-grid" id="advGrid">
+      <div style="color:rgba(255,255,255,.3);font-size:14px;padding:20px 0">Loading featured businesses…</div>
+    </div>
+  </div>
+</div>
+
+<!-- BUSINESS DIRECTORY -->
+<div class="section">
+  <div class="section-head">
+    <div>
+      <div class="section-title">📋 Business Directory</div>
+      <div class="section-sub" id="listingCount">Loading listings…</div>
+    </div>
+  </div>
+
+  <div class="dir-controls">
+    <div class="dir-search">
+      <span class="dir-search-icon">🔍</span>
+      <input type="text" id="dirSearch" placeholder="Search businesses…">
+    </div>
+  </div>
+
+  <div class="cat-chips" id="catChips"></div>
+  <div class="listing-grid" id="listingGrid"></div>
+</div>
+
+<!-- CTA BANNER -->
+<div class="cta-banner">
+  <h2>List Your Business Today</h2>
+  <div class="price-tag">$1 / year</div>
+  <div class="price-sub">One-time payment — listed for 1 year</div>
+  <p>Get found by New Lexington and Perry County residents. Your business name, phone, website, address, and description — all in one place.</p>
+  <button class="btn-amber" style="font-size:16px;padding:12px 32px" onclick="openModal('listingModal')">+ Add My Business — $1</button>
+</div>
+
+<footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap">
+  <a href="/" style="color:var(--amber-mid);text-decoration:none">📅 Community Calendar</a>
+  <a href="/advertise" style="color:var(--amber-mid);text-decoration:none">📢 Advertise</a>
+  <a href="mailto:hello@newlexcalendar.com" style="color:var(--amber-mid);text-decoration:none">✉️ hello@newlexcalendar.com</a>
+</footer>
+
+<!-- LISTING MODAL (auth + dashboard) -->
+<div class="modal-overlay" id="listingModal" onclick="modalOutside(event,'listingModal')">
+  <div class="modal-box" style="max-width:520px">
+    <button class="modal-close" onclick="closeModal('listingModal')">✕</button>
+    <div id="listingModalContent"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+const CATS = [
+  {id:'all',            label:'All Categories'},
+  {id:'restaurant',     label:'Restaurant & Food'},
+  {id:'auto',           label:'Auto & Transportation'},
+  {id:'health',         label:'Health & Medical'},
+  {id:'home',           label:'Home & Garden'},
+  {id:'shopping',       label:'Shopping & Retail'},
+  {id:'professional',   label:'Professional Services'},
+  {id:'church',         label:'Church & Non-Profit'},
+  {id:'other',          label:'Other'},
+];
+const catLabel = id => (CATS.find(c=>c.id===id)||CATS[CATS.length-1]).label;
+
+let listToken   = localStorage.getItem('nlcc_list_token') || null;
+let listingUser = JSON.parse(localStorage.getItem('nlcc_listing') || 'null');
+let allListings = [];
+let allAdvs     = [];
+let catFilter   = 'all';
+let srchQ       = '';
+
+async function api(path, opts={}) {
+  const h = {'Content-Type':'application/json', ...(opts.headers||{})};
+  if (listToken) h['Authorization'] = 'Bearer ' + listToken;
+  const r = await fetch(API + path, {...opts, headers:h});
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Request failed');
+  return d;
+}
+
+function setSession(token, listing) {
+  listToken   = token; listingUser = listing;
+  localStorage.setItem('nlcc_list_token', token);
+  localStorage.setItem('nlcc_listing', JSON.stringify(listing));
+}
+function clearSession() {
+  listToken = null; listingUser = null;
+  localStorage.removeItem('nlcc_list_token');
+  localStorage.removeItem('nlcc_listing');
+}
+
+// Check URL params
+function checkURLParams() {
+  const p = new URLSearchParams(window.location.search);
+  const b = document.getElementById('alertBanner');
+  if (p.get('success') === 'true') {
+    b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your business listing is now live in the directory!</div>`;
+    if (listToken) refreshListing();
+    window.history.replaceState({}, '', '/directory');
+  }
+  if (p.get('cancelled') === 'true') {
+    b.innerHTML = `<div class="alert alert-warning">Payment cancelled. No charge was made.</div>`;
+    window.history.replaceState({}, '', '/directory');
+  }
+}
+
+async function refreshListing() {
+  try {
+    listingUser = await api('/api/listings/me');
+    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
+    renderNav();
+  } catch(e) {
+    if (e.message.includes('expired')) { clearSession(); renderNav(); }
+  }
+}
+
+// Load data
+async function loadAll() {
+  try {
+    const [listings, sponsors] = await Promise.all([
+      fetch('/api/listings').then(r=>r.json()),
+      fetch('/api/display/sponsors').then(r=>r.json()),
+    ]);
+    allListings = listings;
+    allAdvs     = sponsors.filter(s => s.source === 'advertiser');
+    renderAdvGrid();
+    renderListings();
+  } catch(e) { console.error(e); }
+}
+
+// Featured advertisers grid
+function renderAdvGrid() {
+  const grid = document.getElementById('advGrid');
+  let html = '';
+  if (allAdvs.length) {
+    html += allAdvs.map(a => `
+      <div class="adv-card">
+        <div class="adv-card-tag">⭐ Featured Business</div>
+        <div class="adv-card-name">${esc(a.name)}</div>
+        ${a.tagline ? `<div class="adv-card-tag2">${esc(a.tagline)}</div>` : ''}
+        ${a.phone   ? `<a class="adv-card-phone" href="tel:${esc(a.phone)}">📞 ${esc(a.phone)}</a>` : ''}
+        ${a.url     ? `<a class="adv-card-btn" href="${esc(a.url.startsWith('http')?a.url:'https://'+a.url)}" target="_blank" rel="noopener">Visit Website →</a>` : ''}
+      </div>`).join('');
+  }
+  // Fill remaining spots with placeholders up to 5
+  const remaining = Math.max(0, 3 - allAdvs.length);
+  for (let i = 0; i < remaining; i++) {
+    html += `<div class="adv-card adv-placeholder">
+      <div class="adv-card-tag" style="color:rgba(255,255,255,.25)">Featured Spot Available</div>
+      <div class="adv-card-name">Your Business Here</div>
+      <div class="adv-card-tag2">Advertise to the whole New Lexington community</div>
+      <a href="/advertise?tier=premium" class="adv-card-btn" style="background:rgba(186,117,23,.3);color:rgba(255,255,255,.6)">Claim This Spot — $50/mo</a>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+// Category chips
+function renderCatChips() {
+  document.getElementById('catChips').innerHTML = CATS.map(c =>
+    `<span class="cat-chip${catFilter===c.id?' on':''}" onclick="setCat('${c.id}')">${c.label}</span>`
+  ).join('');
+}
+function setCat(id) { catFilter = id; renderCatChips(); renderListings(); }
+
+// Listings
+function renderListings() {
+  const q = srchQ.toLowerCase();
+  const f = allListings.filter(l => {
+    const mc = catFilter === 'all' || l.category === catFilter;
+    const mq = !q || l.business_name.toLowerCase().includes(q) ||
+               l.description.toLowerCase().includes(q) ||
+               l.address.toLowerCase().includes(q);
+    return mc && mq;
+  });
+
+  const cnt = document.getElementById('listingCount');
+  cnt.textContent = `${f.length} business${f.length!==1?'es':''} listed`;
+
+  const grid = document.getElementById('listingGrid');
+  if (!f.length) {
+    grid.innerHTML = `<div class="no-listings">No businesses found.<br><a href="#" onclick="openModal('listingModal');return false" style="color:var(--amber);font-weight:600">Be the first to list yours — $1 one-time</a></div>`;
+    return;
+  }
+  grid.innerHTML = f.map(l => `
+    <div class="listing-card">
+      <div class="listing-cat">${esc(catLabel(l.category))}</div>
+      <div class="listing-name">${esc(l.business_name)}</div>
+      ${l.description ? `<div class="listing-desc">${esc(l.description)}</div>` : ''}
+      <div class="listing-meta">
+        ${l.address ? `<span>📍 ${esc(l.address)}</span>` : ''}
+        ${l.phone   ? `<a href="tel:${esc(l.phone)}">📞 ${esc(l.phone)}</a>` : ''}
+        ${l.website ? `<a href="${esc(l.website.startsWith('http')?l.website:'https://'+l.website)}" target="_blank" rel="noopener">🌐 Visit Website</a>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('dirSearch').addEventListener('input', function() {
+  srchQ = this.value; renderListings();
+});
+
+// Nav
+function renderNav() {
+  const el = document.getElementById('navUser');
+  if (listingUser) {
+    el.innerHTML = `<span style="font-size:13px;color:rgba(255,255,255,.8)">${esc(listingUser.business_name)}</span>
+      <button onclick="openDashboard()" style="font-size:12px;padding:5px 12px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">My Listing</button>`;
+  }
+}
+
+// Modal helpers
+function openModal(id) { document.getElementById(id).classList.add('open'); renderListingModal('register'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function modalOutside(e, id) { if (e.target.id === id) closeModal(id); }
+
+function openDashboard() {
+  document.getElementById('listingModal').classList.add('open');
+  renderDashboard();
+}
+
+// Auth forms
+function renderListingModal(tab) {
+  if (listingUser) { renderDashboard(); return; }
+  document.getElementById('listingModalContent').innerHTML = `
+    <div class="modal-title">${tab==='register' ? 'List Your Business' : 'Sign In to Your Listing'}</div>
+    <div class="auth-tabs">
+      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderListingModal('register')">Add My Business</button>
+      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderListingModal('login')">Existing Listing</button>
+    </div>
+    ${tab === 'register' ? `
+      <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="lNm" placeholder="Your full name"></div>
+      <div class="field"><label>Your Email <span class="req">*</span></label><input type="email" id="lEm" placeholder="you@email.com"></div>
+      <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="lPw" placeholder="6+ characters"></div>
+      <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="lBiz" placeholder="Your business name"></div>
+      <div class="field"><label>Category <span class="req">*</span></label>
+        <select id="lCat">
+          ${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Phone</label><input type="tel" id="lPh" placeholder="(740) 555-1234"></div>
+      <div class="field"><label>Website</label><input type="text" id="lWeb" placeholder="https://yourbusiness.com"></div>
+      <div class="field"><label>Address</label><input type="text" id="lAddr" placeholder="123 Main St, New Lexington, OH"></div>
+      <div class="field"><label>Short Description</label><textarea id="lDesc" placeholder="Tell people what your business does (2-3 sentences)" style="height:70px;resize:none"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn-amber" onclick="doRegister()">Continue to Payment →</button>
+        <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin-top:10px;text-align:center">After registering you'll pay $1 once. Your listing stays live for 1 year. We'll reach out before it expires.</p>
+      <div class="err-msg" id="lErr"></div>
+    ` : `
+      <div class="field"><label>Email</label><input type="email" id="lEm" placeholder="you@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="lPw"></div>
+      <div class="modal-actions">
+        <button class="btn-amber" onclick="doLogin()">Sign In</button>
+        <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
+      </div>
+      <div class="err-msg" id="lErr"></div>
+    `}`;
+}
+
+async function doRegister() {
+  try {
+    const payload = {
+      owner_name: document.getElementById('lNm').value.trim(),
+      owner_email: document.getElementById('lEm').value.trim(),
+      password: document.getElementById('lPw').value,
+      business_name: document.getElementById('lBiz').value.trim(),
+      category: document.getElementById('lCat').value,
+      phone: document.getElementById('lPh').value.trim(),
+      website: document.getElementById('lWeb').value.trim(),
+      address: document.getElementById('lAddr').value.trim(),
+      description: document.getElementById('lDesc').value.trim(),
+    };
+    const { token, listing } = await api('/api/listings/register', { method:'POST', body:JSON.stringify(payload) });
+    setSession(token, listing);
+    renderNav();
+    // Go straight to payment
+    await startPayment();
+  } catch(e) { document.getElementById('lErr').textContent = e.message; }
+}
+
+async function doLogin() {
+  try {
+    const { token, listing } = await api('/api/listings/login', { method:'POST', body:JSON.stringify({
+      email: document.getElementById('lEm').value.trim(),
+      password: document.getElementById('lPw').value,
+    })});
+    setSession(token, listing);
+    renderNav();
+    renderDashboard();
+  } catch(e) { document.getElementById('lErr').textContent = e.message; }
+}
+
+async function startPayment() {
+  try {
+    const { url } = await api('/api/listings/checkout', { method:'POST' });
+    window.location.href = url;
+  } catch(e) {
+    document.getElementById('listingModalContent').innerHTML += `<div class="err-msg">${esc(e.message)}</div>`;
+  }
+}
+
+// Dashboard
+function renderDashboard() {
+  const l = listingUser;
+  if (!l) return;
+  const statusMap = { active:'● Active', pending:'● Pending Payment', expired:'● Expired' };
+  const statusCls = { active:'status-active', pending:'status-pending', expired:'status-expired' };
+  const exp = l.expires_at ? new Date(l.expires_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '—';
+
+  document.getElementById('listingModalContent').innerHTML = `
+    <div class="modal-title">My Business Listing</div>
+    <span class="status-pill ${statusCls[l.status]||'status-pending'}">${statusMap[l.status]||l.status}</span>
+    ${l.status !== 'active' ? `
+      <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--r);padding:12px 14px;font-size:13px;color:#92400E;margin-bottom:16px">
+        ${l.status==='pending' ? '💳 Complete your $1 payment to make your listing live.' : '🔄 Your listing has expired. Renew for $1 one-time to go live again.'}
+        <br><button class="btn-amber" style="margin-top:10px;font-size:13px;padding:7px 16px" onclick="startPayment()">
+          ${l.status==='pending' ? 'Complete Payment — $1 one-time' : 'Renew — $1 one-time'}
+        </button>
+      </div>` : `<p style="font-size:13px;color:var(--text2);margin-bottom:16px">Active until <strong>${exp}</strong> · $1 one-time</p>`}
+
+    <div class="field"><label>Business Name</label><input type="text" id="dBiz" value="${esc(l.business_name)}"></div>
+    <div class="field"><label>Category</label>
+      <select id="dCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}"${l.category===c.id?' selected':''}>${c.label}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Phone</label><input type="tel" id="dPh" value="${esc(l.phone||'')}"></div>
+    <div class="field"><label>Website</label><input type="text" id="dWeb" value="${esc(l.website||'')}"></div>
+    <div class="field"><label>Address</label><input type="text" id="dAddr" value="${esc(l.address||'')}"></div>
+    <div class="field"><label>Description</label><textarea id="dDesc" style="height:70px;resize:none">${esc(l.description||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn-navy" onclick="saveEdits()">Save Changes</button>
+      <button class="btn-ghost" onclick="closeModal('listingModal')">Close</button>
+    </div>
+    <div class="ok-msg"  id="dOk"></div>
+    <div class="err-msg" id="dErr"></div>
+    <hr class="divider">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <button class="btn-danger" style="font-size:13px" onclick="confirmCancel()">Cancel Listing</button>
+      <button class="btn-ghost" style="font-size:13px" onclick="doLogout()">Sign Out</button>
+    </div>
+
+    <div class="upgrade-box">
+      <p>⭐ <strong>Want more visibility?</strong> Upgrade to a Premium Ad — your business appears in a featured card at the top of this directory AND as a popup ad on the community calendar.</p>
+      <a href="/advertise?tier=premium" class="btn-amber" style="font-size:13px;padding:7px 16px;display:inline-block;text-decoration:none">Upgrade to Premium Ad — $50/mo →</a>
+    </div>`;
+}
+
+async function saveEdits() {
+  try {
+    const updated = await api('/api/listings/me', { method:'PUT', body: JSON.stringify({
+      business_name: document.getElementById('dBiz').value.trim(),
+      category:      document.getElementById('dCat').value,
+      phone:         document.getElementById('dPh').value.trim(),
+      website:       document.getElementById('dWeb').value.trim(),
+      address:       document.getElementById('dAddr').value.trim(),
+      description:   document.getElementById('dDesc').value.trim(),
+    })});
+    listingUser = { ...listingUser, ...updated };
+    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
+    await loadAll();
+    document.getElementById('dOk').textContent  = '✓ Saved!';
+    document.getElementById('dErr').textContent = '';
+    setTimeout(() => { const el = document.getElementById('dOk'); if(el) el.textContent=''; }, 3000);
+  } catch(e) { document.getElementById('dErr').textContent = e.message; }
+}
+
+async function confirmCancel() {
+  if (!confirm('Cancel your listing? It will be removed from the directory at the end of the current year.')) return;
+  try {
+    await api('/api/listings/cancel', { method:'POST' });
+    listingUser.status = 'expired';
+    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
+    renderDashboard();
+    await loadAll();
+  } catch(e) { alert(e.message); }
+}
+
+function doLogout() { clearSession(); renderNav(); closeModal('listingModal'); }
+
+// Init
+checkURLParams();
+renderCatChips();
+renderNav();
+loadAll();
+</script>
+</body>
+</html>
