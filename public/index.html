@@ -688,9 +688,9 @@ document.getElementById('srch').addEventListener('input',function(){srchQ=this.v
 
 /* ── EVENT DETAIL + AD ── */
 function getRandomAd() {
-  const active = allSponsors.filter(s => s.source === 'advertiser');
-  if (!active.length) return null;
-  return active[Math.floor(Math.random() * active.length)];
+  const premium = allSponsors.filter(s => s.source === 'advertiser' && s.tier === 'premium');
+  if (!premium.length) return null;
+  return premium[Math.floor(Math.random() * premium.length)];
 }
 
 function fmtDateFull(d) {
@@ -713,8 +713,8 @@ function openEventDetail(ev) {
     </div>` : `
     <div class="ad-no-ads">
       <div style="font-size:28px">📢</div>
-      <div class="ad-no-ads-text"><strong>Advertise here</strong><br>Reach the New Lexington community for $50/mo</div>
-      <a href="/advertise" style="font-size:13px;color:var(--amber);font-weight:600;text-decoration:none">Learn more →</a>
+      <div class="ad-no-ads-text"><strong>Your ad could be here</strong><br>Reach every New Lexington visitor for just $50/mo</div>
+      <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber);font-weight:600;text-decoration:none;margin-top:4px;display:inline-block">See ad options →</a>
     </div>`;
 
   document.getElementById('detailModalContent').innerHTML = `
