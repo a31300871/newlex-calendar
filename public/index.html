@@ -681,7 +681,7 @@ function checkDuplicate() {
     warnEl.style.borderColor = '#F09595';
     warnEl.style.color = '#A32D2D';
   } else if (similar.length > 0) {
-    warnTx.textContent = 'Similar event found: "' + similar[0].name + '" on ' + new Date(similar[0].date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '. Make sure this isn't a duplicate.';
+    warnTx.textContent = 'Similar event found: "' + similar[0].name + '" on ' + new Date(similar[0].date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '. Make sure this is not a duplicate.';
     warnEl.style.display = 'block';
     warnEl.style.background = '#FEF3C7';
     warnEl.style.borderColor = '#FCD34D';
