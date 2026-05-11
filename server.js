@@ -31,11 +31,23 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
+
+// Parse JSON manually from rawBody (since we've already consumed the stream)
 app.use((req, res, next) => {
-  // Parse JSON for non-webhook routes using the already-captured raw body
   if (req.path === '/api/stripe/webhook') return next();
-  express.json()(req, res, next);
+  if (req.rawBody && req.rawBody.length > 0) {
+    try {
+      const ct = req.headers['content-type'] || '';
+      if (ct.includes('application/json')) {
+        req.body = JSON.parse(req.rawBody.toString('utf8'));
+      }
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in request body.' });
+    }
+  }
+  next();
 });
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── STRIPE WEBHOOK ──
