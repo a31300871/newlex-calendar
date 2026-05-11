@@ -50,6 +50,7 @@ async function getDb() {
       tagline                TEXT DEFAULT '',
       url                    TEXT DEFAULT '',
       status                 TEXT NOT NULL DEFAULT 'pending',
+      phone                  TEXT DEFAULT '',
       stripe_customer_id     TEXT DEFAULT '',
       stripe_subscription_id TEXT DEFAULT '',
       created_at             TEXT NOT NULL DEFAULT (datetime('now'))
@@ -61,6 +62,7 @@ async function getDb() {
 
   // Migrations for existing DBs
   try { await _db.run("ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE advertisers ADD COLUMN phone TEXT DEFAULT ''"); } catch(_) {}
 
   const { c } = await _db.get('SELECT COUNT(*) AS c FROM users');
   if (c === 0) {
@@ -71,24 +73,6 @@ async function getDb() {
       "INSERT INTO users (name,email,password_hash,address,is_admin) VALUES ('NL Admin',?,?,'New Lexington, OH',1)",
       [ADMIN_EMAIL, adminHash]
     );
-    const seeds = [
-      ['sports','Panthers Varsity Football vs. Caldwell','NL Stadium, 101 Panther Dr','2026-09-04','7:00 PM','Free','(740) 342-4174'],
-      ['fair','Perry County Fair','Perry Co. Fairgrounds, New Lexington','2026-08-10','All Day (Mon-Sat)','$8 / day','(740) 342-4011'],
-      ['arts','MacGahan Heritage Festival & Memorial','McDougal Park, N. Main St','2026-06-14','10:00 AM - 4:00 PM','Free','village@newlexingtonohio.gov'],
-      ['government','Village Council Regular Meeting','Village Hall, 215 S. Main St','2026-05-12','6:00 PM','Free - Public Welcome','(740) 342-1633'],
-      ['church','First Baptist Potluck & Fellowship Dinner','First Baptist Church, 400 Lincoln Ave','2026-05-18','5:30 PM','Free - Bring a Dish','(740) 342-2020'],
-      ['community','Red Cross Community Blood Drive','Perry Co. District Library, 117 S. Main St','2026-05-15','9:00 AM - 2:00 PM','Free','1-800-RED-CROSS'],
-      ['sports','Panthers Girls Track & Field Invitational','NL Track, Panther Dr','2026-05-16','9:00 AM','$3','(740) 342-4174'],
-      ['other','Community Memorial: John A. Thomas','New Lexington Cemetery, Swigart St','2026-05-20','11:00 AM','Free','Haning Funeral Home (740) 342-2424'],
-      ['food','Perry County Farmers Market','Downtown New Lexington - Main St','2026-05-16','8:00 AM - Noon','Free Entry','perrycountyfarm@gmail.com'],
-      ['government','Perry County Commissioner Meeting','Perry Co. Courthouse, 121 W. Brown St','2026-05-13','9:30 AM','Free - Open to Public','(740) 342-1995'],
-      ['church',"St. Mary's Annual Church Bazaar","St. Mary's Catholic Church, 218 N. Main St",'2026-07-12','10:00 AM - 5:00 PM','Free Admission','(740) 342-3223'],
-      ['community','New Lexington National Night Out','City Park, New Lexington','2026-08-04','6:00 PM - 9:00 PM','Free','(740) 342-1633'],
-      ['sports','NL Panthers JV Football Scrimmage','NL Stadium, 101 Panther Dr','2026-08-21','6:00 PM','Free','(740) 342-4174'],
-    ];
-    for (const e of seeds) {
-      await _db.run('INSERT INTO events (cat,name,location,date,time,price,contact,added_by) VALUES (?,?,?,?,?,?,?,?)', [...e, adminId]);
-    }
     console.log('DB seeded. Admin: ' + ADMIN_EMAIL + ' / ' + ADMIN_PASS);
   }
   return _db;
