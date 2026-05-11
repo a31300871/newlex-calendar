@@ -152,7 +152,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
   <h1>Reach New Lexington<br>Every Single Day</h1>
   <p>Your business on the sponsor bar of the community calendar — always visible, never missed.</p>
   <div class="hero-cta">
-    <button class="btn-amber" style="font-size:17px;padding:12px 32px" onclick="scrollToPortal()">Get Started — $25/mo</button>
+    <button class="btn-amber" style="font-size:17px;padding:12px 32px" onclick="scrollToPortal()">Register Your Business — $25/mo</button>
     <button class="btn-ghost" style="color:rgba(255,255,255,.75);font-size:15px" onclick="document.getElementById('benefits').scrollIntoView({behavior:'smooth'})">See What You Get ↓</button>
   </div>
 </div>
@@ -218,7 +218,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
         <li><span class="check">✓</span> Goes live immediately after payment</li>
         <li><span class="check">✓</span> Cancel anytime — no contracts</li>
       </ul>
-      <button class="btn-amber" style="width:100%;font-size:16px;padding:13px 0" onclick="scrollToPortal()">Start Advertising Today</button>
+      <button class="btn-amber" style="width:100%;font-size:16px;padding:13px 0" onclick="scrollToPortal()">Register Your Business Today</button>
     </div>
   </div>
 </div>
@@ -234,6 +234,9 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
   </div>
 </div>
 
+<div style="background:var(--surface2);border-top:1px solid var(--border);padding:20px 24px;text-align:center">
+  <p style="font-size:13px;color:var(--text3);max-width:500px;margin:0 auto">This portal is for <strong>businesses purchasing ad space only</strong>. If you are a community member looking to post events, <a href="/" style="color:var(--amber);text-decoration:none;font-weight:600">go back to the calendar</a> and register there.</p>
+</div>
 <footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px">
   NewLexCalendar.com · <a href="/" style="color:var(--amber-mid);text-decoration:none">Back to Calendar</a> · <a href="mailto:hello@newlexcalendar.com" style="color:var(--amber-mid);text-decoration:none">hello@newlexcalendar.com</a>
 </footer>
@@ -312,25 +315,27 @@ function renderPortal() {
 
 /* ── AUTH FORMS ── */
 function renderAuthForm(tab) {
-  document.getElementById('portalTitle').textContent = tab === 'register' ? 'Create Your Account' : 'Sign In';
-  document.getElementById('portalSub').textContent   = tab === 'register' ? 'Sign up in under a minute, then complete payment to go live.' : 'Welcome back. Sign in to manage your listing.';
+  document.getElementById('portalTitle').textContent = tab === 'register' ? 'Register Your Business' : 'Returning Advertiser';
+  document.getElementById('portalSub').textContent   = tab === 'register' ? 'Set up your business advertiser account — separate from the community calendar, just for businesses buying ad space.' : 'Sign in to manage your listing and subscription.';
   document.getElementById('portalCard').innerHTML = `
     <div class="auth-tabs">
-      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderAuthForm('register')">Create Account</button>
-      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderAuthForm('login')">Sign In</button>
+      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderAuthForm('register')">Register Your Business</button>
+      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderAuthForm('login')">Returning Advertiser</button>
     </div>
     ${tab === 'register' ? `
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Create your business advertiser account below. This is separate from the community calendar and is for businesses purchasing ad space only.</p>
       <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="aName" placeholder="Your full name"></div>
-      <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="aEmail" placeholder="business@email.com"></div>
+      <div class="field"><label>Business Email <span class="req">*</span></label><input type="email" id="aEmail" placeholder="you@yourbusiness.com"></div>
       <div class="field"><label>Password (6+ chars) <span class="req">*</span></label><input type="password" id="aPass"></div>
       <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="aBiz" placeholder="Your business or organization name"></div>
-      <div class="field"><label>Tagline</label><input type="text" id="aTag" placeholder="Short description (shown under your name)"></div>
+      <div class="field"><label>Tagline</label><input type="text" id="aTag" placeholder="Short description shown under your business name"></div>
       <div class="field"><label>Website URL</label><input type="text" id="aUrl" placeholder="https://yourbusiness.com"></div>
       <div class="form-actions">
-        <button class="btn-amber" onclick="doRegister()">Create Account →</button>
+        <button class="btn-amber" onclick="doRegister()">Register My Business →</button>
       </div>
     ` : `
-      <div class="field"><label>Email</label><input type="email" id="aEmail" placeholder="your@email.com"></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Welcome back. Sign in to manage your listing and subscription.</p>
+      <div class="field"><label>Business Email</label><input type="email" id="aEmail" placeholder="you@yourbusiness.com"></div>
       <div class="field"><label>Password</label><input type="password" id="aPass"></div>
       <div class="form-actions">
         <button class="btn-amber" onclick="doLogin()">Sign In →</button>
