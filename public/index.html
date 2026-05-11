@@ -183,6 +183,30 @@ button:active{opacity:.8}
 .preview-table tr:nth-child(even) td{background:var(--surface2)}
 .preview-wrap{max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px}
 
+/* ── EVENT DETAIL MODAL ── */
+.ev-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ev-detail-info{display:flex;flex-direction:column;gap:10px}
+.ev-detail-row{display:flex;flex-direction:column;gap:2px}
+.ev-detail-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}
+.ev-detail-value{font-size:15px;color:var(--text);font-weight:500}
+.ev-detail-cat{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:100px;border:1.5px solid;width:fit-content}
+
+/* ── SPONSOR AD CARD ── */
+.ad-card{background:var(--navy);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:10px;opacity:0;animation:adFadeIn .5s ease forwards .3s}
+@keyframes adFadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+.ad-pulse{animation:adFadeIn .5s ease forwards .3s,adPulse 1s ease .9s 2}
+@keyframes adPulse{0%,100%{box-shadow:0 0 0 0 rgba(186,117,23,0)}50%{box-shadow:0 0 0 8px rgba(186,117,23,.25)}}
+.ad-sponsored{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.ad-biz-name{font-size:20px;font-weight:700;color:#fff;line-height:1.2}
+.ad-tagline{font-size:13px;color:rgba(255,255,255,.65);line-height:1.4}
+.ad-phone{font-size:15px;font-weight:600;color:var(--amber-mid);text-decoration:none;display:flex;align-items:center;gap:6px}
+.ad-phone:hover{color:#fff}
+.ad-website{display:block;text-align:center;background:var(--amber);color:#fff;font-weight:700;font-size:14px;padding:10px 0;border-radius:var(--r);text-decoration:none;transition:background .15s;margin-top:4px}
+.ad-website:hover{background:var(--amber-dk)}
+.ad-no-ads{background:var(--surface2);border:1.5px dashed var(--border-md);border-radius:var(--r-lg);padding:20px;text-align:center;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:center}
+.ad-no-ads-text{font-size:13px;color:var(--text3);line-height:1.5}
+@media(max-width:600px){.ev-detail-grid{grid-template-columns:1fr}}
+
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
   :root{--hdr-h:60px;--about-h:30px;--spon-h:80px}
@@ -277,6 +301,14 @@ button:active{opacity:.8}
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('spModal')">✕</button>
     <div id="spModalContent"></div>
+  </div>
+</div>
+
+<!-- EVENT DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" onclick="modalOutsideClick(event,'detailModal')">
+  <div class="modal-box" style="max-width:640px">
+    <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    <div id="detailModalContent"></div>
   </div>
 </div>
 
@@ -500,14 +532,14 @@ function renderEvents(){
   list.innerHTML=Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>`
     <div class="date-head">${fmtD(d)}</div>
     ${evs.map(e=>`
-      <div class="erow">
+      <div class="erow" onclick='openEventDetail(${JSON.stringify(e)})' style="cursor:pointer">
         <span class="dot" style="background:${cc(e.cat)}"></span>
         <span class="ename">${esc(e.name)}</span>
         <span class="sep">·</span><span class="em">${esc(e.location)}</span>
         <span class="sep">·</span><span class="em">${esc(e.time)}</span>
         <span class="sep">·</span><span class="${isFree(e.price)?'pf':'pp'}">${esc(e.price)}</span>
         <span class="sep">·</span><span class="em">${esc(e.contact)}</span>
-        <div class="row-actions">
+        <div class="row-actions" onclick="event.stopPropagation()">
           <button class="share-btn" onclick='shareEvent(${JSON.stringify(e)})' title="Share this event">↗</button>
           ${canAct(e)?`<button class="edit-btn" onclick='openEventModal(${JSON.stringify(e)})'>edit</button>
           <button class="del-btn" onclick="deleteEvent(${e.id})">remove</button>`:''}
@@ -653,6 +685,75 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function modalOutsideClick(e,id){if(e.target.id===id)closeModal(id);}
 document.getElementById('srch').addEventListener('input',function(){srchQ=this.value;renderEvents();});
+
+/* ── EVENT DETAIL + AD ── */
+function getRandomAd() {
+  const active = allSponsors.filter(s => s.source === 'advertiser');
+  if (!active.length) return null;
+  return active[Math.floor(Math.random() * active.length)];
+}
+
+function fmtDateFull(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+}
+
+function openEventDetail(ev) {
+  const ad = getRandomAd();
+  const catColor = cc(ev.cat);
+  const catName  = cl(ev.cat);
+
+  const adHTML = ad ? `
+    <div class="ad-card ad-pulse">
+      <div class="ad-sponsored">📢 Sponsored</div>
+      <div class="ad-biz-name">${esc(ad.name)}</div>
+      ${ad.tagline ? `<div class="ad-tagline">${esc(ad.tagline)}</div>` : ''}
+      ${ad.phone   ? `<a class="ad-phone" href="tel:${esc(ad.phone)}">📞 ${esc(ad.phone)}</a>` : ''}
+      ${ad.url     ? `<a class="ad-website" href="${esc(ad.url.startsWith('http') ? ad.url : 'https://' + ad.url)}" target="_blank" rel="noopener">Visit Our Website →</a>` : ''}
+    </div>` : `
+    <div class="ad-no-ads">
+      <div style="font-size:28px">📢</div>
+      <div class="ad-no-ads-text"><strong>Advertise here</strong><br>Reach the New Lexington community for $50/mo</div>
+      <a href="/advertise" style="font-size:13px;color:var(--amber);font-weight:600;text-decoration:none">Learn more →</a>
+    </div>`;
+
+  document.getElementById('detailModalContent').innerHTML = `
+    <div class="ev-detail-cat" style="color:${catColor};border-color:${catColor};background:${catColor}18;margin-bottom:16px">
+      <span style="width:8px;height:8px;border-radius:50%;background:${catColor};display:inline-block"></span>
+      ${esc(catName)}
+    </div>
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--text);margin-bottom:18px;line-height:1.3">${esc(ev.name)}</div>
+    <div class="ev-detail-grid">
+      <div class="ev-detail-info">
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">📍 Location</span>
+          <span class="ev-detail-value">${esc(ev.location)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">📅 Date</span>
+          <span class="ev-detail-value">${fmtDateFull(ev.date)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">🕐 Time</span>
+          <span class="ev-detail-value">${esc(ev.time)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">💰 Price</span>
+          <span class="ev-detail-value ${isFree(ev.price)?'pf':'pp'}">${esc(ev.price)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">📞 Contact</span>
+          <span class="ev-detail-value">${esc(ev.contact)}</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-amber btn-sm" style="flex:1" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
+        </div>
+      </div>
+      ${adHTML}
+    </div>`;
+
+  openModal('detailModal');
+}
 
 /* ── DUPLICATE CHECK ── */
 function checkDuplicate() {
