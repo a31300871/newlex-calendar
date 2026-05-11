@@ -152,8 +152,8 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
   <h1>Reach New Lexington<br>Every Single Day</h1>
   <p>Your business on the sponsor bar of the community calendar — always visible, never missed.</p>
   <div class="hero-cta">
-    <button class="btn-amber" style="font-size:17px;padding:12px 32px" onclick="scrollToPortal()">Register Your Business — $25/mo</button>
-    <button class="btn-ghost" style="color:rgba(255,255,255,.75);font-size:15px" onclick="document.getElementById('benefits').scrollIntoView({behavior:'smooth'})">See What You Get ↓</button>
+    <button class="btn-amber" style="font-size:17px;padding:12px 32px" onclick="scrollToPortal('premium')">⭐ Event Popup Ad — $50/mo</button>
+    <button class="btn-navy" style="font-size:15px;padding:12px 24px;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff" onclick="scrollToPortal('basic')">Sponsor Bar — $25/mo</button>
   </div>
 </div>
 
@@ -205,21 +205,43 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
 <!-- PRICING -->
 <div style="background:var(--surface2);padding:50px 24px">
   <div style="max-width:860px;margin:0 auto;text-align:center">
-    <div class="section-title" style="margin-bottom:8px">Simple Pricing</div>
-    <div class="section-sub" style="margin-bottom:32px">One price. Everything included. Cancel any time.</div>
-    <div class="pricing-card">
-      <div class="price-amount">$25</div>
-      <div class="price-period">per month — billed monthly, cancel anytime</div>
-      <ul class="price-features">
-        <li><span class="check">✓</span> Sponsor card on every page</li>
-        <li><span class="check">✓</span> Business name + tagline</li>
-        <li><span class="check">✓</span> Link to your website</li>
-        <li><span class="check">✓</span> Edit your listing anytime</li>
-        <li><span class="check">✓</span> Goes live immediately after payment</li>
-        <li><span class="check">✓</span> Cancel anytime from your dashboard</li>
-        <li><span class="check">✓</span> No contracts, no setup fees</li>
-      </ul>
-      <button class="btn-amber" style="width:100%;font-size:16px;padding:13px 0" onclick="scrollToPortal()">Register Your Business Today</button>
+    <div class="section-title" style="margin-bottom:8px">Choose Your Plan</div>
+    <div class="section-sub" style="margin-bottom:32px">Both plans are month-to-month. Cancel any time. No contracts.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px;margin:0 auto">
+
+      <!-- BASIC -->
+      <div class="pricing-card" style="border-color:var(--border-md);position:relative">
+        <div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Sponsor Bar</div>
+        <div class="price-amount" style="font-size:44px">$25</div>
+        <div class="price-period">per month</div>
+        <ul class="price-features" style="margin:18px 0">
+          <li><span class="check">✓</span> Your name in the sponsor bar</li>
+          <li><span class="check">✓</span> Visible on every page</li>
+          <li><span class="check">✓</span> Tagline + website link</li>
+          <li><span class="check">✓</span> Edit anytime</li>
+          <li><span class="check">✓</span> Cancel anytime</li>
+        </ul>
+        <button class="btn-navy" style="width:100%;font-size:15px;padding:12px 0" onclick="scrollToPortal('basic')">Get Started</button>
+      </div>
+
+      <!-- PREMIUM -->
+      <div class="pricing-card" style="position:relative">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--amber);color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 14px;border-radius:100px;white-space:nowrap">⭐ Most Popular</div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-dk);margin-bottom:8px">Event Popup Ad</div>
+        <div class="price-amount">$50</div>
+        <div class="price-period">per month</div>
+        <ul class="price-features" style="margin:18px 0">
+          <li><span class="check">✓</span> <strong>Ad popup on every event click</strong></li>
+          <li><span class="check">✓</span> Full business card ad with animation</li>
+          <li><span class="check">✓</span> Tappable phone number</li>
+          <li><span class="check">✓</span> Website button in every popup</li>
+          <li><span class="check">✓</span> Sponsor bar included</li>
+          <li><span class="check">✓</span> <strong>Limited to 5 spots only</strong></li>
+          <li><span class="check">✓</span> Cancel anytime</li>
+        </ul>
+        <button class="btn-amber" style="width:100%;font-size:15px;padding:12px 0" onclick="scrollToPortal('premium')">Claim a Spot</button>
+      </div>
+
     </div>
   </div>
 </div>
@@ -248,6 +270,7 @@ const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 
 let advToken    = localStorage.getItem('nlcc_adv_token') || null;
 let advertiser  = JSON.parse(localStorage.getItem('nlcc_adv') || 'null');
+let selectedTier = new URLSearchParams(window.location.search).get('tier') || 'premium';
 
 async function api(path, opts={}) {
   const h = {'Content-Type':'application/json', ...(opts.headers||{})};
@@ -436,13 +459,23 @@ function renderDashboard() {
         <button class="btn-danger" style="width:100%" onclick="confirmCancel()">Cancel My Subscription</button>
         <div class="err-msg" id="cancelErr"></div>
       ` : `
-        <p style="font-size:14px;color:var(--text2);margin-bottom:6px">Subscribe to put your ad live on the calendar immediately. Your ad appears every time someone clicks an event.</p>
-        <p style="font-size:13px;font-weight:700;color:var(--amber-dk);margin-bottom:14px" id="spotsRemaining">⚡ Limited to 5 ad spots — checking availability…</p>
-        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0" onclick="startCheckout()">
-          ${status === 'paused' ? '🔄 Reactivate Subscription' : '💳 Subscribe — $25/month'}
+        <!-- Tier Selector -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="tierSelector">
+          <div id="tierBasic" onclick="selectTier('basic')" style="border:2px solid var(--border-md);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:var(--text)">$25<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-top:2px">Sponsor Bar</div>
+          </div>
+          <div id="tierPremium" onclick="selectTier('premium')" style="border:2px solid var(--amber);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center;background:var(--amber-lt)">
+            <div style="font-size:18px;font-weight:700;color:var(--amber-dk)">$50<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--amber-dk);margin-top:2px">⭐ Event Popup Ad</div>
+          </div>
+        </div>
+        <p style="font-size:13px;font-weight:700;color:var(--amber-dk);margin-bottom:10px" id="spotsRemaining">⚡ Limited to 5 event ad spots — checking availability…</p>
+        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0" onclick="startCheckout()" id="checkoutBtn">
+          ${status === 'paused' ? '🔄 Reactivate Subscription' : '💳 Subscribe Now'}
         </button>
         <p style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6">
-          🔄 <strong>This is a recurring monthly charge of $25.</strong> Your card will be billed automatically every month. You can cancel at any time from this dashboard — your ad will stay live until the end of the billing period.
+          🔄 <strong>Recurring monthly charge.</strong> Your card is billed automatically each month. Cancel any time from this dashboard — your ad stays live until the end of the billing period. No contracts, no setup fees.
         </p>
         <div class="err-msg" id="checkoutErr"></div>
       `}
@@ -475,24 +508,47 @@ async function saveEdits() {
 async function loadSpotsRemaining() {
   try {
     const all = await fetch('/api/display/sponsors').then(r=>r.json());
-    const taken = all.filter(s => s.source === 'advertiser').length;
+    const taken = all.filter(s => s.source === 'advertiser' && s.tier === 'premium').length;
     const remaining = 5 - taken;
     const el = document.getElementById('spotsRemaining');
     if (el) {
       if (remaining <= 0) {
-        el.textContent = '🔴 All 5 spots are currently taken — join the waitlist below.';
+        el.textContent = '🔴 All 5 event ad spots are taken — select Sponsor Bar or join waitlist.';
         el.style.color = 'var(--danger)';
       } else {
-        el.textContent = `⚡ Only ${remaining} of 5 ad spot${remaining===1?'':'s'} remaining!`;
+        el.textContent = `⚡ Only ${remaining} of 5 event ad spot${remaining===1?'':'s'} remaining!`;
         el.style.color = remaining <= 2 ? 'var(--danger)' : 'var(--amber-dk)';
       }
     }
+    // Apply initial tier selection
+    selectTier(selectedTier);
   } catch(e) { console.error(e); }
+}
+
+function selectTier(tier) {
+  selectedTier = tier;
+  const basic   = document.getElementById('tierBasic');
+  const premium = document.getElementById('tierPremium');
+  const btn     = document.getElementById('checkoutBtn');
+  if (!basic || !premium) return;
+  if (tier === 'premium') {
+    premium.style.borderColor = 'var(--amber)';
+    premium.style.background  = 'var(--amber-lt)';
+    basic.style.borderColor   = 'var(--border-md)';
+    basic.style.background    = '';
+    if (btn) btn.textContent  = '💳 Subscribe — $50/month';
+  } else {
+    basic.style.borderColor   = 'var(--amber)';
+    basic.style.background    = 'var(--amber-lt)';
+    premium.style.borderColor = 'var(--border-md)';
+    premium.style.background  = '';
+    if (btn) btn.textContent  = '💳 Subscribe — $25/month';
+  }
 }
 
 async function startCheckout() {
   try {
-    const { url } = await api('/api/advertiser/checkout', { method:'POST' });
+    const { url } = await api('/api/advertiser/checkout', { method:'POST', body: JSON.stringify({ tier: selectedTier }) });
     window.location.href = url;
   } catch(e) {
     const el = document.getElementById('checkoutErr');
@@ -513,8 +569,11 @@ async function confirmCancel() {
   }
 }
 
-function scrollToPortal() {
+function scrollToPortal(tier) {
+  if (tier) selectedTier = tier;
   document.getElementById('portalSection').scrollIntoView({ behavior: 'smooth' });
+  // If already logged in, update the selected tier display
+  if (advertiser) renderDashboard();
 }
 
 // Init
