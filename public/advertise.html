@@ -209,14 +209,15 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
     <div class="section-sub" style="margin-bottom:32px">One price. Everything included. Cancel any time.</div>
     <div class="pricing-card">
       <div class="price-amount">$25</div>
-      <div class="price-period">per month</div>
+      <div class="price-period">per month — billed monthly, cancel anytime</div>
       <ul class="price-features">
         <li><span class="check">✓</span> Sponsor card on every page</li>
         <li><span class="check">✓</span> Business name + tagline</li>
         <li><span class="check">✓</span> Link to your website</li>
         <li><span class="check">✓</span> Edit your listing anytime</li>
         <li><span class="check">✓</span> Goes live immediately after payment</li>
-        <li><span class="check">✓</span> Cancel anytime — no contracts</li>
+        <li><span class="check">✓</span> Cancel anytime from your dashboard</li>
+        <li><span class="check">✓</span> No contracts, no setup fees</li>
       </ul>
       <button class="btn-amber" style="width:100%;font-size:16px;padding:13px 0" onclick="scrollToPortal()">Register Your Business Today</button>
     </div>
@@ -426,14 +427,18 @@ function renderDashboard() {
     <div class="dash-section">
       <div class="dash-label">Subscription — $25 / month</div>
       ${status === 'active' ? `
-        <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Your subscription is active. Your card is charged $25 on your billing date each month.</p>
-        <button class="btn-danger" onclick="confirmCancel()">Cancel Subscription</button>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:6px">Your subscription is active. Your card is charged <strong>$25/month</strong> automatically on your billing date.</p>
+        <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6">To cancel, click the button below. Your ad will remain live until the end of your current billing period — no partial refunds.</p>
+        <button class="btn-danger" style="width:100%" onclick="confirmCancel()">Cancel My Subscription</button>
         <div class="err-msg" id="cancelErr"></div>
       ` : `
         <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Subscribe for $25/month to put your ad live on the calendar immediately.</p>
         <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0" onclick="startCheckout()">
           ${status === 'paused' ? '🔄 Reactivate Subscription' : '💳 Subscribe — $25/month'}
         </button>
+        <p style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6">
+          🔄 <strong>This is a recurring monthly charge of $25.</strong> Your card will be billed automatically every month. You can cancel at any time from this dashboard — your ad will stay live until the end of the billing period.
+        </p>
         <div class="err-msg" id="checkoutErr"></div>
       `}
     </div>`;
