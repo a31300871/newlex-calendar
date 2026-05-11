@@ -18,6 +18,13 @@ const SITE_URL = process.env.SITE_URL || 'https://www.newlexcalendar.com';
 
 const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
 
+
+app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
+app.use(express.json({
+  verify: (req, res, buf) => { req.rawBody = buf; }
+}));
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ── STRIPE WEBHOOK ──
 app.post('/api/stripe/webhook', async (req, res) => {
     if (!stripe || !STRIPE_WEBHOOK) return res.status(400).send('Webhook not configured');
@@ -71,12 +78,6 @@ app.post('/api/stripe/webhook', async (req, res) => {
     }
   }
 );
-
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
-app.use(express.json({
-  verify: (req, res, buf) => { req.rawBody = buf; }
-}));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // ── AUTH HELPERS ──
 function requireAuth(req, res, next) {
