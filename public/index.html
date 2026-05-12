@@ -110,14 +110,15 @@ button:active{opacity:.8}
 /* ── EVENT ROWS ── */
 .date-head{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:16px 0 5px;border-bottom:1.5px solid var(--border);margin-bottom:7px}
 .date-head:first-child{padding-top:0}
-.erow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:border-color .15s,box-shadow .15s}
+.erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:border-color .15s,box-shadow .15s;cursor:pointer;overflow:hidden}
 .erow:hover{border-color:var(--border-md);box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.ename{font-weight:700;font-size:15px;color:var(--text)}
-.em{color:var(--text2);font-size:14px}
-.sep{color:var(--border-md)}
-.pf{color:var(--teal);font-weight:600;font-size:14px}
-.pp{color:var(--amber-dk);font-weight:600;font-size:14px}
+.ename{font-weight:700;font-size:15px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.em{color:var(--text2);font-size:14px;white-space:nowrap;flex-shrink:0}
+.sep{color:var(--border-md);flex-shrink:0}
+.pf{color:var(--teal);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
+.pp{color:var(--amber-dk);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
+.erow-arrow{color:var(--text3);font-size:14px;flex-shrink:0;margin-left:auto}
 .row-actions{margin-left:auto;display:flex;gap:4px;align-items:center}
 .share-btn{font-size:14px;padding:3px 7px;border:1.5px solid transparent;border-radius:5px;background:transparent;color:var(--text3);line-height:1}
 .share-btn:hover{background:var(--surface2);border-color:var(--border)}
@@ -534,18 +535,11 @@ function renderEvents(){
   list.innerHTML=Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>`
     <div class="date-head">${fmtD(d)}</div>
     ${evs.map(e=>`
-      <div class="erow" onclick='openEventDetail(${JSON.stringify(e)})' style="cursor:pointer">
+      <div class="erow" onclick='openEventDetail(${JSON.stringify(e)})'>
         <span class="dot" style="background:${cc(e.cat)}"></span>
         <span class="ename">${esc(e.name)}</span>
-        <span class="sep">·</span><span class="em">${esc(e.location)}</span>
-        <span class="sep">·</span><span class="em">${esc(e.time)}</span>
-        <span class="sep">·</span><span class="${isFree(e.price)?'pf':'pp'}">${esc(e.price)}</span>
-        <span class="sep">·</span><span class="em">${esc(e.contact)}</span>
-        <div class="row-actions" onclick="event.stopPropagation()">
-          <button class="share-btn" onclick='shareEvent(${JSON.stringify(e)})' title="Share this event">↗</button>
-          ${canAct(e)?`<button class="edit-btn" onclick='openEventModal(${JSON.stringify(e)})'>edit</button>
-          <button class="del-btn" onclick="deleteEvent(${e.id})">remove</button>`:''}
-        </div>
+        <span class="em">${esc(e.time)}</span>
+        <span class="erow-arrow">›</span>
       </div>`).join('')}
   `).join('');
 }
@@ -747,8 +741,12 @@ function openEventDetail(ev) {
           <span class="ev-detail-label">📞 Contact</span>
           <span class="ev-detail-value">${esc(ev.contact)}</span>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn-amber btn-sm" style="flex:1" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn-amber btn-sm" style="flex:1;min-width:90px" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
+          ${authUser && (ev.added_by === authUser.id || authUser.is_admin) ? `
+            <button class="btn-blue btn-sm" style="flex:1;min-width:90px" onclick='closeModal("detailModal");openEventModal(${JSON.stringify(ev)})'>✏ Edit</button>
+            <button class="btn-sm" style="flex:1;min-width:90px;background:var(--danger-bg);color:var(--danger);border-color:#F09595" onclick='closeModal("detailModal");deleteEvent(${ev.id})'>🗑 Remove</button>
+          ` : ''}
         </div>
       </div>
       ${adHTML}
