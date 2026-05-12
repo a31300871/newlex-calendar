@@ -599,11 +599,33 @@ async function confirmCancel() {
 
 function doLogout() { clearSession(); renderNav(); closeModal('listingModal'); }
 
+// ── INACTIVITY AUTO-LOGOUT (30 min) ──
+let inactivityTimer = null;
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  if (!listingUser) return;
+  inactivityTimer = setTimeout(() => {
+    doLogout();
+    showInactivityNotice();
+  }, 30 * 60 * 1000);
+}
+function showInactivityNotice() {
+  const notice = document.createElement('div');
+  notice.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;padding:12px 22px;border-radius:8px;z-index:9999;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:90%;text-align:center';
+  notice.textContent = '⏱️ You have been logged out due to inactivity.';
+  document.body.appendChild(notice);
+  setTimeout(() => notice.remove(), 5000);
+}
+['mousedown','keypress','scroll','touchstart','click'].forEach(evt =>
+  document.addEventListener(evt, resetInactivityTimer, { passive: true })
+);
+
 // Init
 checkURLParams();
 renderCatChips();
 renderNav();
 loadAll();
+resetInactivityTimer();
 </script>
 </body>
 </html>
