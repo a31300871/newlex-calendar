@@ -114,13 +114,25 @@ button:active{opacity:.8}
 .ev-count{font-size:14px;color:var(--text3);margin-bottom:12px}
 
 /* ── EVENT ROWS ── */
-.date-head{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--text);padding:14px 0 8px;margin-bottom:4px}
-.date-head:first-child{padding-top:2px}
-.date-head > span:first-child{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.date-head > span:first-child::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;box-shadow:0 0 0 3px rgba(186,117,23,.15)}
-.date-head::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border-md),transparent);min-width:30px}
-.date-head .today-badge{background:var(--amber);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px;letter-spacing:.06em}
-.date-head .tmrw-badge{background:var(--teal);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px;letter-spacing:.06em}
+/* Side-by-side date layout */
+.date-group{display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--border)}
+.date-group:first-child{border-top:none;padding-top:2px}
+.date-col{width:88px;flex-shrink:0;padding-top:10px}
+.date-col .date-weekday{font-size:14px;font-weight:800;color:var(--text);letter-spacing:.02em;line-height:1.1}
+.date-col .date-monthday{font-size:13px;color:var(--text2);font-weight:600;margin-top:2px;line-height:1.1}
+.date-col .today-badge,.date-col .tmrw-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:100px;margin-bottom:5px}
+.date-col .today-badge{background:var(--amber);color:#fff}
+.date-col .tmrw-badge{background:var(--teal);color:#fff}
+.events-col{flex:1;min-width:0;border-left:1.5px solid var(--border);padding-left:14px}
+.events-col .erow{margin-bottom:5px}
+.events-col .erow:last-child{margin-bottom:0}
+@media(max-width:600px){
+  .date-group{gap:10px}
+  .date-col{width:68px;padding-top:9px}
+  .date-col .date-weekday{font-size:13px}
+  .date-col .date-monthday{font-size:12px}
+  .events-col{padding-left:10px}
+}
 .erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:all .15s;cursor:pointer;overflow:hidden}
 .erow:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
 .erow:hover .erow-arrow{color:var(--amber);transform:translateX(3px)}
@@ -546,15 +558,25 @@ function renderEvents(){
     const tmrw=new Date(today);tmrw.setDate(today.getDate()+1);
     const evDay=new Date(dt);evDay.setHours(0,0,0,0);
     const sameYear=dt.getFullYear()===today.getFullYear();
-    const datePart=dt.toLocaleDateString('en-US',sameYear?{weekday:'short',month:'short',day:'numeric'}:{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-    if(evDay.getTime()===today.getTime()) return `<span class="today-badge">TODAY</span>${datePart}`;
-    if(evDay.getTime()===tmrw.getTime()) return `<span class="tmrw-badge">TOMORROW</span>${datePart}`;
-    return datePart;
+    const weekday=dt.toLocaleDateString('en-US',{weekday:'short'});
+    const monthDay=dt.toLocaleDateString('en-US',sameYear?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'});
+    let badge='';
+    if(evDay.getTime()===today.getTime()) badge='<span class="today-badge">TODAY</span>';
+    else if(evDay.getTime()===tmrw.getTime()) badge='<span class="tmrw-badge">TOMORROW</span>';
+    return{weekday,monthDay,badge};
   };
   const isAdm=authUser&&authUser.is_admin;
   const canAct=e=>authUser&&(e.added_by===authUser.id||isAdm);
-  list.innerHTML=Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>`
-    <div class="date-head"><span>${fmtD(d)}</span></div>
+  list.innerHTML=Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>{
+    const f=fmtD(d);
+    return `
+    <div class="date-group">
+      <div class="date-col">
+        ${f.badge}
+        <div class="date-weekday">${f.weekday}</div>
+        <div class="date-monthday">${f.monthDay}</div>
+      </div>
+      <div class="events-col">
     ${evs.map(e=>`
       <div class="erow" onclick='openEventDetail(${JSON.stringify(e)})'>
         <span class="dot" style="background:${cc(e.cat)}"></span>
@@ -562,7 +584,9 @@ function renderEvents(){
         <span class="em">${esc(e.time)}</span>
         <span class="erow-arrow">›</span>
       </div>`).join('')}
-  `).join('');
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ── CATEGORY FILTERS ── */
