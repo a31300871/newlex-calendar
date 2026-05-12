@@ -743,13 +743,15 @@ function openEventDetail(ev) {
           <span class="ev-detail-label">📞 Contact</span>
           <span class="ev-detail-value">${esc(ev.contact)}</span>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn-amber btn-sm" style="flex:1;min-width:90px" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
-          ${authUser && (ev.added_by === authUser.id || authUser.is_admin) ? `
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <a class="btn-amber btn-sm" style="flex:1;min-width:90px;text-align:center;text-decoration:none" href="/api/events/${ev.id}/ical">📅 Add to My Calendar</a>
+          <button class="btn-sm" style="flex:1;min-width:90px;background:var(--surface2);color:var(--text);border-color:var(--border-md)" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
+        </div>
+        ${authUser && (ev.added_by === authUser.id || authUser.is_admin) ? `
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
             <button class="btn-blue btn-sm" style="flex:1;min-width:90px" onclick='closeModal("detailModal");openEventModal(${JSON.stringify(ev)})'>✏ Edit</button>
             <button class="btn-sm" style="flex:1;min-width:90px;background:var(--danger-bg);color:var(--danger);border-color:#F09595" onclick='closeModal("detailModal");deleteEvent(${ev.id})'>🗑 Remove</button>
-          ` : ''}
-        </div>
+          </div>` : ''}
       </div>
       ${adHTML}
     </div>`;
