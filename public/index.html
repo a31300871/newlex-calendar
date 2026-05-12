@@ -116,15 +116,16 @@ button:active{opacity:.8}
 /* ── EVENT ROWS ── */
 .date-head{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);padding:16px 0 5px;border-bottom:1.5px solid var(--border);margin-bottom:7px}
 .date-head:first-child{padding-top:0}
-.erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:border-color .15s,box-shadow .15s;cursor:pointer;overflow:hidden}
-.erow:hover{border-color:var(--border-md);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:all .15s;cursor:pointer;overflow:hidden}
+.erow:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
+.erow:hover .erow-arrow{color:var(--amber);transform:translateX(3px)}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .ename{font-weight:700;font-size:15px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .em{color:var(--text2);font-size:14px;white-space:nowrap;flex-shrink:0}
 .sep{color:var(--border-md);flex-shrink:0}
 .pf{color:var(--teal);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
 .pp{color:var(--amber-dk);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
-.erow-arrow{color:var(--text3);font-size:14px;flex-shrink:0;margin-left:auto}
+.erow-arrow{color:var(--amber);font-size:18px;font-weight:700;flex-shrink:0;margin-left:auto;transition:transform .15s,color .15s}
 .row-actions{margin-left:auto;display:flex;gap:4px;align-items:center}
 .share-btn{font-size:14px;padding:3px 7px;border:1.5px solid transparent;border-radius:5px;background:transparent;color:var(--text3);line-height:1}
 .share-btn:hover{background:var(--surface2);border-color:var(--border)}
@@ -275,6 +276,7 @@ button:active{opacity:.8}
   </div>
 
   <div class="ev-count" id="evCount"></div>
+  <div id="evHelp" style="display:none;font-size:13px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any event below to see full details, location, and add it to your phone calendar.</div>
   <div id="evList"><div class="no-events">⏳ Loading events…</div></div>
 </div>
 
@@ -515,6 +517,7 @@ async function deleteEvent(id){
 /* ── RENDER EVENTS ── */
 function renderEvents(){
   const q=srchQ.toLowerCase();
+  const helpEl=document.getElementById('evHelp');
   const f=allEvs.filter(e=>{
     const mc=activeFilters.size===0||activeFilters.has(e.cat);
     const mq=!q||e.name.toLowerCase().includes(q)||e.location.toLowerCase().includes(q)||cl(e.cat).toLowerCase().includes(q);
@@ -522,6 +525,7 @@ function renderEvents(){
     return mc&&mq&&md;
   });
   document.getElementById('evCount').textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
+  if(helpEl) helpEl.style.display = f.length > 0 ? 'block' : 'none';
   const list=document.getElementById('evList');
   if(!f.length){
     const isPast=dateFilter==='upcoming';
