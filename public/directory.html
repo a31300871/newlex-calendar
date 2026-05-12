@@ -174,23 +174,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
   </div>
 </div>
 
-<!-- FEATURED ADVERTISERS -->
-<div style="background:var(--navy2);padding:36px 0 28px">
-  <div class="section" style="padding-top:0;padding-bottom:0">
-    <div class="section-head">
-      <div>
-        <div class="section-title" style="color:#fff">⭐ Featured Businesses</div>
-        <div class="section-sub" style="color:rgba(255,255,255,.5)">Premium advertisers — always at the top</div>
-      </div>
-      <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber-mid);text-decoration:none;font-weight:600">Claim a featured spot — $50/mo →</a>
-    </div>
-    <div class="adv-grid" id="advGrid">
-      <div style="color:rgba(255,255,255,.3);font-size:14px;padding:20px 0">Loading featured businesses…</div>
-    </div>
-  </div>
-</div>
-
-<!-- BUSINESS DIRECTORY -->
+<!-- BUSINESS DIRECTORY (now at top) -->
 <div class="section">
   <div class="section-head">
     <div>
@@ -208,6 +192,22 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
 
   <div class="cat-chips" id="catChips"></div>
   <div class="listing-grid" id="listingGrid"></div>
+</div>
+
+<!-- FEATURED ADVERTISERS (moved below directory) -->
+<div style="background:var(--navy2);padding:30px 0 24px">
+  <div class="section" style="padding-top:0;padding-bottom:0">
+    <div class="section-head">
+      <div>
+        <div class="section-title" style="color:#fff;font-size:20px">⭐ Featured Businesses</div>
+        <div class="section-sub" style="color:rgba(255,255,255,.5)">Premium advertisers</div>
+      </div>
+      <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber-mid);text-decoration:none;font-weight:600">Claim a featured spot — $50/mo →</a>
+    </div>
+    <div class="adv-grid" id="advGrid">
+      <div style="color:rgba(255,255,255,.3);font-size:14px;padding:20px 0">Loading featured businesses…</div>
+    </div>
+  </div>
 </div>
 
 <!-- CTA BANNER -->
@@ -413,6 +413,8 @@ document.getElementById('dirSearch').addEventListener('input', function() {
 // Nav
 function renderNav() {
   const el = document.getElementById('navUser');
+  const floatCTA = document.getElementById('floatCTA');
+  if (floatCTA) floatCTA.style.display = listingUser ? 'none' : 'flex';
   if (listingUser) {
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 14px">
@@ -627,5 +629,13 @@ renderNav();
 loadAll();
 resetInactivityTimer();
 </script>
+<!-- FLOATING STICKY CTA -->
+<a href="#" onclick="openModal('listingModal');return false" id="floatCTA" style="position:fixed;bottom:20px;right:20px;background:var(--amber);color:#fff;font-size:14px;font-weight:700;padding:14px 22px;border-radius:100px;text-decoration:none;box-shadow:0 6px 20px rgba(186,117,23,.4);z-index:500;display:flex;align-items:center;gap:6px;transition:transform .15s,box-shadow .15s">
+  <span style="font-size:18px;line-height:1">+</span> List My Business — $1
+</a>
+<style>
+#floatCTA:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(186,117,23,.5)}
+@media(max-width:480px){#floatCTA{font-size:13px;padding:12px 18px;bottom:14px;right:14px}}
+</style>
 </body>
 </html>
