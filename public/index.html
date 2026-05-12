@@ -76,10 +76,16 @@ button:active{opacity:.8}
   position:fixed;top:var(--hdr-h);left:0;right:0;z-index:199;
   height:var(--about-h);background:var(--navy2);
   border-bottom:1px solid rgba(255,255,255,.08);
-  display:flex;align-items:center;justify-content:center;gap:16px;
-  font-size:13px;color:rgba(255,255,255,.65);padding:0 16px;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  padding:0 12px;
 }
-.about-dot{color:var(--amber);font-size:10px}
+.nav-icon-link{
+  font-size:13px;color:rgba(255,255,255,.65);text-decoration:none;
+  padding:5px 14px;border-radius:100px;transition:background .15s,color .15s;
+  font-weight:600;white-space:nowrap
+}
+.nav-icon-link:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-icon-link.active{background:rgba(186,117,23,.18);color:var(--amber-mid)}
 
 /* ── PAGE ── */
 #page{max-width:900px;margin:0 auto;padding:18px 16px 0}
@@ -242,15 +248,11 @@ button:active{opacity:.8}
   <div class="hdr-right" id="authArea"></div>
 </header>
 
-<!-- ABOUT BAR -->
+<!-- ABOUT BAR / SUB-NAV -->
 <div id="aboutBar">
-  <span>📅 Free community events for New Lexington &amp; Perry County</span>
-  <span class="about-dot">●</span>
-  <span class="about-dot-text">Register free to post events</span>
-  <span class="about-dot">●</span>
-  <a href="/advertise" style="color:var(--amber-mid);text-decoration:none;font-weight:600">Advertise →</a>
-  <span class="about-dot">●</span>
-  <a href="/directory" style="color:var(--amber-mid);text-decoration:none;font-weight:600">Business Directory →</a>
+  <a href="/" class="nav-icon-link active">📅 Calendar</a>
+  <a href="/advertise" class="nav-icon-link">📢 Advertise</a>
+  <a href="/directory" class="nav-icon-link">📋 Directory</a>
 </div>
 
 <!-- TOAST -->
