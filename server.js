@@ -507,6 +507,15 @@ app.get('/api/admin/listings', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Admin: hard-delete a listing
+app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run('DELETE FROM listings WHERE id=?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 function safeListing(l) {
   return { id:l.id, owner_name:l.owner_name, owner_email:l.owner_email, business_name:l.business_name,
     category:l.category, phone:l.phone||'', website:l.website||'', address:l.address||'',
