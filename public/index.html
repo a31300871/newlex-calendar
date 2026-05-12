@@ -113,6 +113,46 @@ button:active{opacity:.8}
 
 .ev-count{font-size:14px;color:var(--text3);margin-bottom:12px}
 
+/* ── VIEW TOGGLE ── */
+.view-toggle{display:inline-flex;gap:2px;background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:3px;margin-bottom:10px}
+.view-btn{font-size:13px;padding:6px 14px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-weight:600;color:var(--text2);transition:all .15s}
+.view-btn:hover{color:var(--text)}
+.view-btn.active{background:var(--navy);color:#fff}
+
+/* ── MONTH VIEW ── */
+.month-view{display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.month-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1.5px solid var(--border);background:var(--surface2)}
+.month-title{font-family:var(--font-head);font-size:19px;font-weight:700;color:var(--text)}
+.month-nav-btn{background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--text);font-weight:700}
+.month-nav-btn:hover{background:var(--amber-lt);border-color:var(--amber)}
+.month-today-btn{font-size:12px;padding:6px 12px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;color:var(--text);font-weight:600}
+.month-today-btn:hover{background:var(--amber-lt);border-color:var(--amber)}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.dow-label{text-align:center;padding:8px 0;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;background:var(--surface2);border-bottom:1px solid var(--border)}
+.day-cell{min-height:96px;border-right:1px solid var(--border);border-top:1px solid var(--border);padding:6px;display:flex;flex-direction:column;gap:3px;background:var(--surface);transition:background .15s}
+.day-cell.has-events{cursor:pointer}
+.day-cell.has-events:hover{background:var(--amber-lt)}
+.day-cell.other-month{background:var(--surface2);opacity:.5}
+.day-cell.today{background:rgba(186,117,23,.07)}
+.day-cell:nth-child(7n+7){border-right:none}
+.day-num{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%}
+.day-cell.today .day-num{background:var(--amber);color:#fff}
+.day-cell.other-month .day-num{color:var(--text3);font-weight:500}
+.event-pill{font-size:10px;padding:2px 5px;border-radius:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;border-left:2.5px solid;cursor:pointer;line-height:1.3}
+.event-pill:hover{filter:brightness(.92)}
+.more-events{font-size:10px;color:var(--text2);font-weight:700;padding:1px 4px;cursor:pointer}
+.more-events:hover{color:var(--amber)}
+@media(max-width:600px){
+  .day-cell{min-height:54px;padding:3px;gap:2px}
+  .day-num{font-size:11px;width:18px;height:18px}
+  .event-pill{display:none}
+  .event-dots{display:flex;gap:2px;flex-wrap:wrap;margin-top:auto}
+  .event-dot{width:5px;height:5px;border-radius:50%}
+  .more-events{font-size:9px;padding:0;margin-top:1px}
+  .month-title{font-size:16px}
+  .month-nav-btn{width:30px;height:30px;font-size:16px}
+}
+
 /* ── EVENT ROWS ── */
 /* Side-by-side date layout */
 .date-group{display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--border)}
@@ -293,8 +333,15 @@ button:active{opacity:.8}
   </div>
 
   <div class="ev-count" id="evCount"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="list" onclick="setView('list')">📋 List</button>
+      <button class="view-btn" data-view="month" onclick="setView('month')">📅 Month</button>
+    </div>
+  </div>
   <div id="evHelp" style="display:none;font-size:13px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any event below to see full details, location, and add it to your phone calendar.</div>
   <div id="evList"><div class="no-events">⏳ Loading events…</div></div>
+  <div id="monthView" class="month-view"></div>
 </div>
 
 <!-- FIXED SPONSOR BAR -->
@@ -533,6 +580,8 @@ async function deleteEvent(id){
 
 /* ── RENDER EVENTS ── */
 function renderEvents(){
+  // Also re-render month view if active
+  if (typeof viewMode !== 'undefined' && viewMode === 'month') renderMonth();
   const q=srchQ.toLowerCase();
   const helpEl=document.getElementById('evHelp');
   const f=allEvs.filter(e=>{
@@ -542,7 +591,7 @@ function renderEvents(){
     return mc&&mq&&md;
   });
   document.getElementById('evCount').textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
-  if(helpEl) helpEl.style.display = f.length > 0 ? 'block' : 'none';
+  if(helpEl){helpEl.dataset.show = f.length > 0 ? 'block' : 'none';helpEl.style.display = (typeof viewMode === 'undefined' || viewMode === 'list') && f.length > 0 ? 'block' : 'none';}
   const list=document.getElementById('evList');
   if(!f.length){
     const isPast=dateFilter==='upcoming';
@@ -862,8 +911,139 @@ function showInactivityNotice() {
   document.addEventListener(evt, resetInactivityTimer, { passive: true })
 );
 
+/* ── VIEW MODE (LIST / MONTH) ── */
+let viewMode = localStorage.getItem('nlcc_view') || 'list';
+let currentMonth = new Date();
+
+function setView(mode) {
+  viewMode = mode;
+  localStorage.setItem('nlcc_view', mode);
+  document.querySelectorAll('.view-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.view === mode));
+  document.getElementById('evList').style.display = mode === 'list' ? 'block' : 'none';
+  document.getElementById('monthView').style.display = mode === 'month' ? 'block' : 'none';
+  const help = document.getElementById('evHelp');
+  if (help) help.style.display = mode === 'list' ? help.dataset.show || 'none' : 'none';
+  if (mode === 'month') renderMonth();
+}
+
+function changeMonth(delta) {
+  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1);
+  renderMonth();
+}
+function goToToday() {
+  currentMonth = new Date();
+  renderMonth();
+}
+
+function renderMonth() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+  const q = srchQ.toLowerCase();
+  const filteredEvs = allEvs.filter(e => {
+    const mc = activeFilters.size === 0 || activeFilters.has(e.cat);
+    const mq = !q || e.name.toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || cl(e.cat).toLowerCase().includes(q);
+    return mc && mq;
+  });
+  const eventsByDate = {};
+  filteredEvs.forEach(e => { (eventsByDate[e.date] = eventsByDate[e.date] || []).push(e); });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yr = today.getFullYear();
+  const mo = String(today.getMonth() + 1).padStart(2, '0');
+  const dy = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yr}-${mo}-${dy}`;
+  const isMobile = window.innerWidth <= 600;
+
+  let html = `
+    <div class="month-nav">
+      <button class="month-nav-btn" onclick="changeMonth(-1)" title="Previous month">‹</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="month-title">${monthName}</div>
+        <button class="month-today-btn" onclick="goToToday()">Today</button>
+      </div>
+      <button class="month-nav-btn" onclick="changeMonth(1)" title="Next month">›</button>
+    </div>
+    <div class="month-grid">
+      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="dow-label">${d}</div>`).join('')}`;
+
+  // Previous month padding
+  for (let i = startDay - 1; i >= 0; i--) {
+    html += `<div class="day-cell other-month"><div class="day-num">${prevMonthLastDay - i}</div></div>`;
+  }
+
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const events = eventsByDate[dateStr] || [];
+    const isToday = dateStr === todayStr;
+    const hasEvents = events.length > 0;
+
+    let body = '';
+    if (isMobile) {
+      // Mobile: just colored dots
+      const dotHtml = events.slice(0, 6).map(e => `<span class="event-dot" style="background:${cc(e.cat)}"></span>`).join('');
+      body = `<div class="event-dots">${dotHtml}</div>${events.length > 6 ? `<div class="more-events">+${events.length-6}</div>` : ''}`;
+    } else {
+      // Desktop: 3 event pills + "+ N more"
+      const eventHtml = events.slice(0, 3).map(e =>
+        `<div class="event-pill" style="border-left-color:${cc(e.cat)};background:${cc(e.cat)}15;color:${cc(e.cat)}" onclick="event.stopPropagation();openEventDetail(${esc(JSON.stringify(e))})">${esc(e.name)}</div>`
+      ).join('');
+      const moreCount = events.length > 3 ? events.length - 3 : 0;
+      const moreHtml = moreCount > 0 ? `<div class="more-events">+${moreCount} more</div>` : '';
+      body = eventHtml + moreHtml;
+    }
+
+    const onClick = hasEvents ? `onclick="showDayEvents('${dateStr}')"` : '';
+    const cls = `day-cell${isToday ? ' today' : ''}${hasEvents ? ' has-events' : ''}`;
+    html += `<div class="${cls}" ${onClick}>
+      <div class="day-num">${day}</div>
+      ${body}
+    </div>`;
+  }
+
+  // Next month padding
+  const totalCells = startDay + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    html += `<div class="day-cell other-month"><div class="day-num">${d}</div></div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('monthView').innerHTML = html;
+}
+
+function showDayEvents(dateStr) {
+  const events = allEvs.filter(e => e.date === dateStr);
+  if (!events.length) return;
+  const date = new Date(dateStr + 'T12:00:00');
+  const dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('detailModalContent').innerHTML = `
+    <div class="modal-title">${dateLabel}</div>
+    <p style="color:var(--text2);margin-bottom:14px;font-size:14px">${events.length} event${events.length !== 1 ? 's' : ''} on this day. Tap one for details.</p>
+    ${events.map(e => `
+      <div class="erow" onclick='closeModal("detailModal");openEventDetail(${esc(JSON.stringify(e))})' style="margin-bottom:6px">
+        <span class="dot" style="background:${cc(e.cat)}"></span>
+        <span class="ename">${esc(e.name)}</span>
+        <span class="em">${esc(e.time)}</span>
+        <span class="erow-arrow">›</span>
+      </div>
+    `).join('')}`;
+  openModal('detailModal');
+}
+
+window.addEventListener('resize', () => { if (viewMode === 'month') renderMonth(); });
+
 init();
 resetInactivityTimer();
+// Initialize view on load
+setView(viewMode);
 </script>
 </body>
 </html>
