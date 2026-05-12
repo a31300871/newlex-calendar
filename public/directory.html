@@ -91,18 +91,26 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
 .cat-chip:hover{background:var(--surface2)}
 .cat-chip.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:600}
 
-/* Listing cards */
-.listing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.listing-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px 18px 14px;transition:border-color .15s,box-shadow .15s}
-.listing-card:hover{border-color:var(--border-md);box-shadow:0 2px 10px rgba(0,0,0,.07)}
-.listing-cat{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:3px 10px;margin-bottom:10px}
-.listing-name{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.2}
-.listing-desc{font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5}
-.listing-meta{display:flex;flex-direction:column;gap:4px}
-.listing-meta a{font-size:13px;color:var(--blue);text-decoration:none;font-weight:500}
-.listing-meta a:hover{text-decoration:underline}
-.listing-meta span{font-size:13px;color:var(--text2)}
-.no-listings{text-align:center;color:var(--text2);font-size:15px;padding:40px 0;grid-column:1/-1}
+/* Listing rows - one-line clickable */
+.listing-list{display:flex;flex-direction:column;gap:6px}
+.listing-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.listing-row:hover{border-color:var(--border-md);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.listing-name{font-size:15px;font-weight:700;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.listing-cat-tag{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
+.listing-arrow{color:var(--text3);font-size:14px;flex-shrink:0}
+.no-listings{text-align:center;color:var(--text2);font-size:15px;padding:40px 0}
+
+/* Listing detail modal */
+.det-cat{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:4px 12px;margin-bottom:12px}
+.det-name{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--text);margin-bottom:14px;line-height:1.2}
+.det-desc{font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6}
+.det-info{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.det-row{display:flex;flex-direction:column;gap:2px}
+.det-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.det-value{font-size:14px;color:var(--text)}
+.det-value a{color:var(--blue);text-decoration:none;font-weight:500}
+.det-value a:hover{text-decoration:underline}
+.admin-bar{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
 
 /* ── CTA BANNER ── */
 .cta-banner{background:var(--navy);padding:40px 24px;text-align:center;margin-top:0}
@@ -191,7 +199,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
   </div>
 
   <div class="cat-chips" id="catChips"></div>
-  <div class="listing-grid" id="listingGrid"></div>
+  <div class="listing-list" id="listingGrid"></div>
 </div>
 
 <!-- FEATURED ADVERTISERS (moved below directory) -->
@@ -252,6 +260,9 @@ const catLabel = id => (CATS.find(c=>c.id===id)||CATS[CATS.length-1]).label;
 
 let listToken   = localStorage.getItem('nlcc_list_token') || null;
 let listingUser = JSON.parse(localStorage.getItem('nlcc_listing') || 'null');
+let calToken    = localStorage.getItem('nlcc_token') || null;
+let calUser     = JSON.parse(localStorage.getItem('nlcc_user') || 'null');
+const isAdmin   = !!(calUser && calUser.is_admin);
 let allListings = [];
 let allAdvs     = [];
 let catFilter   = 'all';
@@ -393,17 +404,53 @@ function renderListings() {
     grid.innerHTML = `<div class="no-listings">No businesses found.<br><a href="#" onclick="openModal('listingModal');return false" style="color:var(--amber);font-weight:600">Be the first to list yours — $1 one-time</a></div>`;
     return;
   }
-  grid.innerHTML = f.map(l => `
-    <div class="listing-card">
-      <div class="listing-cat">${esc(catLabel(l.category))}</div>
-      <div class="listing-name">${esc(l.business_name)}</div>
-      ${l.description ? `<div class="listing-desc">${esc(l.description)}</div>` : ''}
-      <div class="listing-meta">
-        ${l.address ? `<span>📍 ${esc(l.address)}</span>` : ''}
-        ${l.phone   ? `<a href="tel:${esc(l.phone)}">📞 ${esc(l.phone)}</a>` : ''}
-        ${l.website ? `<a href="${esc(l.website.startsWith('http')?l.website:'https://'+l.website)}" target="_blank" rel="noopener">🌐 Visit Website</a>` : ''}
-      </div>
+  grid.innerHTML = f.map((l, idx) => `
+    <div class="listing-row" onclick='openListingDetail(${idx})'>
+      <span class="listing-name">${esc(l.business_name)}</span>
+      <span class="listing-cat-tag">${esc(catLabel(l.category))}</span>
+      <span class="listing-arrow">›</span>
     </div>`).join('');
+  // Store filtered for click access
+  window._filteredListings = f;
+}
+
+function openListingDetail(idx) {
+  const l = window._filteredListings[idx];
+  if (!l) return;
+  const websiteUrl = l.website ? (l.website.startsWith('http') ? l.website : 'https://' + l.website) : '';
+  document.getElementById('listingModalContent').innerHTML = `
+    <div class="det-cat">${esc(catLabel(l.category))}</div>
+    <div class="det-name">${esc(l.business_name)}</div>
+    ${l.description ? `<div class="det-desc">${esc(l.description)}</div>` : ''}
+    <div class="det-info">
+      ${l.address ? `<div class="det-row"><span class="det-label">📍 Location</span><span class="det-value">${esc(l.address)}</span></div>` : ''}
+      ${l.phone   ? `<div class="det-row"><span class="det-label">📞 Phone</span><span class="det-value"><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></span></div>` : ''}
+      ${websiteUrl? `<div class="det-row"><span class="det-label">🌐 Website</span><span class="det-value"><a href="${esc(websiteUrl)}" target="_blank" rel="noopener">${esc(l.website)}</a></span></div>` : ''}
+    </div>
+    ${isAdmin ? `
+      <div class="admin-bar">
+        <button class="btn-danger" style="font-size:13px;width:100%" onclick="adminDeleteListing(${l.id})">🗑 Admin: Delete This Listing</button>
+        <div class="err-msg" id="adminErr"></div>
+      </div>` : ''}
+  `;
+  document.getElementById('listingModal').classList.add('open');
+}
+
+async function adminDeleteListing(id) {
+  if (!confirm('Permanently delete this business listing? This cannot be undone.')) return;
+  try {
+    const r = await fetch('/api/admin/listings/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + calToken }
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Delete failed');
+    closeModal('listingModal');
+    await loadAll();
+  } catch(e) {
+    const el = document.getElementById('adminErr');
+    if (el) el.textContent = e.message;
+  }
 }
 
 document.getElementById('dirSearch').addEventListener('input', function() {
