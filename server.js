@@ -567,6 +567,117 @@ app.post('/api/advertiser/verify-session', requireAdvertiser, async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── ICAL DOWNLOAD WITH EMBEDDED SPONSOR ──
+function parseEventTime(timeStr, dateStr) {
+  if (!timeStr || timeStr === 'TBD' || /all\s*day/i.test(timeStr)) return { allDay: true };
+  const parseT = (h, m, ampm) => {
+    let hh = parseInt(h, 10);
+    const mm = parseInt(m || '0', 10);
+    if (ampm && /pm/i.test(ampm) && hh < 12) hh += 12;
+    if (ampm && /am/i.test(ampm) && hh === 12) hh = 0;
+    return { h: hh, m: mm };
+  };
+  const rangeMatch = timeStr.match(/(\d{1,2}):?(\d{0,2})\s*(AM|PM)?\s*[-\u2013to]+\s*(\d{1,2}):?(\d{0,2})\s*(AM|PM)?/i);
+  if (rangeMatch) {
+    const s = parseT(rangeMatch[1], rangeMatch[2], rangeMatch[3] || rangeMatch[6]);
+    const e = parseT(rangeMatch[4], rangeMatch[5], rangeMatch[6]);
+    const startDt = new Date(dateStr + 'T00:00:00');
+    const endDt   = new Date(dateStr + 'T00:00:00');
+    startDt.setHours(s.h, s.m, 0, 0);
+    endDt.setHours(e.h, e.m, 0, 0);
+    return { start: startDt, end: endDt, allDay: false };
+  }
+  const singleMatch = timeStr.match(/(\d{1,2}):?(\d{0,2})\s*(AM|PM)?/i);
+  if (singleMatch) {
+    const t = parseT(singleMatch[1], singleMatch[2], singleMatch[3]);
+    const startDt = new Date(dateStr + 'T00:00:00');
+    startDt.setHours(t.h, t.m, 0, 0);
+    const endDt = new Date(startDt.getTime() + 2 * 3600 * 1000);
+    return { start: startDt, end: endDt, allDay: false };
+  }
+  return { allDay: true };
+}
+
+function fmtICS(date) {
+  return date.getFullYear() +
+    String(date.getMonth() + 1).padStart(2, '0') +
+    String(date.getDate()).padStart(2, '0') + 'T' +
+    String(date.getHours()).padStart(2, '0') +
+    String(date.getMinutes()).padStart(2, '0') + '00';
+}
+
+function escICS(text) {
+  return String(text || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+}
+
+app.get('/api/events/:id/ical', async (req, res) => {
+  try {
+    const db = await getDb();
+    const event = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
+    if (!event) return res.status(404).send('Event not found');
+
+    // Pick a random premium advertiser to embed
+    const premiums = await db.all("SELECT * FROM advertisers WHERE status='active' AND tier='premium'");
+    const sponsor = premiums.length ? premiums[Math.floor(Math.random() * premiums.length)] : null;
+
+    const t = parseEventTime(event.time, event.date);
+
+    // Build description with event details + sponsor
+    let desc = '';
+    if (event.contact && event.contact !== '-') desc += `Contact: ${event.contact}\n`;
+    if (event.price)   desc += `Price: ${event.price}\n`;
+    if (event.time && event.time !== 'TBD') desc += `Time: ${event.time}\n`;
+    desc += '\nFull details at https://www.newlexcalendar.com\n';
+    if (sponsor) {
+      desc += '\n----------------------------------------\n';
+      desc += `📢 SPONSORED BY: ${sponsor.business_name}\n`;
+      if (sponsor.tagline) desc += `${sponsor.tagline}\n`;
+      if (sponsor.phone)   desc += `📞 Call: ${sponsor.phone}\n`;
+      if (sponsor.url)     desc += `🌐 Visit: ${sponsor.url}\n`;
+      desc += '\nThank you for supporting our community sponsors!';
+    }
+
+    let ics = '';
+    ics += 'BEGIN:VCALENDAR\r\n';
+    ics += 'VERSION:2.0\r\n';
+    ics += 'PRODID:-//NewLexCalendar//EN\r\n';
+    ics += 'CALSCALE:GREGORIAN\r\n';
+    ics += 'METHOD:PUBLISH\r\n';
+    ics += 'BEGIN:VEVENT\r\n';
+    ics += `UID:event-${event.id}-${Date.now()}@newlexcalendar.com\r\n`;
+    ics += `DTSTAMP:${fmtICS(new Date())}\r\n`;
+    if (t.allDay) {
+      const startDate = event.date.replace(/-/g, '');
+      const next = new Date(event.date + 'T00:00:00');
+      next.setDate(next.getDate() + 1);
+      const endDate = next.toISOString().split('T')[0].replace(/-/g, '');
+      ics += `DTSTART;VALUE=DATE:${startDate}\r\n`;
+      ics += `DTEND;VALUE=DATE:${endDate}\r\n`;
+    } else {
+      ics += `DTSTART:${fmtICS(t.start)}\r\n`;
+      ics += `DTEND:${fmtICS(t.end)}\r\n`;
+    }
+    ics += `SUMMARY:${escICS(event.name)}\r\n`;
+    ics += `LOCATION:${escICS(event.location)}\r\n`;
+    ics += `DESCRIPTION:${escICS(desc)}\r\n`;
+    ics += `URL:https://www.newlexcalendar.com\r\n`;
+    ics += 'END:VEVENT\r\n';
+    ics += 'END:VCALENDAR\r\n';
+
+    const filename = event.name.replace(/[^a-z0-9]+/gi, '_').slice(0, 50) || 'event';
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.ics"`);
+    res.send(ics);
+  } catch(e) {
+    console.error('iCal generation failed:', e);
+    res.status(500).send('Could not generate calendar file.');
+  }
+});
+
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 getDb().then(() => app.listen(PORT, () => console.log('NewLex Calendar on port ' + PORT)))
