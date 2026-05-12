@@ -93,11 +93,12 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
 
 /* Listing rows - one-line clickable */
 .listing-list{display:flex;flex-direction:column;gap:6px}
-.listing-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:border-color .15s,box-shadow .15s}
-.listing-row:hover{border-color:var(--border-md);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.listing-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:all .15s}
+.listing-row:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
+.listing-row:hover .listing-arrow{color:var(--amber);transform:translateX(3px)}
 .listing-name{font-size:15px;font-weight:700;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .listing-cat-tag{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
-.listing-arrow{color:var(--text3);font-size:14px;flex-shrink:0}
+.listing-arrow{color:var(--amber);font-size:18px;font-weight:700;flex-shrink:0;transition:transform .15s,color .15s}
 .no-listings{text-align:center;color:var(--text2);font-size:15px;padding:40px 0}
 
 /* Listing detail modal */
@@ -189,6 +190,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
     <div>
       <div class="section-title">📋 Business Directory</div>
       <div class="section-sub" id="listingCount">Loading listings…</div>
+      <div id="dirHelp" style="display:none;font-size:13px;color:var(--text3);font-style:italic;margin-top:8px;padding:8px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any business below to see contact info, address, and website.</div>
     </div>
   </div>
 
