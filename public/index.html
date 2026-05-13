@@ -1077,6 +1077,22 @@ function fmtDateFull(d) {
   return dt.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
 }
 
+// Auto-link URLs, phone numbers, and emails in plain text
+function linkify(text) {
+  if (!text) return '';
+  let escaped = esc(text);
+  // Linkify URLs (http://, https://, or starts with www. or has .com/.org/.net etc)
+  escaped = escaped.replace(/(https?:\/\/[^\s<]+)/gi, '<a href="$1" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600;text-decoration:underline">$1 ↗</a>');
+  escaped = escaped.replace(/(^|\s)(www\.[^\s<]+)/gi, '$1<a href="https://$2" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600;text-decoration:underline">$2 ↗</a>');
+  // Domain.com pattern (without http or www)
+  escaped = escaped.replace(/(^|\s)([a-zA-Z0-9-]+\.(com|org|net|edu|gov|io|co)(\/[^\s<]*)?)/gi, '$1<a href="https://$2" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600;text-decoration:underline">$2 ↗</a>');
+  // Linkify emails
+  escaped = escaped.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1" style="color:var(--blue);font-weight:600;text-decoration:underline">$1</a>');
+  // Linkify phone numbers (basic patterns: (xxx) xxx-xxxx, xxx-xxx-xxxx, xxx.xxx.xxxx)
+  escaped = escaped.replace(/(\(\d{3}\)\s*\d{3}[-.\s]?\d{4}|\d{3}[-.\s]\d{3}[-.\s]\d{4})/g, '<a href="tel:$1" style="color:var(--blue);font-weight:600;text-decoration:underline">📞 $1</a>');
+  return escaped;
+}
+
 function openEventDetail(ev) {
   const ad = getRandomAd();
   const catColor = cc(ev.cat);
@@ -1106,7 +1122,7 @@ function openEventDetail(ev) {
       <div class="ev-detail-info">
         <div class="ev-detail-row">
           <span class="ev-detail-label">📍 Location</span>
-          <span class="ev-detail-value">${esc(ev.location)}</span>
+          <span class="ev-detail-value">${linkify(ev.location)}</span>
         </div>
         <div class="ev-detail-row">
           <span class="ev-detail-label">📅 Date</span>
@@ -1122,7 +1138,7 @@ function openEventDetail(ev) {
         </div>
         <div class="ev-detail-row">
           <span class="ev-detail-label">📞 Contact</span>
-          <span class="ev-detail-value">${esc(ev.contact)}</span>
+          <span class="ev-detail-value">${linkify(ev.contact)}</span>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <a class="btn-amber btn-sm" style="flex:1;min-width:90px;text-align:center;text-decoration:none" href="/api/events/${ev.id}/ical">📅 Add to My Calendar</a>
