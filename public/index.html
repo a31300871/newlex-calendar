@@ -1273,8 +1273,34 @@ async function doImport(){
 }
 
 /* ── MODAL HELPERS ── */
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+/* ── MODAL HISTORY MANAGEMENT (mobile back button closes modal, not app) ── */
+window._modalStack = window._modalStack || [];
+function openModal(id){
+  const el = document.getElementById(id);
+  if (!el || el.classList.contains('open')) return;
+  el.classList.add('open');
+  window._modalStack.push(id);
+  try { history.pushState({ modalOpen: id }, ''); } catch(_) {}
+}
+function closeModal(id){
+  const el = document.getElementById(id);
+  if (!el || !el.classList.contains('open')) return;
+  const idx = window._modalStack.lastIndexOf(id);
+  if (idx === window._modalStack.length - 1 && idx >= 0) {
+    // It's the top of the stack — use back() to trigger unified close via popstate
+    try { history.back(); return; } catch(_) {}
+  }
+  // Fallback: close manually
+  el.classList.remove('open');
+  if (idx >= 0) window._modalStack.splice(idx, 1);
+}
+// On any back gesture (browser back, Android back, swipe back) close the topmost modal
+window.addEventListener('popstate', () => {
+  if (window._modalStack.length === 0) return;
+  const id = window._modalStack.pop();
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+});
 function modalOutsideClick(e,id){if(e.target.id===id)closeModal(id);}
 document.getElementById('srch').addEventListener('input',function(){srchQ=this.value;renderEvents();});
 
