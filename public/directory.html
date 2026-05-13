@@ -190,8 +190,13 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:14px 24p
 <div class="section">
   <div class="section-head">
     <div>
-      <div class="section-title">📋 Business Directory</div>
-      <div class="section-sub" id="listingCount">Loading listings…</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div class="section-title">📋 Business Directory</div>
+          <div class="section-sub" id="listingCount">Loading listings…</div>
+        </div>
+        <button id="adminAddBtn" class="btn-blue btn-sm" style="display:none;font-size:13px;padding:8px 14px" onclick="openAdminAddListing()">🔐 Admin: + Add Business</button>
+      </div>
       <div id="dirHelp" style="display:none;font-size:13px;color:var(--text3);font-style:italic;margin-top:8px;padding:8px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any business below to see contact info, address, and website.</div>
     </div>
   </div>
@@ -263,11 +268,11 @@ const CATS = [
 ];
 const catLabel = id => (CATS.find(c=>c.id===id)||CATS[CATS.length-1]).label;
 
-let listToken   = localStorage.getItem('nlcc_list_token') || null;
-let listingUser = JSON.parse(localStorage.getItem('nlcc_listing') || 'null');
-let calToken    = localStorage.getItem('nlcc_token') || null;
-let calUser     = JSON.parse(localStorage.getItem('nlcc_user') || 'null');
-const isAdmin   = !!(calUser && calUser.is_admin);
+// UNIFIED AUTH - shared with calendar page
+let calToken = localStorage.getItem('nlcc_token') || null;
+let calUser  = JSON.parse(localStorage.getItem('nlcc_user') || 'null');
+let isAdmin  = !!(calUser && calUser.is_admin);
+let myListings = [];      // user's owned listings
 let allListings = [];
 let allAdvs     = [];
 let catFilter   = 'all';
@@ -275,69 +280,65 @@ let srchQ       = '';
 
 async function api(path, opts={}) {
   const h = {'Content-Type':'application/json', ...(opts.headers||{})};
-  if (listToken) h['Authorization'] = 'Bearer ' + listToken;
+  if (calToken) h['Authorization'] = 'Bearer ' + calToken;
   const r = await fetch(API + path, {...opts, headers:h});
   const d = await r.json();
   if (!r.ok) throw new Error(d.error || 'Request failed');
   return d;
 }
 
-function setSession(token, listing) {
-  listToken   = token; listingUser = listing;
-  localStorage.setItem('nlcc_list_token', token);
-  localStorage.setItem('nlcc_listing', JSON.stringify(listing));
+function setSession(token, user) {
+  calToken = token; calUser = user;
+  isAdmin = !!(user && user.is_admin);
+  localStorage.setItem('nlcc_token', token);
+  localStorage.setItem('nlcc_user', JSON.stringify(user));
 }
 function clearSession() {
-  listToken = null; listingUser = null;
-  localStorage.removeItem('nlcc_list_token');
-  localStorage.removeItem('nlcc_listing');
+  calToken = null; calUser = null; isAdmin = false; myListings = [];
+  localStorage.removeItem('nlcc_token');
+  localStorage.removeItem('nlcc_user');
 }
 
-// Check URL params - verify session and activate listing
+async function refreshMyListings() {
+  if (!calToken) { myListings = []; return; }
+  try { myListings = await api('/api/listings/my'); }
+  catch(_) { myListings = []; }
+}
+
+// Check URL params - handle Stripe redirect
 function checkURLParams() {
   const p = new URLSearchParams(window.location.search);
   const b = document.getElementById('alertBanner');
-  if (p.get('success') === 'true') {
+  if (p.get('listing_paid') === '1') {
     const sessionId = p.get('session_id');
-    if (sessionId && listToken) {
-      verifySession(sessionId);
+    const listingId = p.get('listing_id');
+    if (sessionId && listingId && calToken) {
+      verifyListingPayment(sessionId, listingId);
     } else {
-      b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your listing is being activated…</div>`;
-      if (listToken) refreshListing();
+      b.innerHTML = `<div class="alert alert-warning">Payment received but we couldn't verify your session. Please log in and contact hello@newlexcalendar.com if needed.</div>`;
     }
     window.history.replaceState({}, '', '/directory');
   }
-  if (p.get('cancelled') === 'true') {
+  if (p.get('listing_canceled') === '1') {
     b.innerHTML = `<div class="alert alert-warning">Payment cancelled. No charge was made.</div>`;
     window.history.replaceState({}, '', '/directory');
   }
 }
 
-// Verify the Stripe session and activate the listing
-async function verifySession(sessionId) {
+async function verifyListingPayment(sessionId, listingId) {
   const b = document.getElementById('alertBanner');
   b.innerHTML = `<div class="alert alert-success">⏳ Activating your listing…</div>`;
   try {
-    const result = await api('/api/listings/verify-session', {
+    await api('/api/listings/my/verify-session', {
       method: 'POST',
-      body: JSON.stringify({ session_id: sessionId })
+      body: JSON.stringify({ session_id: sessionId, listing_id: listingId })
     });
-    listingUser = result.listing;
-    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
+    await refreshMyListings();
     await loadAll();
     b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your business listing is now live in the directory!</div>`;
-  } catch(e) {
-    b.innerHTML = `<div class="alert alert-warning">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@newlexcalendar.com">hello@newlexcalendar.com</a> with your business name and we will activate it manually.</div>`;
-  }
-}
-
-async function refreshListing() {
-  try {
-    listingUser = await api('/api/listings/me');
-    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
     renderNav();
   } catch(e) {
-    if (e.message.includes('expired')) { clearSession(); renderNav(); }
+    b.innerHTML = `<div class="alert alert-warning">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@newlexcalendar.com">hello@newlexcalendar.com</a>.</div>`;
   }
 }
 
@@ -445,6 +446,73 @@ function openListingDetail(idx) {
   document.getElementById('listingModal').classList.add('open');
 }
 
+function openAdminAddListing() {
+  document.getElementById('listingModalContent').innerHTML = `
+    <div class="modal-title">🔐 Admin: Add New Business</div>
+    <div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:14px">
+      Creating as admin. No payment will be charged. The listing will be active for 1 year.
+    </div>
+    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="aaBiz" placeholder="e.g. Joe's Diner"></div>
+    <div class="field"><label>Category</label>
+      <select id="aaCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Phone</label><input type="tel" id="aaPh" placeholder="(740) 555-1234"></div>
+    <div class="field"><label>Website</label><input type="text" id="aaWeb" placeholder="example.com"></div>
+    <div class="field"><label>Address</label><input type="text" id="aaAddr" placeholder="123 Main St, New Lexington OH"></div>
+    <div class="field"><label>Description</label><textarea id="aaDesc" style="height:70px;resize:none" placeholder="Brief description of the business..."></textarea></div>
+    <details style="margin-bottom:12px;font-size:13px">
+      <summary style="cursor:pointer;color:var(--text2);font-weight:600">Optional: Owner contact info</summary>
+      <div style="padding-top:8px">
+        <div class="field"><label>Owner Name (optional)</label><input type="text" id="aaOwnerName" placeholder="Defaults to business name"></div>
+        <div class="field"><label>Owner Email (optional)</label><input type="email" id="aaOwnerEmail" placeholder="Auto-generated if blank"></div>
+        <p style="font-size:11px;color:var(--text3);margin-top:-4px">If you don't provide owner info, the listing will be admin-managed.</p>
+      </div>
+    </details>
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="adminCreateListing()">Add Business</button>
+      <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
+    </div>
+    <div class="ok-msg" id="aaOk"></div>
+    <div class="err-msg" id="aaErr"></div>
+  `;
+  document.getElementById('listingModal').classList.add('open');
+}
+
+async function adminCreateListing() {
+  try {
+    const payload = {
+      business_name: document.getElementById('aaBiz').value.trim(),
+      category: document.getElementById('aaCat').value,
+      phone: document.getElementById('aaPh').value.trim(),
+      website: document.getElementById('aaWeb').value.trim(),
+      address: document.getElementById('aaAddr').value.trim(),
+      description: document.getElementById('aaDesc').value.trim(),
+      owner_name: document.getElementById('aaOwnerName').value.trim(),
+      owner_email: document.getElementById('aaOwnerEmail').value.trim()
+    };
+    if (!payload.business_name) {
+      document.getElementById('aaErr').textContent = 'Business name is required.';
+      return;
+    }
+    const r = await fetch('/api/admin/listings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + calToken
+      },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Create failed');
+    document.getElementById('aaOk').textContent = '✓ Business added!';
+    document.getElementById('aaErr').textContent = '';
+    await loadAll();
+    setTimeout(() => closeModal('listingModal'), 1200);
+  } catch(e) {
+    document.getElementById('aaErr').textContent = e.message;
+  }
+}
+
 function adminEditListing(idx) {
   const l = window._filteredListings[idx];
   if (!l) return;
@@ -532,12 +600,15 @@ document.getElementById('dirSearch').addEventListener('input', function() {
 function renderNav() {
   const el = document.getElementById('navUser');
   const floatCTA = document.getElementById('floatCTA');
-  if (floatCTA) floatCTA.style.display = listingUser ? 'none' : 'flex';
-  if (listingUser) {
+  const adminAddBtn = document.getElementById('adminAddBtn');
+  if (adminAddBtn) adminAddBtn.style.display = isAdmin ? 'inline-block' : 'none';
+  // Hide floating CTA only when user is logged in AND has at least one listing
+  if (floatCTA) floatCTA.style.display = 'flex';
+  if (calUser) {
     el.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 14px">
-        <span style="font-size:13px;color:#fff;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(listingUser.business_name)}</span>
-        <button onclick="openDashboard()" style="font-size:11px;padding:4px 10px;background:var(--amber);border:none;color:#fff;border-radius:100px;font-weight:600">My Listing</button>
+        <span style="font-size:13px;color:#fff;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(calUser.name)}${calUser.is_admin ? ' (Admin)' : ''}</span>
+        ${myListings.length > 0 ? `<button onclick="openMyListings()" style="font-size:11px;padding:4px 10px;background:var(--amber);border:none;color:#fff;border-radius:100px;font-weight:600">My Businesses (${myListings.length})</button>` : ''}
         <button onclick="doLogout()" style="font-size:11px;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.85);cursor:pointer;border-radius:100px;font-weight:600">Log out</button>
       </div>`;
   } else {
@@ -547,47 +618,45 @@ function renderNav() {
 
 function openSignIn() {
   document.getElementById('listingModal').classList.add('open');
-  renderListingModal('login');
+  renderAuthModal('login');
 }
 
 // Modal helpers
-function openModal(id) { document.getElementById(id).classList.add('open'); renderListingModal('register'); }
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (calUser) {
+    // Logged in - go straight to add business form
+    showAddBusinessForm();
+  } else {
+    renderAuthModal('register');
+  }
+}
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function modalOutside(e, id) { if (e.target.id === id) closeModal(id); }
 
-function openDashboard() {
+function openMyListings() {
   document.getElementById('listingModal').classList.add('open');
-  renderDashboard();
+  renderMyListings();
 }
 
-// Auth forms
-function renderListingModal(tab) {
-  if (listingUser) { renderDashboard(); return; }
+// Auth forms - now using calendar credentials
+function renderAuthModal(tab) {
   document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">${tab==='register' ? 'List Your Business' : 'Sign In to Your Listing'}</div>
+    <div class="modal-title">${tab==='register' ? 'Create Account' : 'Sign In'}</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Use one account for the calendar AND directory. Sign in once, manage everything.</p>
     <div class="auth-tabs">
-      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderListingModal('register')">Add My Business</button>
-      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderListingModal('login')">Existing Listing</button>
+      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderAuthModal('register')">Create Account</button>
+      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderAuthModal('login')">Sign In</button>
     </div>
     ${tab === 'register' ? `
       <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="lNm" placeholder="Your full name"></div>
-      <div class="field"><label>Your Email <span class="req">*</span></label><input type="email" id="lEm" placeholder="you@email.com"></div>
+      <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="lEm" placeholder="you@email.com"></div>
       <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="lPw" placeholder="6+ characters"></div>
-      <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="lBiz" placeholder="Your business name"></div>
-      <div class="field"><label>Category <span class="req">*</span></label>
-        <select id="lCat">
-          ${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}
-        </select>
-      </div>
-      <div class="field"><label>Phone</label><input type="tel" id="lPh" placeholder="(740) 555-1234"></div>
-      <div class="field"><label>Website</label><input type="text" id="lWeb" placeholder="https://yourbusiness.com"></div>
-      <div class="field"><label>Address</label><input type="text" id="lAddr" placeholder="123 Main St, New Lexington, OH"></div>
-      <div class="field"><label>Short Description</label><textarea id="lDesc" placeholder="Tell people what your business does (2-3 sentences)" style="height:70px;resize:none"></textarea></div>
+      <div class="field"><label>Address <span class="req">*</span></label><input type="text" id="lAddr" placeholder="New Lexington, OH"></div>
       <div class="modal-actions">
-        <button class="btn-amber" onclick="doRegister()">Continue to Payment →</button>
+        <button class="btn-amber" onclick="doRegister()">Create Account</button>
         <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
       </div>
-      <p style="font-size:12px;color:var(--text3);margin-top:10px;text-align:center">After registering you'll pay $1 once. Your listing stays live for 1 year. We'll reach out before it expires.</p>
       <div class="err-msg" id="lErr"></div>
     ` : `
       <div class="field"><label>Email</label><input type="email" id="lEm" placeholder="you@email.com"></div>
@@ -603,65 +672,131 @@ function renderListingModal(tab) {
 async function doRegister() {
   try {
     const payload = {
-      owner_name: document.getElementById('lNm').value.trim(),
-      owner_email: document.getElementById('lEm').value.trim(),
+      name:     document.getElementById('lNm').value.trim(),
+      email:    document.getElementById('lEm').value.trim(),
       password: document.getElementById('lPw').value,
-      business_name: document.getElementById('lBiz').value.trim(),
-      category: document.getElementById('lCat').value,
-      phone: document.getElementById('lPh').value.trim(),
-      website: document.getElementById('lWeb').value.trim(),
-      address: document.getElementById('lAddr').value.trim(),
-      description: document.getElementById('lDesc').value.trim(),
+      address:  document.getElementById('lAddr').value.trim() || 'New Lexington, OH'
     };
-    const { token, listing } = await api('/api/listings/register', { method:'POST', body:JSON.stringify(payload) });
-    setSession(token, listing);
+    const { token, user } = await api('/api/auth/register', { method:'POST', body:JSON.stringify(payload) });
+    setSession(token, user);
+    await refreshMyListings();
     renderNav();
-    // Go straight to payment
-    await startPayment();
+    showAddBusinessForm();
   } catch(e) { document.getElementById('lErr').textContent = e.message; }
 }
 
 async function doLogin() {
   try {
-    const { token, listing } = await api('/api/listings/login', { method:'POST', body:JSON.stringify({
+    const { token, user } = await api('/api/auth/login', { method:'POST', body:JSON.stringify({
       email: document.getElementById('lEm').value.trim(),
-      password: document.getElementById('lPw').value,
+      password: document.getElementById('lPw').value
     })});
-    setSession(token, listing);
+    setSession(token, user);
+    await refreshMyListings();
     renderNav();
-    renderDashboard();
+    if (myListings.length > 0) renderMyListings();
+    else showAddBusinessForm();
   } catch(e) { document.getElementById('lErr').textContent = e.message; }
 }
 
-async function startPayment() {
-  try {
-    const { url } = await api('/api/listings/checkout', { method:'POST' });
-    window.location.href = url;
-  } catch(e) {
-    document.getElementById('listingModalContent').innerHTML += `<div class="err-msg">${esc(e.message)}</div>`;
-  }
+// Add Business form (for already logged-in users)
+function showAddBusinessForm() {
+  document.getElementById('listingModalContent').innerHTML = `
+    <div class="modal-title">+ Add Your Business — $1 / year</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Hi <strong>${esc(calUser.name)}</strong>! Tell us about your business. After paying $1, your listing stays live for one full year.</p>
+    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="lBiz" placeholder="Your business name"></div>
+    <div class="field"><label>Category <span class="req">*</span></label>
+      <select id="lCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Phone</label><input type="tel" id="lPh" placeholder="(740) 555-1234"></div>
+    <div class="field"><label>Website</label><input type="text" id="lWeb" placeholder="example.com"></div>
+    <div class="field"><label>Address</label><input type="text" id="lAddr" placeholder="123 Main St, New Lexington, OH"></div>
+    <div class="field"><label>Short Description</label><textarea id="lDesc" placeholder="Tell people what your business does (2-3 sentences)" style="height:70px;resize:none"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="createListingAndPay()">Continue to Payment — $1 →</button>
+      <button class="btn-ghost" onclick="${myListings.length > 0 ? 'renderMyListings()' : 'closeModal(\'listingModal\')'}">Cancel</button>
+    </div>
+    <div class="err-msg" id="lErr"></div>`;
 }
 
-// Dashboard
-function renderDashboard() {
-  const l = listingUser;
-  if (!l) return;
+async function createListingAndPay() {
+  try {
+    const businessName = document.getElementById('lBiz').value.trim();
+    if (!businessName) {
+      document.getElementById('lErr').textContent = 'Business name is required.';
+      return;
+    }
+    // Create the listing (pending status)
+    const listing = await api('/api/listings/create', { method:'POST', body:JSON.stringify({
+      business_name: businessName,
+      category:      document.getElementById('lCat').value,
+      phone:         document.getElementById('lPh').value.trim(),
+      website:       document.getElementById('lWeb').value.trim(),
+      address:       document.getElementById('lAddr').value.trim(),
+      description:   document.getElementById('lDesc').value.trim(),
+    })});
+    // Immediately start Stripe checkout
+    const { url } = await api('/api/listings/' + listing.id + '/checkout', { method:'POST' });
+    window.location.href = url;
+  } catch(e) { document.getElementById('lErr').textContent = e.message; }
+}
+
+// My Listings - dashboard showing all of the user's businesses
+function renderMyListings() {
+  if (!calUser) { renderAuthModal('login'); return; }
   const statusMap = { active:'● Active', pending:'● Pending Payment', expired:'● Expired' };
   const statusCls = { active:'status-active', pending:'status-pending', expired:'status-expired' };
-  const exp = l.expires_at ? new Date(l.expires_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '—';
-
   document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">My Business Listing</div>
-    <span class="status-pill ${statusCls[l.status]||'status-pending'}">${statusMap[l.status]||l.status}</span>
-    ${l.status !== 'active' ? `
-      <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--r);padding:12px 14px;font-size:13px;color:#92400E;margin-bottom:16px">
-        ${l.status==='pending' ? '💳 Complete your $1 payment to make your listing live.' : '🔄 Your listing has expired. Renew for $1 one-time to go live again.'}
-        <br><button class="btn-amber" style="margin-top:10px;font-size:13px;padding:7px 16px" onclick="startPayment()">
-          ${l.status==='pending' ? 'Complete Payment — $1 one-time' : 'Renew — $1 one-time'}
-        </button>
-      </div>` : `<p style="font-size:13px;color:var(--text2);margin-bottom:16px">Active until <strong>${exp}</strong> · $1 one-time</p>`}
+    <div class="modal-title">My Businesses</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Manage all the businesses you've added to the directory.</p>
+    ${myListings.length === 0 ? `
+      <div style="background:var(--surface2);padding:20px;border-radius:var(--r);text-align:center;color:var(--text2);margin-bottom:14px">
+        You haven't added any businesses yet.
+      </div>
+    ` : myListings.map(l => `
+      <div style="border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:6px">
+          <div>
+            <div style="font-weight:700;font-size:15px">${esc(l.business_name)}</div>
+            <div style="font-size:12px;color:var(--text2)">${esc(catLabel(l.category))}</div>
+          </div>
+          <span class="status-pill ${statusCls[l.status]||'status-pending'}" style="font-size:10px">${statusMap[l.status]||l.status}</span>
+        </div>
+        ${l.status === 'pending' ? `
+          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">💳 Complete Payment — $1</button>
+        ` : ''}
+        ${l.status === 'expired' ? `
+          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">🔄 Renew — $1</button>
+        ` : ''}
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn-sm" style="flex:1;font-size:12px;background:var(--surface2);border:1px solid var(--border-md);color:var(--text)" onclick="editMyListing(${l.id})">✏️ Edit</button>
+          ${l.status === 'active' ? `<button class="btn-sm" style="flex:1;font-size:12px;background:var(--surface2);border:1px solid var(--border-md);color:var(--danger)" onclick="cancelMyListing(${l.id})">Cancel</button>` : ''}
+        </div>
+      </div>
+    `).join('')}
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-amber" onclick="showAddBusinessForm()">+ Add Another Business — $1</button>
+      <button class="btn-ghost" onclick="closeModal('listingModal')">Close</button>
+    </div>
+    <div class="upgrade-box">
+      <p>⭐ <strong>Want more visibility?</strong> Upgrade any business to a Premium Ad — featured at the top AND popup ad on the calendar.</p>
+      <a href="/advertise?tier=premium" class="btn-amber" style="font-size:13px;padding:7px 16px;display:inline-block;text-decoration:none">Premium Ad — $50/mo →</a>
+    </div>`;
+}
 
-    <div class="field"><label>Business Name</label><input type="text" id="dBiz" value="${esc(l.business_name)}"></div>
+async function payForListing(id) {
+  try {
+    const { url } = await api('/api/listings/' + id + '/checkout', { method:'POST' });
+    window.location.href = url;
+  } catch(e) { alert('Payment error: ' + e.message); }
+}
+
+function editMyListing(id) {
+  const l = myListings.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('listingModalContent').innerHTML = `
+    <div class="modal-title">Edit Business</div>
+    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="dBiz" value="${esc(l.business_name)}"></div>
     <div class="field"><label>Category</label>
       <select id="dCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}"${l.category===c.id?' selected':''}>${c.label}</option>`).join('')}</select>
     </div>
@@ -670,26 +805,16 @@ function renderDashboard() {
     <div class="field"><label>Address</label><input type="text" id="dAddr" value="${esc(l.address||'')}"></div>
     <div class="field"><label>Description</label><textarea id="dDesc" style="height:70px;resize:none">${esc(l.description||'')}</textarea></div>
     <div class="modal-actions">
-      <button class="btn-navy" onclick="saveEdits()">Save Changes</button>
-      <button class="btn-ghost" onclick="closeModal('listingModal')">Close</button>
+      <button class="btn-amber" onclick="saveMyListing(${id})">Save Changes</button>
+      <button class="btn-ghost" onclick="renderMyListings()">Back</button>
     </div>
     <div class="ok-msg"  id="dOk"></div>
-    <div class="err-msg" id="dErr"></div>
-    <hr class="divider">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <button class="btn-danger" style="font-size:13px" onclick="confirmCancel()">Cancel Listing</button>
-      <button class="btn-ghost" style="font-size:13px" onclick="doLogout()">Sign Out</button>
-    </div>
-
-    <div class="upgrade-box">
-      <p>⭐ <strong>Want more visibility?</strong> Upgrade to a Premium Ad — your business appears in a featured card at the top of this directory AND as a popup ad on the community calendar.</p>
-      <a href="/advertise?tier=premium" class="btn-amber" style="font-size:13px;padding:7px 16px;display:inline-block;text-decoration:none">Upgrade to Premium Ad — $50/mo →</a>
-    </div>`;
+    <div class="err-msg" id="dErr"></div>`;
 }
 
-async function saveEdits() {
+async function saveMyListing(id) {
   try {
-    const updated = await api('/api/listings/me', { method:'PUT', body: JSON.stringify({
+    await api('/api/listings/my/' + id, { method:'PUT', body: JSON.stringify({
       business_name: document.getElementById('dBiz').value.trim(),
       category:      document.getElementById('dCat').value,
       phone:         document.getElementById('dPh').value.trim(),
@@ -697,23 +822,20 @@ async function saveEdits() {
       address:       document.getElementById('dAddr').value.trim(),
       description:   document.getElementById('dDesc').value.trim(),
     })});
-    listingUser = { ...listingUser, ...updated };
-    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
+    await refreshMyListings();
     await loadAll();
-    document.getElementById('dOk').textContent  = '✓ Saved!';
-    document.getElementById('dErr').textContent = '';
-    setTimeout(() => { const el = document.getElementById('dOk'); if(el) el.textContent=''; }, 3000);
+    document.getElementById('dOk').textContent = '✓ Saved!';
+    setTimeout(() => renderMyListings(), 1200);
   } catch(e) { document.getElementById('dErr').textContent = e.message; }
 }
 
-async function confirmCancel() {
-  if (!confirm('Cancel your listing? It will be removed from the directory at the end of the current year.')) return;
+async function cancelMyListing(id) {
+  if (!confirm('Cancel this listing? It will be hidden from the directory immediately.')) return;
   try {
-    await api('/api/listings/cancel', { method:'POST' });
-    listingUser.status = 'expired';
-    localStorage.setItem('nlcc_listing', JSON.stringify(listingUser));
-    renderDashboard();
+    await api('/api/listings/my/' + id + '/cancel', { method:'POST' });
+    await refreshMyListings();
     await loadAll();
+    renderMyListings();
   } catch(e) { alert(e.message); }
 }
 
@@ -723,11 +845,13 @@ function doLogout() { clearSession(); renderNav(); closeModal('listingModal'); }
 let inactivityTimer = null;
 function resetInactivityTimer() {
   clearTimeout(inactivityTimer);
-  if (!listingUser) return;
+  if (!calUser) return;
+  // Admin gets shorter timeout (15min); regular users 60min
+  const timeoutMs = calUser.is_admin ? 15 * 60 * 1000 : 60 * 60 * 1000;
   inactivityTimer = setTimeout(() => {
     doLogout();
     showInactivityNotice();
-  }, 30 * 60 * 1000);
+  }, timeoutMs);
 }
 function showInactivityNotice() {
   const notice = document.createElement('div');
@@ -743,9 +867,12 @@ function showInactivityNotice() {
 // Init
 checkURLParams();
 renderCatChips();
-renderNav();
-loadAll();
-resetInactivityTimer();
+(async () => {
+  await refreshMyListings();
+  renderNav();
+  await loadAll();
+  resetInactivityTimer();
+})();
 </script>
 <!-- FLOATING STICKY CTA -->
 <a href="#" onclick="openModal('listingModal');return false" id="floatCTA" style="position:fixed;bottom:20px;right:20px;background:var(--amber);color:#fff;font-size:14px;font-weight:700;padding:14px 22px;border-radius:100px;text-decoration:none;box-shadow:0 6px 20px rgba(186,117,23,.4);z-index:500;display:flex;align-items:center;gap:6px;transition:transform .15s,box-shadow .15s">
