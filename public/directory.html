@@ -466,7 +466,7 @@ async function openDirZipPicker(){
       <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
     </div>
     <div class="err-msg" id="zipErr"></div>`;
-  document.getElementById('listingModal').classList.add('open');
+  _showModal('listingModal');
 }
 function selectDirZip(z){ document.getElementById('zipInput').value = z; saveDirZip(); }
 async function saveDirZip(){
@@ -582,7 +582,7 @@ function openListingDetail(idx) {
         <div class="err-msg" id="adminErr"></div>
       </div>` : ''}
   `;
-  document.getElementById('listingModal').classList.add('open');
+  _showModal('listingModal');
 }
 
 function openAdminAddListing() {
@@ -614,7 +614,7 @@ function openAdminAddListing() {
     <div class="ok-msg" id="aaOk"></div>
     <div class="err-msg" id="aaErr"></div>
   `;
-  document.getElementById('listingModal').classList.add('open');
+  _showModal('listingModal');
 }
 
 async function adminCreateListing() {
@@ -760,30 +760,59 @@ function renderNav() {
 }
 
 function openRegister() {
-  document.getElementById('listingModal').classList.add('open');
+  _showModal('listingModal');
   renderAuthModal('register');
 }
 
 function openSignIn() {
-  document.getElementById('listingModal').classList.add('open');
+  _showModal('listingModal');
   renderAuthModal('login');
 }
 
 // Modal helpers
+/* ── MODAL HISTORY MANAGEMENT (mobile back button closes modal) ── */
+window._modalStack = window._modalStack || [];
+
+function _showModal(id) {
+  const el = document.getElementById(id);
+  if (!el || el.classList.contains('open')) return false;
+  el.classList.add('open');
+  window._modalStack.push(id);
+  try { history.pushState({ modalOpen: id }, ''); } catch(_) {}
+  return true;
+}
+
 function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  if (calUser) {
-    // Logged in - go straight to add business form
-    showAddBusinessForm();
-  } else {
-    renderAuthModal('register');
+  if (_showModal(id)) {
+    if (calUser) {
+      showAddBusinessForm();
+    } else {
+      renderAuthModal('register');
+    }
   }
 }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (!el || !el.classList.contains('open')) return;
+  const idx = window._modalStack.lastIndexOf(id);
+  if (idx === window._modalStack.length - 1 && idx >= 0) {
+    try { history.back(); return; } catch(_) {}
+  }
+  el.classList.remove('open');
+  if (idx >= 0) window._modalStack.splice(idx, 1);
+}
+
+window.addEventListener('popstate', () => {
+  if (window._modalStack.length === 0) return;
+  const id = window._modalStack.pop();
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+});
 function modalOutside(e, id) { if (e.target.id === id) closeModal(id); }
 
 function openMyListings() {
-  document.getElementById('listingModal').classList.add('open');
+  _showModal('listingModal');
   renderMyListings();
 }
 
