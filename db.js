@@ -85,7 +85,9 @@ async function getDb() {
   try { await _db.run("ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN phone TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN tier TEXT NOT NULL DEFAULT 'basic'"); } catch(_) {}
-  // listings table is created above if not exists
+  // listings: link to community user (unified auth)
+  try { await _db.run("ALTER TABLE listings ADD COLUMN user_id INTEGER REFERENCES users(id)"); } catch(_) {}
+  try { await _db.run("CREATE INDEX IF NOT EXISTS idx_listings_user ON listings(user_id)"); } catch(_) {}
 
   const { c } = await _db.get('SELECT COUNT(*) AS c FROM users');
   if (c === 0) {
