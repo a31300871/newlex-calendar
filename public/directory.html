@@ -148,8 +148,11 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 .det-row{display:flex;flex-direction:column;gap:2px}
 .det-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
 .det-value{font-size:14px;color:var(--text)}
-.det-value a{color:var(--blue);text-decoration:none;font-weight:500}
-.det-value a:hover{text-decoration:underline}
+.det-value a{color:var(--blue);text-decoration:underline;font-weight:600;word-break:break-word}
+.det-value a:hover{color:#1A3E8A;text-decoration:underline;background:rgba(35,85,181,.08);padding:0 2px;border-radius:3px}
+.det-value a::before{content:'🔗 ';font-size:11px;margin-right:2px;text-decoration:none;display:inline-block}
+.det-value a[href^="tel:"]::before{content:'';margin:0}
+.det-value a[href^="mailto:"]::before{content:'';margin:0}
 .admin-bar{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
 
 /* ── CTA BANNER ── */
@@ -493,7 +496,7 @@ function openListingDetail(idx) {
     <div class="det-info">
       ${l.address ? `<div class="det-row"><span class="det-label">📍 Location</span><span class="det-value">${esc(l.address)}</span></div>` : ''}
       ${l.phone   ? `<div class="det-row"><span class="det-label">📞 Phone</span><span class="det-value"><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></span></div>` : ''}
-      ${websiteUrl? `<div class="det-row"><span class="det-label">🌐 Website</span><span class="det-value"><a href="${esc(websiteUrl)}" target="_blank" rel="noopener">${esc(l.website)}</a></span></div>` : ''}
+      ${websiteUrl? `<div class="det-row"><span class="det-label">🌐 Website</span><span class="det-value"><a href="${esc(websiteUrl)}" target="_blank" rel="noopener" style="color:var(--blue);font-weight:700;text-decoration:underline">${esc(l.website)} ↗</a></span></div>` : ''}
     </div>
     ${isAdmin ? `
       <div class="admin-bar">
