@@ -60,6 +60,27 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 .nav-btn.active{color:var(--amber-mid);background:rgba(186,117,23,.20);border-color:rgba(186,117,23,.35)}
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
 .nav-user{font-size:13px;color:#fff;font-weight:600}
+
+/* Unified Sign In / Register buttons (match calendar page) */
+.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
+.signin-btn{color:#fff;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.30)}
+.signin-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
+.register-btn{color:var(--navy);background:var(--amber-mid);border:1.5px solid var(--amber-mid)}
+.register-btn:hover{background:#FFB740;border-color:#FFB740;color:var(--navy)}
+.auth-buttons{display:flex;align-items:center;gap:6px}
+.user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 6px;min-width:0;position:relative}
+.user-pill .avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user-pill .user-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;padding:0 4px}
+.user-pill .pill-btn{font-size:11px;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.85);cursor:pointer;border-radius:100px;font-weight:600;white-space:nowrap;font-family:var(--font-body)}
+.user-pill .pill-btn:hover{background:rgba(255,255,255,.10);color:#fff}
+.user-pill .pill-btn.amber{background:var(--amber);border-color:var(--amber);color:#fff}
+.user-pill .pill-btn.amber:hover{background:var(--amber-dk)}
+@media(max-width:480px){
+  .signin-btn,.register-btn{font-size:12px;padding:6px 11px}
+  .user-pill .user-name{max-width:80px;font-size:12px}
+  .user-pill .pill-btn{font-size:10px;padding:3px 8px}
+  .user-pill .avatar{width:26px;height:26px;font-size:11px}
+}
 @media(max-width:600px){
   .nav-btn{font-size:13px;padding:7px 12px;gap:6px}
   .nav-btn svg{width:18px;height:18px}
@@ -643,18 +664,27 @@ function renderNav() {
   const floatCTA = document.getElementById('floatCTA');
   const adminAddBtn = document.getElementById('adminAddBtn');
   if (adminAddBtn) adminAddBtn.style.display = isAdmin ? 'inline-block' : 'none';
-  // Hide floating CTA only when user is logged in AND has at least one listing
   if (floatCTA) floatCTA.style.display = 'flex';
   if (calUser) {
+    const ini = (calUser.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 14px">
-        <span style="font-size:13px;color:#fff;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(calUser.name)}${calUser.is_admin ? ' (Admin)' : ''}</span>
-        ${myListings.length > 0 ? `<button onclick="openMyListings()" style="font-size:11px;padding:4px 10px;background:var(--amber);border:none;color:#fff;border-radius:100px;font-weight:600">My Businesses (${myListings.length})</button>` : ''}
-        <button onclick="doLogout()" style="font-size:11px;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.85);cursor:pointer;border-radius:100px;font-weight:600">Log out</button>
+      <div class="user-pill">
+        <div class="avatar">${esc(ini)}</div>
+        <span class="user-name">${esc(calUser.name)}${calUser.is_admin ? ' ★' : ''}</span>
+        ${myListings.length > 0 ? `<button class="pill-btn amber" onclick="openMyListings()">My Businesses (${myListings.length})</button>` : ''}
+        <button class="pill-btn" onclick="doLogout()">Log out</button>
       </div>`;
   } else {
-    el.innerHTML = `<button onclick="openSignIn()" style="font-size:13px;padding:6px 14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:var(--r)">Sign In</button>`;
+    el.innerHTML = `<div class="auth-buttons">
+      <button class="register-btn" onclick="openRegister()">Register</button>
+      <button class="signin-btn" onclick="openSignIn()">Sign In</button>
+    </div>`;
   }
+}
+
+function openRegister() {
+  document.getElementById('listingModal').classList.add('open');
+  renderAuthModal('register');
 }
 
 function openSignIn() {
