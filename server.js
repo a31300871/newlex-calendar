@@ -516,6 +516,32 @@ app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Admin: edit any listing
+app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
+  try {
+    const { business_name, category, phone, website, address, description, status } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const db = await getDb();
+    const existing = await db.get('SELECT * FROM listings WHERE id=?', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: 'Listing not found.' });
+    await db.run(
+      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=?,status=? WHERE id=?',
+      [
+        business_name.trim(),
+        category || 'other',
+        phone?.trim() || '',
+        website?.trim() || '',
+        address?.trim() || '',
+        description?.trim() || '',
+        status || existing.status,
+        req.params.id
+      ]
+    );
+    const updated = await db.get('SELECT * FROM listings WHERE id=?', [req.params.id]);
+    res.json(safeListing(updated));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 function safeListing(l) {
   return { id:l.id, owner_name:l.owner_name, owner_email:l.owner_email, business_name:l.business_name,
     category:l.category, phone:l.phone||'', website:l.website||'', address:l.address||'',
