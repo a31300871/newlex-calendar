@@ -21,7 +21,7 @@
   --blue:#2355B5;--blue-lt:#EEF4FF;
   --font-head:'Playfair Display',Georgia,serif;
   --font-body:'Source Sans 3',system-ui,sans-serif;
-  --hdr-h:68px;--about-h:34px;--spon-h:90px;--r:8px;--r-lg:14px;
+  --hdr-h:118px;--about-h:0px;--spon-h:90px;--r:8px;--r-lg:14px;
 }
 html{font-size:16px}
 body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5;
@@ -55,14 +55,14 @@ button:active{opacity:.8}
 
 /* ── FIXED HEADER ── */
 #hdr{
-  position:fixed;top:0;left:0;right:0;z-index:200;height:var(--hdr-h);
+  position:fixed;top:0;left:0;right:0;z-index:200;
   background:var(--navy);border-bottom:4px solid var(--amber);
-  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 16px;gap:8px
+  padding:10px 16px 10px;
 }
-.hdr-left{display:flex;align-items:center;gap:8px}
-.hdr-center{text-align:center}
-.hdr-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;line-height:1.2}
-.hdr-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.hdr-row1{display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:10px;min-height:42px}
+.hdr-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;line-height:1.15;text-align:center}
+.hdr-right{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px}
+.hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 12px 5px 6px;min-width:0}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .user-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
@@ -71,35 +71,112 @@ button:active{opacity:.8}
 .signin-btn{font-size:13px;padding:6px 14px;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);white-space:nowrap;flex-shrink:0}
 .signin-btn:hover{background:rgba(255,255,255,.20)}
 
-/* ── ABOUT BAR ── */
-#aboutBar{
-  position:fixed;top:var(--hdr-h);left:0;right:0;z-index:199;
-  height:var(--about-h);background:var(--navy2);
-  border-bottom:1px solid rgba(255,255,255,.08);
-  display:flex;align-items:center;justify-content:center;gap:4px;
-  padding:0 12px;
+/* ── BIG NAV BUTTONS ── */
+.nav-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 16px;border-radius:100px;
+  font-size:15px;font-weight:700;color:rgba(255,255,255,.7);
+  background:transparent;border:1.5px solid transparent;
+  text-decoration:none;transition:all .15s;cursor:pointer;
+  font-family:var(--font-body);white-space:nowrap;
 }
-.nav-icon-link{
-  font-size:13px;color:rgba(255,255,255,.65);text-decoration:none;
-  padding:5px 14px;border-radius:100px;transition:background .15s,color .15s;
-  font-weight:600;white-space:nowrap
+.nav-btn:hover{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.15)}
+.nav-btn.active{color:var(--amber-mid);background:rgba(186,117,23,.20);border-color:rgba(186,117,23,.35)}
+.nav-btn svg{width:22px;height:22px;flex-shrink:0}
+@media(max-width:600px){
+  .nav-btn{font-size:13px;padding:7px 12px;gap:6px}
+  .nav-btn svg{width:18px;height:18px}
+  .hdr-title{font-size:17px}
 }
-.nav-icon-link:hover{background:rgba(255,255,255,.08);color:#fff}
-.nav-icon-link.active{background:rgba(186,117,23,.18);color:var(--amber-mid)}
 
 /* ── PAGE ── */
 #page{max-width:900px;margin:0 auto;padding:18px 16px 0}
-.search-wrap{position:relative;margin-bottom:14px}
-.search-wrap input{padding-left:44px;font-size:16px;height:50px;border-radius:10px}
-.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text3);pointer-events:none}
+.search-wrap{
+  display:flex;align-items:center;gap:4px;
+  background:var(--surface);border:1.5px solid var(--border-md);
+  border-radius:10px;padding:5px;margin-bottom:8px;
+  transition:border-color .15s,box-shadow .15s
+}
+.search-wrap:focus-within{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+.search-wrap input{
+  border:none;background:transparent;padding:8px 10px;
+  flex:1;outline:none;font-size:16px;height:auto;min-width:0;
+}
+.search-wrap input:focus{box-shadow:none;border:none}
 
-/* Date quick filters */
-.date-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.date-chip{font-size:13px;padding:5px 13px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;user-select:none}
-.date-chip:hover{background:var(--surface2)}
-.date-chip.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+/* Filter pill (inside search bar, left side) */
+.filter-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;background:var(--surface2);
+  border:1.5px solid var(--border);border-radius:100px;
+  font-size:13px;font-weight:700;color:var(--text);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  font-family:var(--font-body);transition:all .15s
+}
+.filter-pill svg{width:14px;height:14px}
+.filter-pill:hover{background:var(--amber-lt);border-color:var(--amber)}
+.filter-pill.has-active{background:var(--amber);color:#fff;border-color:var(--amber)}
+.filter-pill.has-active:hover{background:var(--amber-dk)}
+.filter-badge{
+  background:#fff;color:var(--amber);
+  font-size:10px;font-weight:800;
+  padding:1px 6px;border-radius:100px;
+  min-width:18px;text-align:center;
+}
+.filter-pill:not(.has-active) .filter-badge{background:var(--amber);color:#fff}
 
-/* Category filters */
+/* Filter dropdown menu */
+.filter-menu{
+  display:none;background:var(--surface);
+  border:1.5px solid var(--border-md);border-radius:var(--r-lg);
+  padding:14px;margin-bottom:14px;
+  box-shadow:0 6px 20px rgba(0,0,0,.08)
+}
+.filter-menu.open{display:block}
+.filter-section{margin-bottom:14px}
+.filter-section:last-child{margin-bottom:0}
+.filter-section-label{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text3);
+  margin-bottom:7px
+}
+.filter-select{
+  width:100%;padding:10px 14px;font-size:14px;
+  border:1.5px solid var(--border-md);border-radius:var(--r);
+  background:var(--surface);cursor:pointer;font-weight:600;
+  color:var(--text)
+}
+.filter-cats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+@media(max-width:480px){.filter-cats{grid-template-columns:1fr}}
+.filter-cat-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border:1.5px solid var(--border-md);
+  border-radius:var(--r);cursor:pointer;font-size:13px;
+  transition:all .15s;user-select:none;font-weight:500
+}
+.filter-cat-item:hover{background:var(--surface2)}
+.filter-cat-item.on{
+  background:var(--amber-lt);border-color:var(--amber);
+  color:var(--amber-dk);font-weight:700
+}
+.filter-cat-item input{
+  margin:0;width:16px;height:16px;
+  accent-color:var(--amber);cursor:pointer;flex-shrink:0
+}
+.cat-dot{
+  width:9px;height:9px;border-radius:50%;flex-shrink:0
+}
+.filter-clear{
+  display:block;width:100%;margin-top:10px;
+  padding:9px;font-size:13px;font-weight:700;
+  border:1.5px solid var(--border-md);border-radius:var(--r);
+  background:var(--surface2);color:var(--text2);
+  cursor:pointer;transition:all .15s
+}
+.filter-clear:hover{background:var(--surface);color:var(--amber);border-color:var(--amber)}
+
+/* Category filters (legacy - kept for any references) */
 .toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:7px;flex:1}
 .filter-label{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
@@ -275,7 +352,7 @@ button:active{opacity:.8}
 
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
-  :root{--hdr-h:60px;--about-h:30px;--spon-h:80px}
+  :root{--hdr-h:108px;--about-h:0px;--spon-h:80px}
   .hdr-title{font-size:15px}
   #addEventBtn{font-size:12px;padding:7px 11px}
   .user-name{display:none}
@@ -286,7 +363,6 @@ button:active{opacity:.8}
   .frow{grid-template-columns:1fr}
   .spon-card{min-width:140px}
   .about-dot{display:none}
-  #aboutBar{font-size:12px;justify-content:center}
 }
 @media(max-width:400px){
   .hdr-title{font-size:13px}
@@ -298,21 +374,40 @@ button:active{opacity:.8}
 
 <!-- FIXED HEADER -->
 <header id="hdr">
-  <div class="hdr-left">
-    <button id="addEventBtn" onclick="clickAddEvent()">+ ADD EVENT</button>
-  </div>
-  <div class="hdr-center">
+  <div class="hdr-row1">
     <div class="hdr-title">New Lexington &amp; Area<br>Community Calendar</div>
+    <div class="hdr-right" id="authArea"></div>
   </div>
-  <div class="hdr-right" id="authArea"></div>
+  <div class="hdr-row2">
+    <a href="/" class="nav-btn active" aria-label="Calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="2"/>
+        <path d="M3 10h18M8 3v4M16 3v4"/>
+        <circle cx="8" cy="15" r="1" fill="currentColor"/>
+        <circle cx="12" cy="15" r="1" fill="currentColor"/>
+        <circle cx="16" cy="15" r="1" fill="currentColor"/>
+      </svg>
+      Calendar
+    </a>
+    <a href="/advertise" class="nav-btn" aria-label="Advertise">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11v3l13 5V6L3 11z"/>
+        <path d="M18 9c1 1 1 5 0 6"/>
+        <path d="M20.5 7c2 2 2 8 0 10"/>
+      </svg>
+      Advertise
+    </a>
+    <a href="/directory" class="nav-btn" aria-label="Directory">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l1.5-5h15L21 9"/>
+        <path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/>
+        <path d="M9 21v-6h6v6"/>
+        <path d="M3 9c0 1.5 1 2.5 2.5 2.5S8 10.5 8 9M8 9c0 1.5 1 2.5 2.5 2.5S13 10.5 13 9M13 9c0 1.5 1 2.5 2.5 2.5S18 10.5 18 9M18 9c0 1.5 1 2.5 2.5 2.5S21 10.5 21 9"/>
+      </svg>
+      Directory
+    </a>
+  </div>
 </header>
-
-<!-- ABOUT BAR / SUB-NAV -->
-<div id="aboutBar">
-  <a href="/" class="nav-icon-link active">📅 Calendar</a>
-  <a href="/advertise" class="nav-icon-link">📢 Advertise</a>
-  <a href="/directory" class="nav-icon-link">📋 Directory</a>
-</div>
 
 <!-- TOAST -->
 <div id="toast">📋 Copied to clipboard!</div>
@@ -320,18 +415,19 @@ button:active{opacity:.8}
 <!-- PAGE BODY -->
 <div id="page">
   <div class="search-wrap" style="margin-top:16px">
-    <span class="search-icon">🔍</span>
+    <button class="filter-pill" id="filterPill" onclick="toggleFilterMenu(event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M6 12h12M10 18h4"/>
+      </svg>
+      Filter
+      <span class="filter-badge" id="filterBadge" style="display:none">0</span>
+    </button>
     <input type="text" id="srch" placeholder="Search events…">
+    <button id="importBtn" onclick="openImportModal()" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:pointer;flex-shrink:0;font-size:13px" title="Bulk Import (admin)">📥</button>
   </div>
 
-  <!-- DATE QUICK FILTERS -->
-  <div class="date-filters" id="dateFilters"></div>
-
-  <!-- CATEGORY FILTERS + IMPORT -->
-  <div class="toolbar">
-    <div class="filter-row" id="filterRow"></div>
-    <button id="importBtn" onclick="openImportModal()" style="display:none">📥 Bulk Import</button>
-  </div>
+  <!-- COLLAPSIBLE FILTER MENU -->
+  <div class="filter-menu" id="filterMenu"></div>
 
   <div class="ev-count" id="evCount"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
@@ -340,7 +436,7 @@ button:active{opacity:.8}
       <button class="view-btn" data-view="month" onclick="setView('month')">📅 Month</button>
     </div>
   </div>
-  <div id="evHelp" style="display:none;font-size:13px;color:var(--text3);font-style:italic;margin-bottom:10px;padding:8px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any event below to see full details, location, and add it to your phone calendar.</div>
+  <div id="evHelp" style="display:none;font-size:14px;color:var(--text);font-weight:700;margin-bottom:10px;padding:10px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any event below to see full details, location, and add it to your phone calendar.</div>
   <div id="evList"><div class="no-events">⏳ Loading events…</div></div>
   <div id="monthView" class="month-view"></div>
 </div>
@@ -425,7 +521,8 @@ async function api(path,opts={}){
 }
 
 async function init(){
-  renderAuth();renderDateFilters();renderChips();
+  renderAuth();
+  updateFilterPill();
   await Promise.all([loadEvents(),loadSponsors()]);
 }
 
@@ -450,12 +547,73 @@ function matchesDate(dateStr){
   if(dateFilter==='upcoming') return ed>=today;
   return true; // 'all'
 }
-function renderDateFilters(){
-  document.getElementById('dateFilters').innerHTML=DATE_FILTERS.map(f=>
-    `<span class="date-chip${dateFilter===f.id?' on':''}" onclick="setDateFilter('${f.id}')">${f.label}</span>`
-  ).join('');
+/* ── FILTER MENU (new pill-based filter UI) ── */
+function toggleFilterMenu(e){
+  if(e) e.stopPropagation();
+  const menu=document.getElementById('filterMenu');
+  const wasOpen=menu.classList.contains('open');
+  menu.classList.toggle('open');
+  if(!wasOpen){
+    renderFilterMenu();
+    setTimeout(()=>{document.addEventListener('click',closeFilterOnOutside);},0);
+  } else {
+    document.removeEventListener('click',closeFilterOnOutside);
+  }
 }
-function setDateFilter(id){dateFilter=id;renderDateFilters();renderEvents();}
+function closeFilterOnOutside(e){
+  const menu=document.getElementById('filterMenu');
+  const pill=document.getElementById('filterPill');
+  if(menu && !menu.contains(e.target) && !pill.contains(e.target)){
+    menu.classList.remove('open');
+    document.removeEventListener('click',closeFilterOnOutside);
+  }
+}
+function renderFilterMenu(){
+  document.getElementById('filterMenu').innerHTML=`
+    <div class="filter-section">
+      <div class="filter-section-label">📅 When</div>
+      <select class="filter-select" onchange="setDateFilter(this.value)">
+        ${DATE_FILTERS.map(f=>`<option value="${f.id}"${dateFilter===f.id?' selected':''}>${f.label}</option>`).join('')}
+      </select>
+    </div>
+    <div class="filter-section">
+      <div class="filter-section-label">🏷️ What</div>
+      <div class="filter-cats">
+        ${CATS.map(c=>`
+          <label class="filter-cat-item${activeFilters.has(c.id)?' on':''}">
+            <input type="checkbox" ${activeFilters.has(c.id)?'checked':''} onchange="toggleFilter('${c.id}')">
+            <span class="cat-dot" style="background:${c.c}"></span>
+            ${c.label}
+          </label>
+        `).join('')}
+      </div>
+    </div>
+    ${(activeFilters.size>0||dateFilter!=='upcoming')?'<button class="filter-clear" onclick="clearAllFilters()">✕ Clear All Filters</button>':''}
+  `;
+  updateFilterPill();
+}
+function updateFilterPill(){
+  const pill=document.getElementById('filterPill');
+  const badge=document.getElementById('filterBadge');
+  if(!pill||!badge) return;
+  const total=activeFilters.size+(dateFilter!=='upcoming'&&dateFilter!=='all'?1:0);
+  if(total>0){
+    pill.classList.add('has-active');
+    badge.style.display='inline-flex';
+    badge.textContent=total;
+  } else {
+    pill.classList.remove('has-active');
+    badge.style.display='none';
+  }
+}
+function clearAllFilters(){
+  activeFilters.clear();
+  dateFilter='upcoming';
+  renderFilterMenu();
+  renderEvents();
+}
+function renderDateFilters(){updateFilterPill();}
+function setDateFilter(id){dateFilter=id;renderFilterMenu();renderEvents();}
 
 /* ── SHARE ── */
 function fmtDateShort(d){
@@ -484,7 +642,16 @@ function renderAuth(){
   const isAdm=authUser&&authUser.is_admin;
   if(authUser){
     const ini=authUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    el.innerHTML=`<div class="user-pill"><div class="avatar">${esc(ini)}</div><span class="user-name">${esc(authUser.name)}</span><button class="sign-out-btn" onclick="doLogout()">Sign&nbsp;out</button></div>`;
+    el.innerHTML=`<div class="user-pill" style="position:relative">
+      <div class="avatar">${esc(ini)}</div>
+      <span class="user-name">${esc(authUser.name)}</span>
+      <button class="sign-out-btn" onclick="toggleAcctMenu(event)" style="padding-right:6px" title="Account menu">▾</button>
+      <div id="acctMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:200px;z-index:1000;color:var(--text);font-family:var(--font-body);overflow:hidden">
+        <button onclick="openChangePassword()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500">🔑 Change Password</button>
+        ${authUser.is_admin ? '' : `<button onclick="openDeleteAccount()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--danger);font-weight:500;border-top:1px solid var(--border)">🗑 Delete My Account</button>`}
+        <button onclick="doLogout();document.getElementById('acctMenu').style.display='none'" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:var(--surface2);border:none;cursor:pointer;color:var(--text);font-weight:600;border-top:1px solid var(--border)">Sign Out</button>
+      </div>
+    </div>`;
     document.getElementById('importBtn').style.display='';
   } else {
     el.innerHTML=`<button class="signin-btn" onclick="openAuthModal()">Sign In</button>`;
@@ -511,6 +678,11 @@ function buildAuthForm(tab){
       <div class="field"><label>Password</label><input type="password" id="liPw" autocomplete="current-password"></div>
       <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doLogin()">Sign In</button></div>
       <div class="err-msg" id="liErr"></div>
+      <div style="margin-top:14px;font-size:12px;color:var(--text2);text-align:center;line-height:1.7">
+        <a href="#" onclick="showForgotPassword();return false" style="color:var(--blue);text-decoration:none;font-weight:600">Forgot password?</a>
+        &nbsp;·&nbsp;
+        <a href="#" onclick="showForgotUsername();return false" style="color:var(--blue);text-decoration:none;font-weight:600">Forgot email?</a>
+      </div>
     </div>
     <div id="suPanel" style="display:${tab==='su'?'block':'none'}">
       <div class="field"><label>Full Name <span class="req">*</span></label><input type="text" id="rgNm"></div>
@@ -534,6 +706,115 @@ async function doRegister(){
     const {token:tk,user}=await api('/api/auth/register',{method:'POST',body:JSON.stringify({name:document.getElementById('rgNm').value,email:document.getElementById('rgEm').value,password:document.getElementById('rgPw').value,address:document.getElementById('rgAddr').value})});
     setSession(tk,user);closeModal('evModal');
   }catch(e){document.getElementById('rgErr').textContent=e.message;}
+}
+
+/* ── ACCOUNT MANAGEMENT ── */
+function toggleAcctMenu(e){
+  e.stopPropagation();
+  const m = document.getElementById('acctMenu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+  document.addEventListener('click', closeAcctMenu, { once: true });
+}
+function closeAcctMenu(){
+  const m = document.getElementById('acctMenu');
+  if (m) m.style.display = 'none';
+}
+
+function showForgotPassword(){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">Forgot Password?</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px">No worries — to reset your password, please email us with the email address on your account:</p>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:14px">
+      <a href="mailto:hello@newlexcalendar.com?subject=Password%20Reset%20Request" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@newlexcalendar.com</a>
+    </div>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.5">Include your full name and we'll verify it's you, then send you a new password to sign in with. We respond within 24 hours.</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="openAuthModal()">← Back to Sign In</button>
+    </div>`;
+}
+
+function showForgotUsername(){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">Forgot Your Email?</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Your username IS your email address. Try one of these:</p>
+    <ul style="font-size:14px;color:var(--text);line-height:1.8;padding-left:20px;margin-bottom:14px">
+      <li>Your personal email (Gmail, Yahoo, etc.)</li>
+      <li>The email you receive newsletters at</li>
+      <li>Your work email if you signed up at work</li>
+    </ul>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Still can't remember? Email us with your full name and any details about your account:</p>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:14px">
+      <a href="mailto:hello@newlexcalendar.com?subject=Forgot%20My%20Email" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@newlexcalendar.com</a>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="openAuthModal()">← Back to Sign In</button>
+    </div>`;
+}
+
+function openChangePassword(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">🔑 Change Password</div>
+    <div class="field"><label>Current Password <span class="req">*</span></label><input type="password" id="cpCur" autocomplete="current-password"></div>
+    <div class="field"><label>New Password <span class="req">*</span></label><input type="password" id="cpNew" placeholder="6+ characters" autocomplete="new-password"></div>
+    <div class="field"><label>Confirm New Password <span class="req">*</span></label><input type="password" id="cpConfirm" autocomplete="new-password"></div>
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="doChangePassword()">Update Password</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+    </div>
+    <div class="ok-msg" id="cpOk"></div>
+    <div class="err-msg" id="cpErr"></div>`;
+  openModal('evModal');
+}
+
+async function doChangePassword(){
+  const cur = document.getElementById('cpCur').value;
+  const nw = document.getElementById('cpNew').value;
+  const cf = document.getElementById('cpConfirm').value;
+  const err = document.getElementById('cpErr');
+  err.textContent = '';
+  if (!cur || !nw) { err.textContent = 'All fields are required.'; return; }
+  if (nw.length < 6) { err.textContent = 'New password must be at least 6 characters.'; return; }
+  if (nw !== cf) { err.textContent = 'New passwords do not match.'; return; }
+  try {
+    await api('/api/auth/password', { method:'PUT', body: JSON.stringify({ current_password: cur, new_password: nw })});
+    document.getElementById('cpOk').textContent = '✓ Password updated!';
+    setTimeout(() => closeModal('evModal'), 1500);
+  } catch(e) { err.textContent = e.message; }
+}
+
+function openDeleteAccount(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title" style="color:var(--danger)">🗑 Delete My Account</div>
+    <div style="background:#FEE2E2;border:1.5px solid #F09595;color:#7F1D1D;padding:12px 14px;border-radius:var(--r);font-size:13px;margin-bottom:14px;line-height:1.5">
+      <strong>⚠️ This cannot be undone.</strong><br>
+      Deleting your account will permanently remove:
+      <ul style="margin-top:6px;padding-left:20px">
+        <li>Your account and login</li>
+        <li>All events you've posted</li>
+        <li>Any business listings you own</li>
+      </ul>
+    </div>
+    <div class="field"><label>Confirm with your password <span class="req">*</span></label><input type="password" id="daPw" autocomplete="current-password"></div>
+    <div class="modal-actions">
+      <button class="btn-amber" style="background:var(--danger);border-color:var(--danger)" onclick="doDeleteAccount()">Yes, Delete My Account</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="daErr"></div>`;
+  openModal('evModal');
+}
+
+async function doDeleteAccount(){
+  const pw = document.getElementById('daPw').value;
+  if (!pw) { document.getElementById('daErr').textContent = 'Password required.'; return; }
+  if (!confirm('Are you absolutely sure? This will permanently delete your account and all your data.')) return;
+  try {
+    await api('/api/auth/me', { method:'DELETE', body: JSON.stringify({ password: pw })});
+    doLogout();
+    closeModal('evModal');
+    alert('Your account has been deleted.');
+  } catch(e) { document.getElementById('daErr').textContent = e.message; }
 }
 
 /* ── EVENT MODAL ── */
@@ -641,13 +922,10 @@ function renderEvents(){
 
 /* ── CATEGORY FILTERS ── */
 function renderChips(){
-  let html=`<span class="filter-label">Filter:</span>`;
-  CATS.forEach(c=>{html+=`<span class="chip${activeFilters.has(c.id)?' on':''}" style="${!activeFilters.has(c.id)?`border-left-color:${c.c}`:''}" onclick="toggleFilter('${c.id}')">${c.label}</span>`;});
-  if(activeFilters.size>0)html+=`<button class="clear-chip" onclick="clearFilters()">✕ Clear</button>`;
-  document.getElementById('filterRow').innerHTML=html;
+  updateFilterPill();
 }
-function toggleFilter(id){if(activeFilters.has(id))activeFilters.delete(id);else activeFilters.add(id);renderChips();renderEvents();}
-function clearFilters(){activeFilters.clear();renderChips();renderEvents();}
+function toggleFilter(id){if(activeFilters.has(id))activeFilters.delete(id);else activeFilters.add(id);renderFilterMenu();renderEvents();}
+function clearFilters(){activeFilters.clear();renderFilterMenu();renderEvents();}
 
 /* ── SPONSORS ── */
 function renderSponsors(){
@@ -1046,5 +1324,13 @@ resetInactivityTimer();
 // Initialize view on load
 setView(viewMode);
 </script>
+<!-- FLOATING ADD EVENT BUTTON -->
+<button id="addEventFloat" onclick="clickAddEvent()" style="position:fixed;bottom:20px;right:20px;background:var(--amber);color:#fff;font-size:14px;font-weight:700;padding:14px 22px;border-radius:100px;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(186,117,23,.4);z-index:500;display:flex;align-items:center;gap:6px;transition:transform .15s,box-shadow .15s">
+  <span style="font-size:18px;line-height:1">+</span> Add Event
+</button>
+<style>
+#addEventFloat:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(186,117,23,.5)}
+@media(max-width:480px){#addEventFloat{font-size:13px;padding:12px 18px;bottom:14px;right:14px}}
+</style>
 </body>
 </html>
