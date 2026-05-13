@@ -88,7 +88,8 @@ button:active{opacity:.8}
   font-family:var(--font-body);white-space:nowrap;
 }
 .nav-btn:hover{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.15)}
-.nav-btn.active{color:var(--amber-mid);background:rgba(186,117,23,.20);border-color:rgba(186,117,23,.35)}
+.nav-btn.active{color:#fff;background:var(--amber);border-color:var(--amber);box-shadow:0 2px 8px rgba(186,117,23,.30)}
+.nav-btn.active:hover{background:var(--amber-dk);border-color:var(--amber-dk);color:#fff}
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
 @media(max-width:600px){
   .nav-btn{font-size:13px;padding:7px 12px;gap:6px}
@@ -252,11 +253,19 @@ button:active{opacity:.8}
 .events-col .erow{margin-bottom:5px}
 .events-col .erow:last-child{margin-bottom:0}
 @media(max-width:600px){
-  .date-group{gap:10px}
-  .date-col{width:68px;padding-top:9px}
-  .date-col .date-weekday{font-size:13px}
-  .date-col .date-monthday{font-size:12px}
-  .events-col{padding-left:10px}
+  .date-group{gap:8px;padding:10px 0}
+  .date-col{width:48px;padding-top:8px}
+  .date-col .date-weekday{font-size:12px;letter-spacing:0}
+  .date-col .date-monthday{font-size:11px;font-weight:700;margin-top:1px}
+  .date-col .today-badge,.date-col .tmrw-badge{font-size:8px;padding:1px 5px;letter-spacing:.04em;margin-bottom:3px}
+  .events-col{padding-left:8px;border-left-width:1px}
+  /* Tighter event rows on mobile to maximize name space */
+  .events-col .erow{padding:9px 10px;gap:6px;margin-bottom:4px}
+  .events-col .ename{font-size:14px}
+  .events-col .em{font-size:12px}
+  .events-col .erow-more{font-size:11px}
+  .events-col .erow-arrow{font-size:15px}
+  .events-col .dot{width:8px;height:8px}
 }
 .erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:all .15s;cursor:pointer;overflow:hidden}
 .erow:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
@@ -267,7 +276,13 @@ button:active{opacity:.8}
 .sep{color:var(--border-md);flex-shrink:0}
 .pf{color:var(--teal);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
 .pp{color:var(--amber-dk);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
-.erow-arrow{color:var(--amber);font-size:18px;font-weight:700;flex-shrink:0;margin-left:auto;transition:transform .15s,color .15s}
+.erow-more{
+  color:var(--amber);font-size:12px;font-weight:700;
+  flex-shrink:0;margin-left:auto;letter-spacing:.02em;
+  transition:color .15s
+}
+.erow-arrow{color:var(--amber);font-size:18px;font-weight:700;flex-shrink:0;margin-left:0;transition:transform .15s,color .15s}
+.erow:hover .erow-more{color:var(--amber-dk)}
 .row-actions{margin-left:auto;display:flex;gap:4px;align-items:center}
 .share-btn{font-size:14px;padding:3px 7px;border:1.5px solid transparent;border-radius:5px;background:transparent;color:var(--text3);line-height:1}
 .share-btn:hover{background:var(--surface2);border-color:var(--border)}
@@ -390,9 +405,6 @@ button:active{opacity:.8}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="5" width="18" height="16" rx="2"/>
         <path d="M3 10h18M8 3v4M16 3v4"/>
-        <circle cx="8" cy="15" r="1" fill="currentColor"/>
-        <circle cx="12" cy="15" r="1" fill="currentColor"/>
-        <circle cx="16" cy="15" r="1" fill="currentColor"/>
       </svg>
       Calendar
     </a>
@@ -421,7 +433,17 @@ button:active{opacity:.8}
 
 <!-- PAGE BODY -->
 <div id="page">
-  <div class="search-wrap" style="margin-top:16px">
+  <!-- ZIPCODE SCOPE PICKER -->
+  <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);flex-wrap:wrap">
+    <span style="font-size:13px;color:var(--text2);font-weight:600">📍 Showing:</span>
+    <button id="zipBtn" class="filter-pill" style="background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700" onclick="openZipPicker()">
+      <span id="zipBtnLabel">Zip 43764</span>
+    </button>
+    <button id="allAreasBtn" class="filter-pill" onclick="toggleAllAreas()">🌎 All areas</button>
+    <span style="font-size:11px;color:var(--text3);margin-left:auto" id="zipResultCount"></span>
+  </div>
+
+  <div class="search-wrap" style="margin-top:10px">
     <button class="filter-pill" id="filterPill" onclick="toggleFilterMenu(event)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 6h18M6 12h12M10 18h4"/>
@@ -514,6 +536,8 @@ const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 
 let token=localStorage.getItem('nlcc_token')||null;
 let authUser=JSON.parse(localStorage.getItem('nlcc_user')||'null');
+let currentZipcode = localStorage.getItem('nlcc_zipcode') || (authUser && authUser.home_zipcode) || '43764';
+let showAllAreas = false;
 let allEvs=[],allSponsors=[],activeFilters=new Set();
 let srchQ='',dateFilter='upcoming',editingId=null;
 let captchaA=0,captchaB=0,parsedImport=[];
@@ -530,11 +554,77 @@ async function api(path,opts={}){
 async function init(){
   renderAuth();
   updateFilterPill();
+  updateZipDisplay();
   await Promise.all([loadEvents(),loadSponsors()]);
+  await refreshPendingBadge();
+}
+
+function updateZipDisplay(){
+  const lbl = document.getElementById('zipBtnLabel');
+  const allBtn = document.getElementById('allAreasBtn');
+  if (lbl) lbl.textContent = showAllAreas ? 'All Zips' : 'Zip ' + currentZipcode;
+  if (allBtn) {
+    if (showAllAreas) { allBtn.style.background = 'var(--navy)'; allBtn.style.color = '#fff'; allBtn.style.borderColor = 'var(--navy)'; }
+    else { allBtn.style.background = ''; allBtn.style.color = ''; allBtn.style.borderColor = ''; }
+  }
+}
+
+function toggleAllAreas(){
+  showAllAreas = !showAllAreas;
+  updateZipDisplay();
+  loadEvents();
+}
+
+async function openZipPicker(){
+  let popularZips = [];
+  try { popularZips = await api('/api/zipcodes'); } catch(_) {}
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">📍 Choose Your Area</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your 5-digit zipcode to see local events. You can switch areas anytime.</p>
+    <div class="field"><label>Your Zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="43764" value="${esc(currentZipcode||'')}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
+    ${popularZips.length ? `
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Popular zipcodes:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+        ${popularZips.slice(0,8).map(z => `<button class="filter-pill" style="font-size:12px" onclick="selectZip('${z.zipcode}')">📍 ${z.zipcode} <span style="font-size:10px;opacity:.6">(${z.events||0} events)</span></button>`).join('')}
+      </div>
+    ` : ''}
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="saveZip()">Use This Zipcode</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="zipErr"></div>`;
+  openModal('evModal');
+}
+
+function selectZip(zip){
+  document.getElementById('zipInput').value = zip;
+  saveZip();
+}
+
+async function saveZip(){
+  const zip = document.getElementById('zipInput').value.trim();
+  if (!/^\d{5}$/.test(zip)) {
+    document.getElementById('zipErr').textContent = 'Please enter a valid 5-digit zipcode.';
+    return;
+  }
+  currentZipcode = zip;
+  showAllAreas = false;
+  localStorage.setItem('nlcc_zipcode', zip);
+  // Save to user account if logged in
+  if (token) {
+    try { await api('/api/auth/zipcode', { method:'PUT', body: JSON.stringify({ zipcode: zip })}); } catch(_) {}
+  }
+  closeModal('evModal');
+  updateZipDisplay();
+  await loadEvents();
 }
 
 async function loadEvents(){
-  try{allEvs=await api('/api/events');renderEvents();}
+  try{
+    const zip = (!showAllAreas && currentZipcode) ? '?zipcode='+encodeURIComponent(currentZipcode) : '';
+    allEvs=await api('/api/events'+zip);
+    renderEvents();
+  }
   catch(e){document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`;}
 }
 async function loadSponsors(){
@@ -651,9 +741,13 @@ function renderAuth(){
     const ini=authUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     el.innerHTML=`<div class="user-pill" style="position:relative">
       <div class="avatar">${esc(ini)}</div>
-      <span class="user-name">${esc(authUser.name)}</span>
+      <span class="user-name">${esc(authUser.name)}${authUser.is_admin?' <span title="Admin" style="color:var(--amber);font-size:13px">★</span>':authUser.is_town_crier?' <span title="Town Crier - your posts go live immediately" style="font-size:11px">🔔</span>':''}</span>
       <button class="sign-out-btn" onclick="toggleAcctMenu(event)" style="padding-right:6px" title="Account menu">▾</button>
       <div id="acctMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:200px;z-index:1000;color:var(--text);font-family:var(--font-body);overflow:hidden">
+        ${authUser.is_admin ? `
+          <button onclick="openApprovalsPanel()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:600">📋 <span id="pendingCountBadge"></span>Approvals & Town Criers</button>
+          <div style="height:1px;background:var(--border)"></div>
+        ` : ''}
         <button onclick="openChangePassword()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500">🔑 Change Password</button>
         ${authUser.is_admin ? '' : `<button onclick="openDeleteAccount()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--danger);font-weight:500;border-top:1px solid var(--border)">🗑 Delete My Account</button>`}
         <button onclick="doLogout();document.getElementById('acctMenu').style.display='none'" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:var(--surface2);border:none;cursor:pointer;color:var(--text);font-weight:600;border-top:1px solid var(--border)">Sign Out</button>
@@ -827,6 +921,122 @@ async function doDeleteAccount(){
   } catch(e) { document.getElementById('daErr').textContent = e.message; }
 }
 
+/* ── ADMIN APPROVAL PANEL ── */
+async function openApprovalsPanel(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">📋 Approvals & Town Criers</div>
+    <div style="display:flex;gap:4px;margin-bottom:14px;background:var(--surface2);border:1.5px solid var(--border-md);padding:3px;border-radius:8px;width:fit-content">
+      <button id="apTab1" class="auth-tab on" onclick="loadApprovalsTab('events')">📅 Pending Events</button>
+      <button id="apTab2" class="auth-tab" onclick="loadApprovalsTab('listings')">🏪 Pending Listings</button>
+      <button id="apTab3" class="auth-tab" onclick="loadApprovalsTab('users')">🔔 Town Criers</button>
+    </div>
+    <div id="apContent" style="min-height:200px"><div style="color:var(--text2);padding:20px;text-align:center">Loading…</div></div>`;
+  openModal('evModal');
+  await loadApprovalsTab('events');
+}
+
+async function loadApprovalsTab(tab){
+  // Highlight active tab
+  document.querySelectorAll('#apTab1, #apTab2, #apTab3').forEach(b => b.classList.remove('on'));
+  document.getElementById(tab==='events'?'apTab1':tab==='listings'?'apTab2':'apTab3').classList.add('on');
+  const c = document.getElementById('apContent');
+  c.innerHTML = '<div style="color:var(--text2);padding:20px;text-align:center">Loading…</div>';
+  try{
+    if(tab==='events'){
+      const evs = await api('/api/admin/pending-events');
+      if(!evs.length){c.innerHTML = '<div style="color:var(--text2);padding:30px;text-align:center;background:var(--surface2);border-radius:var(--r)">✓ No pending events to review.</div>';return;}
+      c.innerHTML = evs.map(e=>`
+        <div style="border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px">
+          <div style="font-weight:700;font-size:15px;margin-bottom:3px">${esc(e.name)}</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:4px">${esc(e.date)} · ${esc(e.time)} · ${esc(e.location)}</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Submitted by ${esc(e.submitter_name||'unknown')} (${esc(e.submitter_email||'')})</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-sm" style="flex:1;background:#16A34A;color:#fff;border-color:#16A34A;font-weight:700" onclick="approveEvent(${e.id})">✓ Approve</button>
+            <button class="btn-sm" style="flex:1;background:var(--danger-bg);color:var(--danger);border-color:#F09595" onclick="rejectEvent(${e.id})">✕ Reject</button>
+            <button class="btn-sm" style="flex:1;background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700" onclick="approveAndPromote(${e.id}, ${e.added_by})" title="Approve and make this user a Town Crier">🔔 Approve + Promote</button>
+          </div>
+        </div>`).join('');
+    } else if(tab==='listings'){
+      const ls = await api('/api/admin/pending-listings');
+      if(!ls.length){c.innerHTML = '<div style="color:var(--text2);padding:30px;text-align:center;background:var(--surface2);border-radius:var(--r)">✓ No pending listings to review.</div>';return;}
+      c.innerHTML = ls.map(l=>`
+        <div style="border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px">
+          <div style="font-weight:700;font-size:15px;margin-bottom:3px">${esc(l.business_name)}</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:4px">${esc(l.category)} · ${esc(l.phone||'no phone')} · ${esc(l.website||'no website')}</div>
+          ${l.description?`<div style="font-size:12px;color:var(--text3);margin-bottom:8px">${esc(l.description)}</div>`:''}
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Submitted by ${esc(l.submitter_name||'unknown')} (${esc(l.submitter_email||'')})</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-sm" style="flex:1;background:#16A34A;color:#fff;border-color:#16A34A;font-weight:700" onclick="approveListing(${l.id})">✓ Approve</button>
+            <button class="btn-sm" style="flex:1;background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700" onclick="approveListingAndPromote(${l.id}, ${l.user_id})">🔔 Approve + Promote</button>
+          </div>
+        </div>`).join('');
+    } else {
+      const users = await api('/api/admin/users');
+      c.innerHTML = `
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px">🔔 <strong>Town Criers</strong> are trusted community members whose posts go live immediately without admin review. Promote users who have proven reliable.</p>
+        ${users.filter(u => !u.is_admin).map(u => `
+          <div style="border:1.5px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="min-width:0;flex:1">
+              <div style="font-weight:700;font-size:14px">${esc(u.name)}${u.is_town_crier?' <span style="font-size:11px;background:var(--amber);color:#fff;padding:2px 7px;border-radius:100px;font-weight:700;margin-left:4px">🔔 TOWN CRIER</span>':''}</div>
+              <div style="font-size:11px;color:var(--text3)">${esc(u.email)} · ${u.approved_events_count||0} approved events · ${u.listings_count||0} listings</div>
+            </div>
+            ${u.is_town_crier
+              ? `<button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border-md);font-size:11px" onclick="setTownCrier(${u.id}, false)">Revoke</button>`
+              : `<button class="btn-sm" style="background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700;font-size:11px" onclick="setTownCrier(${u.id}, true)">🔔 Promote</button>`}
+          </div>
+        `).join('')}`;
+    }
+  } catch(e) { c.innerHTML = '<div class="err-msg">'+esc(e.message)+'</div>'; }
+}
+
+async function approveEvent(id){
+  try { await api('/api/admin/events/'+id+'/approve',{method:'PUT'}); await loadEvents(); await loadApprovalsTab('events'); }
+  catch(e) { alert(e.message); }
+}
+async function rejectEvent(id){
+  if(!confirm('Reject and delete this event? This cannot be undone.')) return;
+  try { await api('/api/admin/events/'+id+'/reject',{method:'DELETE'}); await loadEvents(); await loadApprovalsTab('events'); }
+  catch(e) { alert(e.message); }
+}
+async function approveAndPromote(eventId, userId){
+  try {
+    await api('/api/admin/events/'+eventId+'/approve',{method:'PUT'});
+    await api('/api/admin/users/'+userId+'/town-crier',{method:'PUT',body:JSON.stringify({is_town_crier:1})});
+    await loadEvents(); await loadApprovalsTab('events');
+  } catch(e) { alert(e.message); }
+}
+async function approveListing(id){
+  try { await api('/api/admin/listings/'+id+'/approve',{method:'PUT'}); await loadApprovalsTab('listings'); }
+  catch(e) { alert(e.message); }
+}
+async function approveListingAndPromote(listingId, userId){
+  try {
+    await api('/api/admin/listings/'+listingId+'/approve',{method:'PUT'});
+    if(userId) await api('/api/admin/users/'+userId+'/town-crier',{method:'PUT',body:JSON.stringify({is_town_crier:1})});
+    await loadApprovalsTab('listings');
+  } catch(e) { alert(e.message); }
+}
+async function setTownCrier(id, promote){
+  try {
+    await api('/api/admin/users/'+id+'/town-crier',{method:'PUT',body:JSON.stringify({is_town_crier: promote?1:0})});
+    await loadApprovalsTab('users');
+  } catch(e) { alert(e.message); }
+}
+
+// Check pending count and show badge on admin's user pill
+async function refreshPendingBadge(){
+  if(!authUser || !authUser.is_admin) return;
+  try {
+    const [evs, ls] = await Promise.all([api('/api/admin/pending-events'), api('/api/admin/pending-listings')]);
+    const count = (evs?.length||0) + (ls?.length||0);
+    const badge = document.getElementById('pendingCountBadge');
+    if(badge){
+      badge.innerHTML = count > 0 ? `<span style="background:#DC2626;color:#fff;font-size:10px;padding:2px 7px;border-radius:100px;font-weight:800;margin-right:4px">${count}</span>` : '';
+    }
+  } catch(_){}
+}
+
 /* ── EVENT MODAL ── */
 function clickAddEvent(){if(!authUser){openAuthModal();return;}openEventModal(null);}
 function openEventModal(ev){
@@ -848,6 +1058,8 @@ function openEventModal(ev){
     <div class="field"><label>Category</label>
       <select id="fCt">${CATS.map(c=>`<option value="${c.id}"${(ev?ev.cat:'')==c.id?' selected':''}>${c.label}</option>`).join('')}</select>
     </div>
+    <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="fZip" maxlength="5" value="${ev?esc(ev.zipcode||currentZipcode||'43764'):(currentZipcode||'43764')}" placeholder="43764" inputmode="numeric"></div>
+    <div class="field"><label>🎟️ Ticket Link (optional)</label><input type="text" id="fAff" value="${ev?esc(ev.affiliate_url||''):''}" placeholder="https://ticketmaster.com/... or affiliate URL"><div style="font-size:11px;color:var(--text3);margin-top:3px">Paste a ticket purchase URL — a "Get Tickets" button will appear on the event.</div></div>
     <div class="modal-actions">
       <button class="${ev?'btn-blue':'btn-amber'}" onclick="doSubmitEvent()">${ev?'Save Changes':'Post Event'}</button>
       <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
@@ -856,11 +1068,11 @@ function openEventModal(ev){
   openModal('evModal');
 }
 async function doSubmitEvent(){
-  const payload={cat:document.getElementById('fCt').value,name:document.getElementById('fNm').value.trim(),location:document.getElementById('fLc').value.trim(),date:document.getElementById('fDt').value,time:document.getElementById('fTm').value.trim()||'TBD',price:document.getElementById('fPr').value.trim()||'Free',contact:document.getElementById('fCo').value.trim()||'-'};
+  const payload={cat:document.getElementById('fCt').value,name:document.getElementById('fNm').value.trim(),location:document.getElementById('fLc').value.trim(),date:document.getElementById('fDt').value,time:document.getElementById('fTm').value.trim()||'TBD',price:document.getElementById('fPr').value.trim()||'Free',contact:document.getElementById('fCo').value.trim()||'-',zipcode:document.getElementById('fZip').value.trim()||'43764',affiliate_url:document.getElementById('fAff').value.trim()};
   if(!payload.name||!payload.location||!payload.date){document.getElementById('fErr').textContent='Name, location, and date are required.';return;}
   try{
     if(editingId){const u=await api('/api/events/'+editingId,{method:'PUT',body:JSON.stringify(payload)});allEvs=allEvs.map(e=>e.id===editingId?u:e);document.getElementById('fOk').textContent='✓ Event updated!';}
-    else{const n=await api('/api/events',{method:'POST',body:JSON.stringify(payload)});allEvs.push(n);document.getElementById('fOk').textContent='✓ Event posted!';}
+    else{const n=await api('/api/events',{method:'POST',body:JSON.stringify(payload)});allEvs.push(n);if(n.pending_approval){document.getElementById('fOk').textContent='⏳ Submitted for review!';setTimeout(()=>showPendingNotice(),300);}else{document.getElementById('fOk').textContent='✓ Event posted!';}}
     allEvs.sort((a,b)=>a.date.localeCompare(b.date));renderEvents();setTimeout(()=>closeModal('evModal'),1200);
   }catch(e){document.getElementById('fErr').textContent=e.message;}
 }
@@ -902,8 +1114,9 @@ function renderEvents(){
     const weekday=dt.toLocaleDateString('en-US',{weekday:'short'});
     const monthDay=dt.toLocaleDateString('en-US',sameYear?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'});
     let badge='';
+    const isMobile = window.innerWidth <= 600;
     if(evDay.getTime()===today.getTime()) badge='<span class="today-badge">TODAY</span>';
-    else if(evDay.getTime()===tmrw.getTime()) badge='<span class="tmrw-badge">TOMORROW</span>';
+    else if(evDay.getTime()===tmrw.getTime()) badge='<span class="tmrw-badge">'+(isMobile?'TMRW':'TOMORROW')+'</span>';
     return{weekday,monthDay,badge};
   };
   const isAdm=authUser&&authUser.is_admin;
@@ -919,10 +1132,10 @@ function renderEvents(){
       </div>
       <div class="events-col">
     ${evs.map(e=>`
-      <div class="erow" onclick='openEventDetail(${JSON.stringify(e)})'>
+      <div class="erow${e.status==='pending'?' ev-pending':''}" onclick='openEventDetail(${JSON.stringify(e)})'>
         <span class="dot" style="background:${cc(e.cat)}"></span>
-        <span class="ename">${esc(e.name)}</span>
-        <span class="em">${esc(e.time)}</span>
+        <span class="ename">${esc(e.name)}${e.status==='pending'?' <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:100px;font-weight:700;margin-left:6px">⏳ Pending</span>':''}</span>
+        <span class="erow-more">more</span>
         <span class="erow-arrow">›</span>
       </div>`).join('')}
       </div>
@@ -1141,7 +1354,10 @@ function openEventDetail(ev) {
           <span class="ev-detail-value">${linkify(ev.contact)}</span>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <a class="btn-amber btn-sm" style="flex:1;min-width:90px;text-align:center;text-decoration:none" href="/api/events/${ev.id}/ical">📅 Add to My Calendar</a>
+          ${ev.affiliate_url ? `
+            <a class="btn-amber btn-sm" style="flex:1;min-width:140px;text-align:center;text-decoration:none;background:linear-gradient(135deg,#BA7517,#D4951F);box-shadow:0 3px 10px rgba(186,117,23,.3);font-weight:800" href="${esc(ev.affiliate_url)}" target="_blank" rel="noopener sponsored">🎟️ Get Tickets →</a>
+          ` : ''}
+          <a class="btn-sm" style="flex:1;min-width:90px;text-align:center;text-decoration:none;background:var(--surface2);color:var(--text);border:1.5px solid var(--border-md)" href="/api/events/${ev.id}/ical">📅 Add to Calendar</a>
           <button class="btn-sm" style="flex:1;min-width:90px;background:var(--surface2);color:var(--text);border-color:var(--border-md)" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
         </div>
         ${authUser && (ev.added_by === authUser.id || authUser.is_admin) ? `
@@ -1211,6 +1427,13 @@ function showInactivityNotice() {
   notice.textContent = '⏱️ You have been logged out due to inactivity.';
   document.body.appendChild(notice);
   setTimeout(() => notice.remove(), 5000);
+}
+function showPendingNotice() {
+  const notice = document.createElement('div');
+  notice.style.cssText = 'position:fixed;top:130px;left:50%;transform:translateX(-50%);background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;padding:14px 24px;border-radius:8px;z-index:9999;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:92%;text-align:center;line-height:1.4';
+  notice.innerHTML = '⏳ <strong>Submitted for review!</strong><br><span style="font-weight:500">Your event will appear after the admin approves it (usually within 24 hours).<br>Reliable submitters get promoted to <strong>🔔 Town Crier</strong> so future posts go live instantly.</span>';
+  document.body.appendChild(notice);
+  setTimeout(() => notice.remove(), 8000);
 }
 ['mousedown','keypress','scroll','touchstart','click'].forEach(evt =>
   document.addEventListener(evt, resetInactivityTimer, { passive: true })
@@ -1336,7 +1559,7 @@ function showDayEvents(dateStr) {
       <div class="erow" onclick='closeModal("detailModal");openEventDetail(${esc(JSON.stringify(e))})' style="margin-bottom:6px">
         <span class="dot" style="background:${cc(e.cat)}"></span>
         <span class="ename">${esc(e.name)}</span>
-        <span class="em">${esc(e.time)}</span>
+        <span class="erow-more">more</span>
         <span class="erow-arrow">›</span>
       </div>
     `).join('')}`;
