@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Local Business Directory – New Lexington & Area</title>
-<meta name="description" content="Find local businesses in New Lexington and Perry County, Ohio. List your business for just $1 one-time.">
+<meta name="description" content="Find local businesses in New Lexington and Perry County, Ohio. List your business for just FREE.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +57,8 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
   font-family:var(--font-body);white-space:nowrap;
 }
 .nav-btn:hover{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.15)}
-.nav-btn.active{color:var(--amber-mid);background:rgba(186,117,23,.20);border-color:rgba(186,117,23,.35)}
+.nav-btn.active{color:#fff;background:var(--amber);border-color:var(--amber);box-shadow:0 2px 8px rgba(186,117,23,.30)}
+.nav-btn.active:hover{background:var(--amber-dk);border-color:var(--amber-dk);color:#fff}
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
 .nav-user{font-size:13px;color:#fff;font-weight:600}
 
@@ -129,6 +130,17 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 .cat-chip{font-size:12px;padding:4px 12px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
 .cat-chip:hover{background:var(--surface2)}
 .cat-chip.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:600}
+
+/* Filter pill (zipcode picker, scope buttons) */
+.filter-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;background:var(--surface2);
+  border:1.5px solid var(--border-md);border-radius:100px;
+  font-size:13px;font-weight:700;color:var(--text);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  font-family:var(--font-body);transition:all .15s
+}
+.filter-pill:hover{background:var(--amber-lt);border-color:var(--amber)}
 
 /* Listing rows - one-line clickable */
 .listing-list{display:flex;flex-direction:column;gap:6px}
@@ -211,9 +223,6 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="5" width="18" height="16" rx="2"/>
         <path d="M3 10h18M8 3v4M16 3v4"/>
-        <circle cx="8" cy="15" r="1" fill="currentColor"/>
-        <circle cx="12" cy="15" r="1" fill="currentColor"/>
-        <circle cx="16" cy="15" r="1" fill="currentColor"/>
       </svg>
       Calendar
     </a>
@@ -244,10 +253,23 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 <div class="hero">
   <div class="hero-tag">Local Business Directory</div>
   <h1>New Lexington &amp; Area<br>Business Directory</h1>
-  <p>Find local businesses in Perry County. Get your business listed for just $1 one-time.</p>
+  <p>Find local businesses in Perry County. Get your business listed for just FREE.</p>
   <div class="hero-cta">
-    <button class="btn-amber" style="font-size:16px;padding:11px 28px" onclick="openModal('listingModal')">+ List My Business — $1 one-time</button>
+    <button class="btn-amber" style="font-size:16px;padding:11px 28px" onclick="openModal('listingModal')">+ List My Business — FREE one-time</button>
     <a href="/advertise" style="font-size:14px;color:rgba(255,255,255,.7);text-decoration:none;padding:11px 20px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r);display:inline-block">📢 Premium Advertising →</a>
+  </div>
+</div>
+
+<!-- ZIPCODE BANNER -->
+<div style="background:var(--surface);border-bottom:1.5px solid var(--border-md);padding:10px 16px">
+  <div class="section" style="padding-top:0;padding-bottom:0">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:13px;color:var(--text2);font-weight:600">📍 Showing businesses in:</span>
+      <button class="filter-pill" style="background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700" onclick="openDirZipPicker()">
+        <span id="dirZipLabel">Zip 43764</span>
+      </button>
+      <button class="filter-pill" id="dirAllAreasBtn" onclick="toggleDirAllAreas()">🌎 All areas</button>
+    </div>
   </div>
 </div>
 
@@ -296,10 +318,10 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 <!-- CTA BANNER -->
 <div class="cta-banner">
   <h2>List Your Business Today</h2>
-  <div class="price-tag">$1 / year</div>
+  <div class="price-tag">FREE</div>
   <div class="price-sub">One-time payment — listed for 1 year</div>
   <p>Get found by New Lexington and Perry County residents. Your business name, phone, website, address, and description — all in one place.</p>
-  <button class="btn-amber" style="font-size:16px;padding:12px 32px" onclick="openModal('listingModal')">+ Add My Business — $1</button>
+  <button class="btn-amber" style="font-size:16px;padding:12px 32px" onclick="openModal('listingModal')">+ Add My Business — FREE</button>
 </div>
 
 <footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap">
@@ -408,6 +430,58 @@ async function verifyListingPayment(sessionId, listingId) {
 }
 
 // Load data
+function updateDirZipDisplay(){
+  const lbl = document.getElementById('dirZipLabel');
+  const btn = document.getElementById('dirAllAreasBtn');
+  const zip = localStorage.getItem('nlcc_zipcode') || '43764';
+  const showAll = localStorage.getItem('nlcc_dir_all') === '1';
+  if (lbl) lbl.textContent = showAll ? 'All Zips' : 'Zip ' + zip;
+  if (btn) {
+    if (showAll) { btn.style.background = 'var(--navy)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--navy)'; }
+    else { btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }
+  }
+}
+function toggleDirAllAreas(){
+  const cur = localStorage.getItem('nlcc_dir_all') === '1';
+  localStorage.setItem('nlcc_dir_all', cur ? '0' : '1');
+  updateDirZipDisplay();
+  loadAll();
+}
+async function openDirZipPicker(){
+  const cur = localStorage.getItem('nlcc_zipcode') || '43764';
+  let popular = [];
+  try { popular = await api('/api/zipcodes'); } catch(_) {}
+  document.getElementById('listingModalContent').innerHTML = `
+    <div class="modal-title">📍 Choose Your Area</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your 5-digit zipcode to see local businesses.</p>
+    <div class="field"><label>Your Zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="43764" value="${esc(cur)}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
+    ${popular.length ? `
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Popular areas:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+        ${popular.slice(0,8).map(z => `<button class="filter-pill" style="font-size:12px" onclick="selectDirZip('${z.zipcode}')">📍 ${z.zipcode} <span style="opacity:.6">(${z.listings||0} biz)</span></button>`).join('')}
+      </div>
+    ` : ''}
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="saveDirZip()">Use This Zipcode</button>
+      <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="zipErr"></div>`;
+  document.getElementById('listingModal').classList.add('open');
+}
+function selectDirZip(z){ document.getElementById('zipInput').value = z; saveDirZip(); }
+async function saveDirZip(){
+  const z = document.getElementById('zipInput').value.trim();
+  if (!/^\d{5}$/.test(z)) { document.getElementById('zipErr').textContent = 'Please enter a valid 5-digit zipcode.'; return; }
+  localStorage.setItem('nlcc_zipcode', z);
+  localStorage.setItem('nlcc_dir_all', '0');
+  if (calToken) {
+    try { await api('/api/auth/zipcode', { method:'PUT', body: JSON.stringify({ zipcode: z })}); } catch(_) {}
+  }
+  closeModal('listingModal');
+  updateDirZipDisplay();
+  await loadAll();
+}
+
 async function loadAll() {
   try {
     const [listings, sponsors] = await Promise.all([
@@ -472,7 +546,7 @@ function renderListings() {
 
   const grid = document.getElementById('listingGrid');
   if (!f.length) {
-    grid.innerHTML = `<div class="no-listings">No businesses found.<br><a href="#" onclick="openModal('listingModal');return false" style="color:var(--amber);font-weight:600">Be the first to list yours — $1 one-time</a></div>`;
+    grid.innerHTML = `<div class="no-listings">No businesses found.<br><a href="#" onclick="openModal('listingModal');return false" style="color:var(--amber);font-weight:600">Be the first to list yours — FREE</a></div>`;
     return;
   }
   grid.innerHTML = f.map((l, idx) => `
@@ -775,19 +849,22 @@ async function doLogin() {
 
 // Add Business form (for already logged-in users)
 function showAddBusinessForm() {
+  const defaultZip = localStorage.getItem('nlcc_zipcode') || '43764';
   document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">+ Add Your Business — $1 / year</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Hi <strong>${esc(calUser.name)}</strong>! Tell us about your business. After paying $1, your listing stays live for one full year.</p>
+    <div class="modal-title">+ Add Your Business — FREE</div>
+    <div style="background:#D1FAE5;border:1.5px solid #10B981;color:#065F46;padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:14px;font-weight:600">✓ All listings are now FREE. No credit card needed.</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Hi <strong>${esc(calUser.name)}</strong>! Tell us about your business and we'll add it to the directory.</p>
     <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="lBiz" placeholder="Your business name"></div>
     <div class="field"><label>Category <span class="req">*</span></label>
       <select id="lCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select>
     </div>
+    <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="lZip" maxlength="5" value="${esc(defaultZip)}" placeholder="43764" inputmode="numeric"></div>
     <div class="field"><label>Phone</label><input type="tel" id="lPh" placeholder="(740) 555-1234"></div>
     <div class="field"><label>Website</label><input type="text" id="lWeb" placeholder="example.com"></div>
-    <div class="field"><label>Address</label><input type="text" id="lAddr" placeholder="123 Main St, New Lexington, OH"></div>
+    <div class="field"><label>Address</label><input type="text" id="lAddr" placeholder="123 Main St, City, State"></div>
     <div class="field"><label>Short Description</label><textarea id="lDesc" placeholder="Tell people what your business does (2-3 sentences)" style="height:70px;resize:none"></textarea></div>
     <div class="modal-actions">
-      <button class="btn-amber" onclick="createListingAndPay()">Continue to Payment — $1 →</button>
+      <button class="btn-amber" onclick="createListingAndPay()">Add My Business — Free</button>
       <button class="btn-ghost" onclick="${myListings.length > 0 ? 'renderMyListings()' : 'closeModal(\'listingModal\')'}">Cancel</button>
     </div>
     <div class="err-msg" id="lErr"></div>`;
@@ -800,18 +877,31 @@ async function createListingAndPay() {
       document.getElementById('lErr').textContent = 'Business name is required.';
       return;
     }
-    // Create the listing (pending status)
-    const listing = await api('/api/listings/create', { method:'POST', body:JSON.stringify({
+    const zip = document.getElementById('lZip')?.value.trim() || '43764';
+    // Create listing as FREE (no payment)
+    const listing = await api('/api/listings/create-free', { method:'POST', body:JSON.stringify({
       business_name: businessName,
       category:      document.getElementById('lCat').value,
       phone:         document.getElementById('lPh').value.trim(),
       website:       document.getElementById('lWeb').value.trim(),
       address:       document.getElementById('lAddr').value.trim(),
       description:   document.getElementById('lDesc').value.trim(),
+      zipcode:       zip
     })});
-    // Immediately start Stripe checkout
-    const { url } = await api('/api/listings/' + listing.id + '/checkout', { method:'POST' });
-    window.location.href = url;
+    await refreshMyListings();
+    document.getElementById('listingModalContent').innerHTML = `
+      <div class="modal-title">${listing.pending_approval ? '⏳ Submitted for Review' : '🎉 Listing Live!'}</div>
+      <div style="background:${listing.pending_approval?'#FEF3C7':'#D1FAE5'};border:1.5px solid ${listing.pending_approval?'#FCD34D':'#10B981'};color:${listing.pending_approval?'#92400E':'#065F46'};padding:14px 16px;border-radius:var(--r);font-size:14px;line-height:1.5;margin-bottom:14px">
+        ${listing.pending_approval ? '<strong>Thanks!</strong> Your business listing has been submitted for review. The admin will approve it (usually within 24 hours) and it will appear in the directory. <br><br>💡 Reliable submitters get promoted to 🔔 <strong>Town Crier</strong> so future listings go live instantly.' : '<strong>Your business is now live!</strong> Anyone visiting this zipcode will see your listing in the directory.'}
+      </div>
+      <div class="modal-actions">
+        <button class="btn-amber" onclick="renderMyListings()">View My Businesses</button>
+        <button class="btn-ghost" onclick="closeModal('listingModal')">Close</button>
+      </div>
+      <div class="upgrade-box">
+        <p>⭐ <strong>Want even more visibility?</strong> Upgrade to a Premium Ad — featured at the top of the directory AND popup ad on every event.</p>
+        <a href="/advertise?tier=premium" class="btn-amber" style="font-size:13px;padding:7px 16px;display:inline-block;text-decoration:none">Premium Ad — $50/mo →</a>
+      </div>`;
   } catch(e) { document.getElementById('lErr').textContent = e.message; }
 }
 
@@ -837,10 +927,10 @@ function renderMyListings() {
           <span class="status-pill ${statusCls[l.status]||'status-pending'}" style="font-size:10px">${statusMap[l.status]||l.status}</span>
         </div>
         ${l.status === 'pending' ? `
-          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">💳 Complete Payment — $1</button>
+          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">💳 Complete Payment — FREE</button>
         ` : ''}
         ${l.status === 'expired' ? `
-          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">🔄 Renew — $1</button>
+          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">🔄 Renew — FREE</button>
         ` : ''}
         <div style="display:flex;gap:6px;margin-top:8px">
           <button class="btn-sm" style="flex:1;font-size:12px;background:var(--surface2);border:1px solid var(--border-md);color:var(--text)" onclick="editMyListing(${l.id})">✏️ Edit</button>
@@ -849,7 +939,7 @@ function renderMyListings() {
       </div>
     `).join('')}
     <div class="modal-actions" style="margin-top:14px">
-      <button class="btn-amber" onclick="showAddBusinessForm()">+ Add Another Business — $1</button>
+      <button class="btn-amber" onclick="showAddBusinessForm()">+ Add Another Business — FREE</button>
       <button class="btn-ghost" onclick="closeModal('listingModal')">Close</button>
     </div>
     <div class="upgrade-box">
@@ -941,6 +1031,7 @@ function showInactivityNotice() {
 // Init
 checkURLParams();
 renderCatChips();
+updateDirZipDisplay();
 (async () => {
   await refreshMyListings();
   renderNav();
@@ -950,7 +1041,7 @@ renderCatChips();
 </script>
 <!-- FLOATING STICKY CTA -->
 <a href="#" onclick="openModal('listingModal');return false" id="floatCTA" style="position:fixed;bottom:20px;right:20px;background:var(--amber);color:#fff;font-size:14px;font-weight:700;padding:14px 22px;border-radius:100px;text-decoration:none;box-shadow:0 6px 20px rgba(186,117,23,.4);z-index:500;display:flex;align-items:center;gap:6px;transition:transform .15s,box-shadow .15s">
-  <span style="font-size:18px;line-height:1">+</span> List My Business — $1
+  <span style="font-size:18px;line-height:1">+</span> List My Business — FREE
 </a>
 <style>
 #floatCTA:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(186,117,23,.5)}
