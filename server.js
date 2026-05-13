@@ -140,7 +140,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (await db.get('SELECT id FROM users WHERE email=?', [email.toLowerCase()])) return res.status(409).json({ error: 'Email already registered.' });
     const hash = bcrypt.hashSync(password, 10);
     const r = await db.run('INSERT INTO users (name,email,password_hash,address) VALUES (?,?,?,?)', [name.trim(), email.toLowerCase(), hash, address.trim()]);
-    const user = { id: r.lastID, name: name.trim(), email: email.toLowerCase(), is_admin: 0 };
+    const user = { id: r.lastID, name: name.trim(), email: email.toLowerCase(), is_admin: 0, is_town_crier: 0 };
     res.status(201).json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -151,8 +151,21 @@ app.post('/api/auth/login', async (req, res) => {
     const db = await getDb();
     const row = await db.get('SELECT * FROM users WHERE email=?', [email?.toLowerCase()]);
     if (!row || !bcrypt.compareSync(password || '', row.password_hash)) return res.status(401).json({ error: 'Incorrect email or password.' });
-    const user = { id: row.id, name: row.name, email: row.email, is_admin: row.is_admin };
+    const user = { id: row.id, name: row.name, email: row.email, is_admin: row.is_admin, is_town_crier: row.is_town_crier };
     res.json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update home zipcode
+app.put('/api/auth/zipcode', requireAuth, async (req, res) => {
+  try {
+    const { zipcode } = req.body || {};
+    if (!zipcode || !/^\d{5}$/.test(zipcode.toString().trim())) {
+      return res.status(400).json({ error: 'Please enter a valid 5-digit US zipcode.' });
+    }
+    const db = await getDb();
+    await db.run('UPDATE users SET home_zipcode=? WHERE id=?', [zipcode.toString().trim(), req.user.id]);
+    res.json({ success: true, home_zipcode: zipcode.toString().trim() });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -193,23 +206,50 @@ app.delete('/api/auth/me', requireAuth, async (req, res) => {
 app.get('/api/events', async (req, res) => {
   try {
     const db = await getDb();
-    res.json(await db.all('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by ORDER BY e.date ASC,e.time ASC'));
+    let isAdmin = false;
+    let userId = null;
+    const auth = req.headers.authorization;
+    if (auth && auth.startsWith('Bearer ')) {
+      try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; userId = payload.id; } catch(_) {}
+    }
+    const zipcode = (req.query.zipcode||'').toString().trim();
+    const zipFilter = zipcode ? ' AND e.zipcode=?' : '';
+    const zipParam = zipcode ? [zipcode] : [];
+    let sql;
+    let params;
+    if (isAdmin) {
+      sql = 'SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE 1=1' + zipFilter + ' ORDER BY e.date ASC,e.time ASC';
+      params = zipParam;
+    } else if (userId) {
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?))" + zipFilter + " ORDER BY e.date ASC,e.time ASC";
+      params = [userId, ...zipParam];
+    } else {
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved'" + zipFilter + " ORDER BY e.date ASC,e.time ASC";
+      params = zipParam;
+    }
+    res.json(await db.all(sql, params));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/events', requireAuth, async (req, res) => {
   try {
-    const { cat, name, location, date, time, price, contact } = req.body || {};
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
     const dup = await db.get(
-      "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=?",
+      "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status!='pending'",
       [name.trim(), date]
     );
     if (dup) return res.status(409).json({ error: "An event with that name already exists on that date. Check the calendar to avoid duplicates." });
-    const r = await db.run('INSERT INTO events (cat,name,location,date,time,price,contact,added_by) VALUES (?,?,?,?,?,?,?,?)',
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', req.user.id]);
-    res.status(201).json(await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]));
+    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
+    const status = (userRow && (userRow.is_admin || userRow.is_town_crier)) ? 'approved' : 'pending';
+    const zip = (zipcode || '').toString().trim() || '43764';
+    const r = await db.run(
+      'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', req.user.id, status, zip, (affiliate_url||'').trim()]
+    );
+    const ev = await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]);
+    res.status(201).json({ ...ev, pending_approval: status === 'pending' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -240,11 +280,13 @@ app.put('/api/events/:id', requireAuth, async (req, res) => {
     const db = await getDb();
     const ev = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
     if (!ev) return res.status(404).json({ error: 'Event not found.' });
-    if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only edit your own events.' });
-    const { cat, name, location, date, time, price, contact } = req.body || {};
+    if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only edit events you posted.' });
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
-    await db.run('UPDATE events SET cat=?,name=?,location=?,date=?,time=?,price=?,contact=? WHERE id=?',
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', req.params.id]);
+    await db.run(
+      'UPDATE events SET cat=?,name=?,location=?,date=?,time=?,price=?,contact=?,zipcode=?,affiliate_url=? WHERE id=?',
+      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||ev.zipcode||'43764').toString().trim(), (affiliate_url||'').trim(), req.params.id]
+    );
     res.json(await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [req.params.id]));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -460,32 +502,61 @@ app.get('/api/listings/my', requireAuth, async (req, res) => {
 });
 
 // POST /api/listings/create - create a listing tied to the calendar user (pending until paid)
+// LEGACY: paid listing creation (kept for backward compat)
+app.post('/api/listings/create-paid', requireAuth, async (req, res) => {
+  // Original logic preserved for any existing paid flow
+  return res.status(410).json({ error: 'Paid listings are no longer required. Use /api/listings/create-free instead.' });
+});
+
+// NEW: free listing creation (all listings are now free)
+app.post('/api/listings/create-free', requireAuth, async (req, res) => {
+  try {
+    const { business_name, category, phone, website, address, description, zipcode } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const db = await getDb();
+    const placeholderEmail = `user-${req.user.id}-${Date.now()}@newlexcalendar.local`;
+    const placeholderPwd = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
+    const skipReview = !!(userRow && (userRow.is_admin || userRow.is_town_crier));
+    const status = skipReview ? 'active' : 'pending_review';
+    const expiresAt = new Date(); expiresAt.setFullYear(expiresAt.getFullYear() + 5); // long expiry since free
+    const zip = (zipcode || '').toString().trim() || '43764';
+    const r = await db.run(
+      `INSERT INTO listings (user_id, owner_name, owner_email, password_hash, business_name, category, phone, website, address, description, status, zipcode, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        req.user.id, req.user.name || business_name.trim(), placeholderEmail, placeholderPwd,
+        business_name.trim(), category || 'other', (phone||'').trim(), (website||'').trim(),
+        (address||'').trim(), (description||'').trim(), status, zip, expiresAt.toISOString()
+      ]
+    );
+    const listing = await db.get('SELECT * FROM listings WHERE id=?', [r.lastID]);
+    res.json({ ...safeListing(listing), pending_approval: !skipReview });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/listings/create', requireAuth, async (req, res) => {
   try {
     const { business_name, category, phone, website, address, description } = req.body || {};
     if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const db = await getDb();
-    // Generate placeholder email/password (won't be used since auth is via user_id)
     const placeholderEmail = `user-${req.user.id}-${Date.now()}@newlexcalendar.local`;
     const placeholderPwd = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+    // Town Criers and admins skip 'pending_review' status after payment;
+    // others land in 'pending_review' after payment (admin must approve)
+    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
+    const skipReview = !!(userRow && (userRow.is_admin || userRow.is_town_crier));
     const r = await db.run(
       `INSERT INTO listings (user_id, owner_name, owner_email, password_hash, business_name, category, phone, website, address, description, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [
-        req.user.id,
-        req.user.name || business_name.trim(),
-        placeholderEmail,
-        placeholderPwd,
-        business_name.trim(),
-        category || 'other',
-        (phone||'').trim(),
-        (website||'').trim(),
-        (address||'').trim(),
-        (description||'').trim()
+        req.user.id, req.user.name || business_name.trim(), placeholderEmail, placeholderPwd,
+        business_name.trim(), category || 'other', (phone||'').trim(), (website||'').trim(),
+        (address||'').trim(), (description||'').trim()
       ]
     );
     const listing = await db.get('SELECT * FROM listings WHERE id=?', [r.lastID]);
-    res.json(safeListing(listing));
+    res.json({ ...safeListing(listing), skip_review: skipReview });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -521,33 +592,30 @@ app.post('/api/listings/my/verify-session', requireAuth, async (req, res) => {
     const db = await getDb();
     const listing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [listing_id, req.user.id]);
     if (!listing) return res.status(404).json({ error: 'Listing not found.' });
+    // Town Criers and admins go live immediately; others go to 'pending_review' for admin approval
+    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
+    const skipReview = !!(userRow && (userRow.is_admin || userRow.is_town_crier));
+    const newStatus = skipReview ? 'active' : 'pending_review';
     const expiresAt = new Date(); expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-    await db.run(
-      "UPDATE listings SET status='active', expires_at=? WHERE id=?",
-      [expiresAt.toISOString(), listing_id]
-    );
+    await db.run('UPDATE listings SET status=?, expires_at=? WHERE id=?', [newStatus, expiresAt.toISOString(), listing_id]);
     const updated = await db.get('SELECT * FROM listings WHERE id=?', [listing_id]);
-    res.json(safeListing(updated));
+    res.json({ ...safeListing(updated), pending_approval: !skipReview });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // PUT /api/listings/my/:id - user can edit their own listing
 app.put('/api/listings/my/:id', requireAuth, async (req, res) => {
   try {
-    const { business_name, category, phone, website, address, description } = req.body || {};
+    const { business_name, category, phone, website, address, description, zipcode } = req.body || {};
     if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const db = await getDb();
     const existing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [req.params.id, req.user.id]);
     if (!existing) return res.status(404).json({ error: 'Listing not found.' });
     await db.run(
-      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=? WHERE id=?',
+      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=?,zipcode=? WHERE id=?',
       [
-        business_name.trim(),
-        category || 'other',
-        (phone||'').trim(),
-        (website||'').trim(),
-        (address||'').trim(),
-        (description||'').trim(),
+        business_name.trim(), category || 'other', (phone||'').trim(), (website||'').trim(),
+        (address||'').trim(), (description||'').trim(), (zipcode||existing.zipcode||'43764').toString().trim(),
         req.params.id
       ]
     );
@@ -654,11 +722,115 @@ app.post('/api/listings/cancel', requireListing, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Get all distinct zipcodes with their event counts (for zipcode picker)
+app.get('/api/zipcodes', async (req, res) => {
+  try {
+    const db = await getDb();
+    const evRows = await db.all("SELECT zipcode, COUNT(*) as count FROM events WHERE status='approved' AND date >= date('now') GROUP BY zipcode ORDER BY count DESC");
+    const lsRows = await db.all("SELECT zipcode, COUNT(*) as count FROM listings WHERE status='active' GROUP BY zipcode");
+    const combined = {};
+    evRows.forEach(r => { combined[r.zipcode] = { zipcode: r.zipcode, events: r.count, listings: 0 }; });
+    lsRows.forEach(r => {
+      if (combined[r.zipcode]) combined[r.zipcode].listings = r.count;
+      else combined[r.zipcode] = { zipcode: r.zipcode, events: 0, listings: r.count };
+    });
+    res.json(Object.values(combined).sort((a, b) => (b.events + b.listings) - (a.events + a.listings)));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Admin: get all listings
 app.get('/api/admin/listings', requireAdmin, async (req, res) => {
   try {
     const db = await getDb();
     res.json(await db.all('SELECT * FROM listings ORDER BY created_at DESC'));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN APPROVAL ENDPOINTS ──
+
+// Get all pending events
+app.get('/api/admin/pending-events', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all(`
+      SELECT e.*, u.name AS submitter_name, u.email AS submitter_email
+      FROM events e LEFT JOIN users u ON e.added_by = u.id
+      WHERE e.status='pending' ORDER BY e.created_at DESC
+    `);
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Approve a pending event
+app.put('/api/admin/events/:id/approve', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE events SET status='approved' WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reject (delete) a pending event
+app.delete('/api/admin/events/:id/reject', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run('DELETE FROM events WHERE id=?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get all pending listings (paid but awaiting approval)
+app.get('/api/admin/pending-listings', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all(`
+      SELECT l.*, u.name AS submitter_name, u.email AS submitter_email
+      FROM listings l LEFT JOIN users u ON l.user_id = u.id
+      WHERE l.status='pending_review' ORDER BY l.created_at DESC
+    `);
+    res.json(rows.map(safeListing));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Approve a pending listing
+app.put('/api/admin/listings/:id/approve', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE listings SET status='active' WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get all users (for Town Crier management)
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all(`
+      SELECT id, name, email, is_admin, is_town_crier, created_at,
+        (SELECT COUNT(*) FROM events WHERE added_by = users.id AND status='approved') AS approved_events_count,
+        (SELECT COUNT(*) FROM listings WHERE user_id = users.id) AS listings_count
+      FROM users ORDER BY created_at DESC
+    `);
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Promote / demote Town Crier
+app.put('/api/admin/users/:id/town-crier', requireAdmin, async (req, res) => {
+  try {
+    const { is_town_crier } = req.body || {};
+    const db = await getDb();
+    await db.run('UPDATE users SET is_town_crier=? WHERE id=?', [is_town_crier ? 1 : 0, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get current user's Town Crier status (used by frontend to show badge)
+app.get('/api/auth/me', requireAuth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const row = await db.get('SELECT id, name, email, is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
+    res.json(row);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
