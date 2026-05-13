@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Local Business Directory – New Lexington & Area</title>
-<meta name="description" content="Find local businesses in New Lexington and Perry County, Ohio. List your business for just $1 one-time.">
+<title>New Lexington &amp; Area Community Calendar</title>
+<meta name="description" content="Free community event calendar for New Lexington and Perry County, Ohio. Sports, church, government, fairs, and more.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,42 +12,73 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --amber:#BA7517;--amber-dk:#854F0B;--amber-lt:#FFF4E0;--amber-mid:#EF9F27;
+  --amber:#BA7517;--amber-dk:#854F0B;--amber-lt:#FFF4E0;
   --teal:#0F6E56;--navy:#1A2744;--navy2:#1E3260;--cream:#FAF8F4;
   --border:rgba(0,0,0,0.09);--border-md:rgba(0,0,0,0.16);
   --text:#1C1C1E;--text2:#5F5E5A;--text3:#888780;
   --surface:#FFF;--surface2:#F5F3EE;
   --danger:#A32D2D;--danger-bg:#FCEBEB;
+  --blue:#2355B5;--blue-lt:#EEF4FF;
   --font-head:'Playfair Display',Georgia,serif;
   --font-body:'Source Sans 3',system-ui,sans-serif;
-  --r:8px;--r-lg:14px;
+  --hdr-h:118px;--about-h:0px;--spon-h:90px;--r:8px;--r-lg:14px;
 }
 html{font-size:16px}
-body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5}
+body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5;
+  padding-top:calc(var(--hdr-h) + var(--about-h));padding-bottom:var(--spon-h)}
 input,select,textarea,button{font-family:var(--font-body);font-size:15px}
 input,select,textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
 input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
 input::placeholder,textarea::placeholder{color:var(--text3)}
-button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s;font-size:15px;font-weight:500}
+button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s,opacity .15s;font-size:15px;font-weight:500}
 button:hover{background:var(--surface2)}
 button:active{opacity:.8}
 .btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
-.btn-amber:hover{background:var(--amber-dk)}
-.btn-blue{background:#2355B5;color:#fff;border-color:#2355B5;font-weight:700}
+.btn-amber:hover{background:var(--amber-dk);border-color:var(--amber-dk)}
+.btn-blue{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700}
 .btn-blue:hover{background:#1A3E8A}
-.btn-navy{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
-.btn-navy:hover{background:var(--navy2)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
 .btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
-.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#F09595;font-weight:600}
+.btn-sm{font-size:13px;padding:6px 14px}
 
-/* ── NAV ── */
-nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16px;position:sticky;top:0;z-index:100}
-.hdr-row1{display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:10px;min-height:38px}
-.nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;text-decoration:none;line-height:1.15;text-align:center}
-.nav-brand span{color:var(--amber-mid)}
+/* ── PULSE ANIMATION (slower, gentler) ── */
+@keyframes btnPulse{
+  0%,100%{background:#BA7517;border-color:#BA7517;box-shadow:0 0 0 0 rgba(186,117,23,.5)}
+  50%    {background:#0F6E56;border-color:#0F6E56;box-shadow:0 0 0 5px rgba(15,110,86,0)}
+}
+#addEventBtn{
+  animation:btnPulse 3s ease-in-out infinite;
+  color:#fff;font-weight:700;font-size:14px;padding:8px 16px;
+  border-radius:var(--r);white-space:nowrap;flex-shrink:0;border:1.5px solid var(--amber)
+}
+#addEventBtn:hover{animation-play-state:paused;background:var(--amber-dk);border-color:var(--amber-dk)}
+
+/* ── FIXED HEADER ── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:var(--navy);border-bottom:4px solid var(--amber);
+  padding:10px 16px 10px;
+}
+.hdr-row1{display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:10px;min-height:42px}
+.hdr-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;line-height:1.15;text-align:center}
 .hdr-right{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px}
 .hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 12px 5px 6px;min-width:0}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.sign-out-btn{font-size:12px;color:rgba(255,255,255,.6);background:transparent;border:none;padding:0;cursor:pointer;white-space:nowrap;font-family:var(--font-body);flex-shrink:0}
+.sign-out-btn:hover{color:#fff;background:transparent}
+.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
+.signin-btn{color:#fff;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.30)}
+.signin-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
+.register-btn{color:var(--navy);background:var(--amber-mid);border:1.5px solid var(--amber-mid)}
+.register-btn:hover{background:#FFB740;border-color:#FFB740;color:var(--navy)}
+.auth-buttons{display:flex;align-items:center;gap:6px}
+@media(max-width:480px){
+  .signin-btn,.register-btn{font-size:12px;padding:6px 11px}
+}
+
+/* ── BIG NAV BUTTONS ── */
 .nav-btn{
   display:inline-flex;align-items:center;gap:8px;
   padding:9px 16px;border-radius:100px;
@@ -59,92 +90,227 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 .nav-btn:hover{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.15)}
 .nav-btn.active{color:var(--amber-mid);background:rgba(186,117,23,.20);border-color:rgba(186,117,23,.35)}
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
-.nav-user{font-size:13px;color:#fff;font-weight:600}
 @media(max-width:600px){
   .nav-btn{font-size:13px;padding:7px 12px;gap:6px}
   .nav-btn svg{width:18px;height:18px}
-  .nav-brand{font-size:17px}
+  .hdr-title{font-size:17px}
 }
 
-/* ── HERO ── */
-.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:48px 24px 40px;text-align:center}
-.hero-tag{display:inline-block;background:rgba(186,117,23,.2);border:1px solid rgba(186,117,23,.4);color:var(--amber-mid);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px}
-.hero h1{font-family:var(--font-head);font-size:clamp(24px,4vw,40px);font-weight:700;color:#fff;line-height:1.2;margin-bottom:10px}
-.hero p{font-size:16px;color:rgba(255,255,255,.7);max-width:500px;margin:0 auto 28px}
-.hero-cta{display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* ── PAGE ── */
+#page{max-width:900px;margin:0 auto;padding:18px 16px 0}
+.search-wrap{
+  display:flex;align-items:center;gap:4px;
+  background:var(--surface);border:1.5px solid var(--border-md);
+  border-radius:10px;padding:5px;margin-bottom:8px;
+  transition:border-color .15s,box-shadow .15s
+}
+.search-wrap:focus-within{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+.search-wrap input{
+  border:none;background:transparent;padding:8px 10px;
+  flex:1;outline:none;font-size:16px;height:auto;min-width:0;
+}
+.search-wrap input:focus{box-shadow:none;border:none}
 
-/* ── ALERT BANNER ── */
-.alert{padding:14px 20px;font-size:14px;line-height:1.5;text-align:center}
-.alert-success{background:#D1FAE5;color:#065F46;border-bottom:1px solid #6EE7B7}
-.alert-warning{background:#FEF3C7;color:#92400E;border-bottom:1px solid #FCD34D}
+/* Filter pill (inside search bar, left side) */
+.filter-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;background:var(--surface2);
+  border:1.5px solid var(--border);border-radius:100px;
+  font-size:13px;font-weight:700;color:var(--text);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  font-family:var(--font-body);transition:all .15s
+}
+.filter-pill svg{width:14px;height:14px}
+.filter-pill:hover{background:var(--amber-lt);border-color:var(--amber)}
+.filter-pill.has-active{background:var(--amber);color:#fff;border-color:var(--amber)}
+.filter-pill.has-active:hover{background:var(--amber-dk)}
+.filter-badge{
+  background:#fff;color:var(--amber);
+  font-size:10px;font-weight:800;
+  padding:1px 6px;border-radius:100px;
+  min-width:18px;text-align:center;
+}
+.filter-pill:not(.has-active) .filter-badge{background:var(--amber);color:#fff}
 
-/* ── SECTION ── */
-.section{max-width:960px;margin:0 auto;padding:40px 20px}
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
-.section-title{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--text)}
-.section-sub{font-size:14px;color:var(--text3);margin-top:2px}
+/* Filter dropdown menu */
+.filter-menu{
+  display:none;background:var(--surface);
+  border:1.5px solid var(--border-md);border-radius:var(--r-lg);
+  padding:14px;margin-bottom:14px;
+  box-shadow:0 6px 20px rgba(0,0,0,.08)
+}
+.filter-menu.open{display:block}
+.filter-section{margin-bottom:14px}
+.filter-section:last-child{margin-bottom:0}
+.filter-section-label{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text3);
+  margin-bottom:7px
+}
+.filter-select{
+  width:100%;padding:10px 14px;font-size:14px;
+  border:1.5px solid var(--border-md);border-radius:var(--r);
+  background:var(--surface);cursor:pointer;font-weight:600;
+  color:var(--text)
+}
+.filter-cats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+@media(max-width:480px){.filter-cats{grid-template-columns:1fr}}
+.filter-cat-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border:1.5px solid var(--border-md);
+  border-radius:var(--r);cursor:pointer;font-size:13px;
+  transition:all .15s;user-select:none;font-weight:500
+}
+.filter-cat-item:hover{background:var(--surface2)}
+.filter-cat-item.on{
+  background:var(--amber-lt);border-color:var(--amber);
+  color:var(--amber-dk);font-weight:700
+}
+.filter-cat-item input{
+  margin:0;width:16px;height:16px;
+  accent-color:var(--amber);cursor:pointer;flex-shrink:0
+}
+.cat-dot{
+  width:9px;height:9px;border-radius:50%;flex-shrink:0
+}
+.filter-clear{
+  display:block;width:100%;margin-top:10px;
+  padding:9px;font-size:13px;font-weight:700;
+  border:1.5px solid var(--border-md);border-radius:var(--r);
+  background:var(--surface2);color:var(--text2);
+  cursor:pointer;transition:all .15s
+}
+.filter-clear:hover{background:var(--surface);color:var(--amber);border-color:var(--amber)}
 
-/* ── FEATURED ADVERTISERS GRID ── */
-.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:10px}
-.adv-card{background:var(--navy);border-radius:var(--r-lg);padding:20px;position:relative;transition:transform .15s,box-shadow .15s}
-.adv-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,39,68,.3)}
-.adv-card-tag{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px}
-.adv-card-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.2}
-.adv-card-tag2{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px;line-height:1.4}
-.adv-card-phone{font-size:14px;color:var(--amber-mid);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:8px}
-.adv-card-phone:hover{color:#fff}
-.adv-card-btn{display:block;text-align:center;background:var(--amber);color:#fff;font-weight:700;font-size:13px;padding:8px 0;border-radius:var(--r);text-decoration:none;transition:background .15s}
-.adv-card-btn:hover{background:var(--amber-dk)}
-.adv-placeholder{border:2px dashed rgba(255,255,255,.15);background:rgba(255,255,255,.03)}
-.adv-placeholder .adv-card-name{color:rgba(255,255,255,.3);font-size:15px}
-.adv-placeholder .adv-card-tag2{color:rgba(255,255,255,.25)}
+/* Category filters (legacy - kept for any references) */
+.toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:7px;flex:1}
+.filter-label{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
+.chip{font-size:13px;padding:5px 13px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;user-select:none;border-left:4px solid var(--border-md)}
+.chip:hover{background:var(--surface2)}
+.chip.on{border-color:var(--amber)!important;background:var(--amber-lt);color:var(--amber-dk);font-weight:700}
+.clear-chip{font-size:12px;padding:4px 11px;border-radius:100px;border:1.5px solid var(--amber);background:transparent;color:var(--amber-dk);cursor:pointer;font-weight:700}
+.clear-chip:hover{background:var(--amber-lt)}
+#importBtn{font-size:12px;padding:5px 12px;white-space:nowrap;flex-shrink:0;color:var(--blue);border-color:var(--blue);background:var(--blue-lt)}
+#importBtn:hover{background:#D4E2FF}
 
-/* ── DIRECTORY ── */
-.dir-controls{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.dir-search{flex:1;min-width:200px;position:relative}
-.dir-search input{padding-left:38px}
-.dir-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);pointer-events:none}
-.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.cat-chip{font-size:12px;padding:4px 12px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
-.cat-chip:hover{background:var(--surface2)}
-.cat-chip.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:600}
+.ev-count{font-size:14px;color:var(--text3);margin-bottom:12px}
 
-/* Listing rows - one-line clickable */
-.listing-list{display:flex;flex-direction:column;gap:6px}
-.listing-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:all .15s}
-.listing-row:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
-.listing-row:hover .listing-arrow{color:var(--amber);transform:translateX(3px)}
-.listing-name{font-size:15px;font-weight:700;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.listing-cat-tag{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
-.listing-arrow{color:var(--amber);font-size:18px;font-weight:700;flex-shrink:0;transition:transform .15s,color .15s}
-.no-listings{text-align:center;color:var(--text2);font-size:15px;padding:40px 0}
+/* ── VIEW TOGGLE ── */
+.view-toggle{display:inline-flex;gap:2px;background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:3px;margin-bottom:10px}
+.view-btn{font-size:13px;padding:6px 14px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-weight:600;color:var(--text2);transition:all .15s}
+.view-btn:hover{color:var(--text)}
+.view-btn.active{background:var(--navy);color:#fff}
 
-/* Listing detail modal */
-.det-cat{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:4px 12px;margin-bottom:12px}
-.det-name{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--text);margin-bottom:14px;line-height:1.2}
-.det-desc{font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6}
-.det-info{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
-.det-row{display:flex;flex-direction:column;gap:2px}
-.det-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
-.det-value{font-size:14px;color:var(--text)}
-.det-value a{color:var(--blue);text-decoration:none;font-weight:500}
-.det-value a:hover{text-decoration:underline}
-.admin-bar{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+/* ── MONTH VIEW ── */
+.month-view{display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden}
+.month-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1.5px solid var(--border);background:var(--surface2)}
+.month-title{font-family:var(--font-head);font-size:19px;font-weight:700;color:var(--text)}
+.month-nav-btn{background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--text);font-weight:700}
+.month-nav-btn:hover{background:var(--amber-lt);border-color:var(--amber)}
+.month-today-btn{font-size:12px;padding:6px 12px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;color:var(--text);font-weight:600}
+.month-today-btn:hover{background:var(--amber-lt);border-color:var(--amber)}
+.month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:110px}
+.dow-label{text-align:center;padding:8px 0;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;background:var(--surface2);border-bottom:1px solid var(--border)}
+.day-cell{min-width:0;border-right:1px solid var(--border);border-top:1px solid var(--border);padding:6px;display:flex;flex-direction:column;gap:3px;background:var(--surface);transition:background .15s;overflow:hidden}
+.day-cell.has-events{cursor:pointer}
+.day-cell.has-events:hover{background:var(--amber-lt)}
+.day-cell.other-month{background:var(--surface2);opacity:.5}
+.day-cell.today{background:rgba(186,117,23,.07)}
+.day-cell:nth-child(7n+7){border-right:none}
+.day-num{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;flex-shrink:0}
+.day-cell.today .day-num{background:var(--amber);color:#fff}
+.day-cell.other-month .day-num{color:var(--text3);font-weight:500}
+.event-pill{font-size:10px;padding:2px 5px;border-radius:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;border-left:2.5px solid;cursor:pointer;line-height:1.3;max-width:100%;min-width:0}
+.event-pill:hover{filter:brightness(.92)}
+.more-events{font-size:10px;color:var(--text2);font-weight:700;padding:1px 4px;cursor:pointer}
+.more-events:hover{color:var(--amber)}
+@media(max-width:600px){
+  .month-grid{grid-auto-rows:64px}
+  .day-cell{padding:3px;gap:2px}
+  .day-num{font-size:11px;width:18px;height:18px}
+  .event-pill{display:none}
+  .event-dots{display:flex;gap:2px;flex-wrap:wrap;margin-top:auto}
+  .event-dot{width:5px;height:5px;border-radius:50%}
+  .more-events{font-size:9px;padding:0;margin-top:1px}
+  .month-title{font-size:16px}
+  .month-nav-btn{width:30px;height:30px;font-size:16px}
+}
 
-/* ── CTA BANNER ── */
-.cta-banner{background:var(--navy);padding:40px 24px;text-align:center;margin-top:0}
-.cta-banner h2{font-family:var(--font-head);font-size:26px;font-weight:700;color:#fff;margin-bottom:8px}
-.cta-banner p{font-size:15px;color:rgba(255,255,255,.7);margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto}
-.price-tag{display:inline-block;background:var(--amber);color:#fff;font-size:28px;font-weight:700;font-family:var(--font-head);padding:8px 24px;border-radius:var(--r-lg);margin-bottom:20px}
-.price-sub{font-size:14px;color:rgba(255,255,255,.6);margin-top:-16px;margin-bottom:20px}
+/* ── EVENT ROWS ── */
+/* Side-by-side date layout */
+.date-group{display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--border)}
+.date-group:first-child{border-top:none;padding-top:2px}
+.date-col{width:88px;flex-shrink:0;padding-top:10px}
+.date-col .date-weekday{font-size:14px;font-weight:800;color:var(--text);letter-spacing:.02em;line-height:1.1}
+.date-col .date-monthday{font-size:13px;color:var(--text2);font-weight:600;margin-top:2px;line-height:1.1}
+.date-col .today-badge,.date-col .tmrw-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:100px;margin-bottom:5px}
+.date-col .today-badge{background:var(--amber);color:#fff}
+.date-col .tmrw-badge{background:var(--teal);color:#fff}
+.events-col{flex:1;min-width:0;border-left:1.5px solid var(--border);padding-left:14px}
+.events-col .erow{margin-bottom:5px}
+.events-col .erow:last-child{margin-bottom:0}
+@media(max-width:600px){
+  .date-group{gap:10px}
+  .date-col{width:68px;padding-top:9px}
+  .date-col .date-weekday{font-size:13px}
+  .date-col .date-monthday{font-size:12px}
+  .events-col{padding-left:10px}
+}
+.erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:all .15s;cursor:pointer;overflow:hidden}
+.erow:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
+.erow:hover .erow-arrow{color:var(--amber);transform:translateX(3px)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ename{font-weight:700;font-size:15px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.em{color:var(--text2);font-size:14px;white-space:nowrap;flex-shrink:0}
+.sep{color:var(--border-md);flex-shrink:0}
+.pf{color:var(--teal);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
+.pp{color:var(--amber-dk);font-weight:600;font-size:14px;white-space:nowrap;flex-shrink:0}
+.erow-arrow{color:var(--amber);font-size:18px;font-weight:700;flex-shrink:0;margin-left:auto;transition:transform .15s,color .15s}
+.row-actions{margin-left:auto;display:flex;gap:4px;align-items:center}
+.share-btn{font-size:14px;padding:3px 7px;border:1.5px solid transparent;border-radius:5px;background:transparent;color:var(--text3);line-height:1}
+.share-btn:hover{background:var(--surface2);border-color:var(--border)}
+.edit-btn{font-size:12px;color:var(--blue);padding:3px 8px;border:1.5px solid transparent;border-radius:5px;background:transparent}
+.edit-btn:hover{background:var(--blue-lt);border-color:#9AB5F0}
+.del-btn{font-size:12px;color:var(--text3);padding:3px 8px;border:1.5px solid transparent;border-radius:5px;background:transparent}
+.del-btn:hover{background:var(--danger-bg);border-color:#F09595;color:var(--danger)}
+.no-events{text-align:center;color:var(--text2);font-size:16px;padding:50px 0;line-height:2}
+
+/* Toast for share copy feedback */
+#toast{position:fixed;bottom:calc(var(--spon-h) + 14px);left:50%;transform:translateX(-50%) translateY(20px);background:#1C1C1E;color:#fff;font-size:13px;padding:9px 20px;border-radius:100px;opacity:0;transition:opacity .2s,transform .2s;z-index:500;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── FIXED SPONSOR BAR ── */
+#sponsorBar{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--spon-h);background:var(--navy);border-top:3px solid var(--amber);display:flex;align-items:center;padding:0 16px;gap:12px}
+.spon-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5);white-space:nowrap;flex-shrink:0}
+.spon-cards{display:flex;gap:9px;flex:1;overflow-x:auto;align-items:stretch;scrollbar-width:none}
+.spon-cards::-webkit-scrollbar{display:none}
+.spon-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 13px;min-width:170px;max-width:230px;flex-shrink:0;position:relative;transition:background .15s}
+.spon-card:hover{background:rgba(255,255,255,.11)}
+.spon-card.advertise-card{border:1.5px dashed rgba(186,117,23,.5);background:rgba(186,117,23,.06);cursor:pointer}
+.spon-card.advertise-card:hover{background:rgba(186,117,23,.12)}
+.spon-name{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spon-tag{font-size:11px;color:rgba(255,255,255,.5);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spon-link{font-size:11px;color:#EF9F27;text-decoration:none;font-weight:600;display:inline-block;margin-top:2px}
+.spon-link:hover{text-decoration:underline}
+.spon-admin{position:absolute;top:5px;right:6px;display:flex;gap:3px}
+.s-edit-btn,.s-del-btn{font-size:10px;padding:1px 6px;border-radius:3px;border:none;cursor:pointer;font-family:var(--font-body)}
+.s-edit-btn{background:rgba(255,255,255,.15);color:#fff}
+.s-edit-btn:hover{background:rgba(255,255,255,.25)}
+.s-del-btn{background:rgba(180,40,40,.3);color:#ffb3b3}
+.s-del-btn:hover{background:rgba(180,40,40,.5)}
+#addSponsorBarBtn{font-size:12px;padding:6px 12px;white-space:nowrap;flex-shrink:0;background:rgba(255,255,255,.10);border:1px dashed rgba(255,255,255,.30);color:rgba(255,255,255,.7);border-radius:var(--r)}
+#addSponsorBarBtn:hover{background:rgba(255,255,255,.18);color:#fff}
 
 /* ── MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:14px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:12px}
 .modal-overlay.open{display:flex}
 .modal-box{background:var(--surface);border-radius:16px;padding:26px 24px 22px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;max-height:92vh;overflow-y:auto}
 .modal-title{font-family:var(--font-head);font-size:21px;font-weight:700;margin-bottom:18px;color:var(--text)}
 .modal-close{position:absolute;top:14px;right:14px;background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2)}
 .modal-close:hover{background:var(--border);color:var(--text)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field{margin-bottom:11px}
 .field label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px}
 .field label .req{color:var(--danger)}
@@ -155,35 +321,72 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 .auth-tabs{display:flex;gap:6px;margin-bottom:18px}
 .auth-tab{flex:1;font-size:14px;padding:8px 0;border-radius:var(--r)}
 .auth-tab.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:700}
-.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:100px;margin-bottom:16px}
-.status-active{background:#D1FAE5;color:#065F46}
-.status-pending{background:#FEF3C7;color:#92400E}
-.status-expired{background:var(--surface2);color:var(--text3)}
-.divider{border:none;border-top:1px solid var(--border);margin:18px 0}
-.upgrade-box{background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:var(--r-lg);padding:14px 16px;margin-top:16px}
-.upgrade-box p{font-size:13px;color:var(--amber-dk);line-height:1.5;margin-bottom:10px}
+.captcha-box{background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:11px}
+.captcha-q{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap}
+.captcha-box input{max-width:90px;text-align:center;font-size:16px;font-weight:700}
+.import-template{font-size:12px;color:var(--blue);cursor:pointer;text-decoration:underline;margin-bottom:10px;display:inline-block}
+.import-csv-area{width:100%;height:120px;font-family:monospace;font-size:12px;resize:vertical;padding:10px;border:1.5px solid var(--border-md);border-radius:var(--r)}
+.import-csv-area:focus{border-color:var(--amber);outline:none}
+.preview-table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
+.preview-table th{background:var(--navy);color:#fff;padding:5px 8px;text-align:left;font-size:11px}
+.preview-table td{padding:5px 8px;border-bottom:0.5px solid var(--border);color:var(--text2)}
+.preview-table tr:nth-child(even) td{background:var(--surface2)}
+.preview-wrap{max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px}
 
+/* ── EVENT DETAIL MODAL ── */
+.ev-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ev-detail-info{display:flex;flex-direction:column;gap:10px}
+.ev-detail-row{display:flex;flex-direction:column;gap:2px}
+.ev-detail-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}
+.ev-detail-value{font-size:15px;color:var(--text);font-weight:500}
+.ev-detail-cat{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:100px;border:1.5px solid;width:fit-content}
+
+/* ── SPONSOR AD CARD ── */
+.ad-card{background:var(--navy);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:10px;opacity:0;animation:adFadeIn .5s ease forwards .3s}
+@keyframes adFadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+.ad-pulse{animation:adFadeIn .5s ease forwards .3s,adPulse 1s ease .9s 2}
+@keyframes adPulse{0%,100%{box-shadow:0 0 0 0 rgba(186,117,23,0)}50%{box-shadow:0 0 0 8px rgba(186,117,23,.25)}}
+.ad-sponsored{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.ad-biz-name{font-size:20px;font-weight:700;color:#fff;line-height:1.2}
+.ad-tagline{font-size:13px;color:rgba(255,255,255,.65);line-height:1.4}
+.ad-phone{font-size:15px;font-weight:600;color:var(--amber-mid);text-decoration:none;display:flex;align-items:center;gap:6px}
+.ad-phone:hover{color:#fff}
+.ad-website{display:block;text-align:center;background:var(--amber);color:#fff;font-weight:700;font-size:14px;padding:10px 0;border-radius:var(--r);text-decoration:none;transition:background .15s;margin-top:4px}
+.ad-website:hover{background:var(--amber-dk)}
+.ad-no-ads{background:var(--surface2);border:1.5px dashed var(--border-md);border-radius:var(--r-lg);padding:20px;text-align:center;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:center}
+.ad-no-ads-text{font-size:13px;color:var(--text3);line-height:1.5}
+@media(max-width:600px){.ev-detail-grid{grid-template-columns:1fr}}
+
+/* ── RESPONSIVE ── */
 @media(max-width:600px){
-  .hero{padding:32px 16px 28px}
-  .section{padding:28px 14px}
+  :root{--hdr-h:108px;--about-h:0px;--spon-h:80px}
+  .hdr-title{font-size:15px}
+  #addEventBtn{font-size:12px;padding:7px 11px}
+  .user-name{display:none}
+  .user-pill{padding:4px 10px 4px 5px}
+  .sign-out-btn{font-size:11px}
+  #page{padding:14px 12px 0}
   .modal-box{padding:20px 16px 18px}
-  .adv-grid{grid-template-columns:1fr}
-  .listing-grid{grid-template-columns:1fr}
-  nav{padding:12px 16px}
-  .nav-brand{font-size:15px}
+  .frow{grid-template-columns:1fr}
+  .spon-card{min-width:140px}
+  .about-dot{display:none}
+}
+@media(max-width:400px){
+  .hdr-title{font-size:13px}
+  #addEventBtn{font-size:11px;padding:6px 9px}
 }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
+<!-- FIXED HEADER -->
+<header id="hdr">
   <div class="hdr-row1">
-    <a href="/" class="nav-brand">NewLex<span>Calendar</span>.com</a>
-    <div class="hdr-right"><span class="nav-user" id="navUser"></span></div>
+    <div class="hdr-title">New Lexington &amp; Area<br>Community Calendar</div>
+    <div class="hdr-right" id="authArea"></div>
   </div>
   <div class="hdr-row2">
-    <a href="/" class="nav-btn" aria-label="Calendar">
+    <a href="/" class="nav-btn active" aria-label="Calendar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="5" width="18" height="16" rx="2"/>
         <path d="M3 10h18M8 3v4M16 3v4"/>
@@ -201,7 +404,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
       </svg>
       Advertise
     </a>
-    <a href="/directory" class="nav-btn active" aria-label="Directory">
+    <a href="/directory" class="nav-btn" aria-label="Directory">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9l1.5-5h15L21 9"/>
         <path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/>
@@ -211,684 +414,776 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
       Directory
     </a>
   </div>
-</nav>
+</header>
 
-<!-- ALERTS -->
-<div id="alertBanner"></div>
+<!-- TOAST -->
+<div id="toast">📋 Copied to clipboard!</div>
 
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-tag">Local Business Directory</div>
-  <h1>New Lexington &amp; Area<br>Business Directory</h1>
-  <p>Find local businesses in Perry County. Get your business listed for just $1 one-time.</p>
-  <div class="hero-cta">
-    <button class="btn-amber" style="font-size:16px;padding:11px 28px" onclick="openModal('listingModal')">+ List My Business — $1 one-time</button>
-    <a href="/advertise" style="font-size:14px;color:rgba(255,255,255,.7);text-decoration:none;padding:11px 20px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r);display:inline-block">📢 Premium Advertising →</a>
+<!-- PAGE BODY -->
+<div id="page">
+  <div class="search-wrap" style="margin-top:16px">
+    <button class="filter-pill" id="filterPill" onclick="toggleFilterMenu(event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M6 12h12M10 18h4"/>
+      </svg>
+      Filter
+      <span class="filter-badge" id="filterBadge" style="display:none">0</span>
+    </button>
+    <input type="text" id="srch" placeholder="Search events…">
+    <button id="importBtn" onclick="openImportModal()" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:pointer;flex-shrink:0;font-size:13px" title="Bulk Import (admin)">📥</button>
+  </div>
+
+  <!-- COLLAPSIBLE FILTER MENU -->
+  <div class="filter-menu" id="filterMenu"></div>
+
+  <div class="ev-count" id="evCount"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="list" onclick="setView('list')">📋 List</button>
+      <button class="view-btn" data-view="month" onclick="setView('month')">📅 Month</button>
+    </div>
+  </div>
+  <div id="evHelp" style="display:none;font-size:14px;color:var(--text);font-weight:700;margin-bottom:10px;padding:10px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any event below to see full details, location, and add it to your phone calendar.</div>
+  <div id="evList"><div class="no-events">⏳ Loading events…</div></div>
+  <div id="monthView" class="month-view"></div>
+</div>
+
+<!-- FIXED SPONSOR BAR -->
+<div id="sponsorBar">
+  <span class="spon-label">📢 Sponsors</span>
+  <div class="spon-cards" id="sponCards"></div>
+  <button id="addSponsorBarBtn" onclick="openSponsorModal(null)" style="display:none">+ Add Sponsor</button>
+</div>
+
+<!-- EVENT / AUTH MODAL -->
+<div class="modal-overlay" id="evModal" onclick="modalOutsideClick(event,'evModal')">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('evModal')">✕</button>
+    <div id="evModalContent"></div>
   </div>
 </div>
 
-<!-- BUSINESS DIRECTORY (now at top) -->
-<div class="section">
-  <div class="section-head">
-    <div>
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div>
-          <div class="section-title">📋 Business Directory</div>
-          <div class="section-sub" id="listingCount">Loading listings…</div>
-        </div>
-        <button id="adminAddBtn" class="btn-blue btn-sm" style="display:none;font-size:13px;padding:8px 14px" onclick="openAdminAddListing()">🔐 Admin: + Add Business</button>
-      </div>
-      <div id="dirHelp" style="display:none;font-size:13px;color:var(--text3);font-style:italic;margin-top:8px;padding:8px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any business below to see contact info, address, and website.</div>
-    </div>
-  </div>
-
-  <div class="dir-controls">
-    <div class="dir-search">
-      <span class="dir-search-icon">🔍</span>
-      <input type="text" id="dirSearch" placeholder="Search businesses…">
-    </div>
-  </div>
-
-  <div class="cat-chips" id="catChips"></div>
-  <div class="listing-list" id="listingGrid"></div>
-</div>
-
-<!-- FEATURED ADVERTISERS (moved below directory) -->
-<div style="background:var(--navy2);padding:30px 0 24px">
-  <div class="section" style="padding-top:0;padding-bottom:0">
-    <div class="section-head">
-      <div>
-        <div class="section-title" style="color:#fff;font-size:20px">⭐ Featured Businesses</div>
-        <div class="section-sub" style="color:rgba(255,255,255,.5)">Premium advertisers</div>
-      </div>
-      <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber-mid);text-decoration:none;font-weight:600">Claim a featured spot — $50/mo →</a>
-    </div>
-    <div class="adv-grid" id="advGrid">
-      <div style="color:rgba(255,255,255,.3);font-size:14px;padding:20px 0">Loading featured businesses…</div>
-    </div>
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal" onclick="modalOutsideClick(event,'importModal')">
+  <div class="modal-box" style="max-width:620px">
+    <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+    <div id="importModalContent"></div>
   </div>
 </div>
 
-<!-- CTA BANNER -->
-<div class="cta-banner">
-  <h2>List Your Business Today</h2>
-  <div class="price-tag">$1 / year</div>
-  <div class="price-sub">One-time payment — listed for 1 year</div>
-  <p>Get found by New Lexington and Perry County residents. Your business name, phone, website, address, and description — all in one place.</p>
-  <button class="btn-amber" style="font-size:16px;padding:12px 32px" onclick="openModal('listingModal')">+ Add My Business — $1</button>
+<!-- SPONSOR MODAL -->
+<div class="modal-overlay" id="spModal" onclick="modalOutsideClick(event,'spModal')">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('spModal')">✕</button>
+    <div id="spModalContent"></div>
+  </div>
 </div>
 
-<footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap">
-  <a href="/" style="color:var(--amber-mid);text-decoration:none">📅 Community Calendar</a>
-  <a href="/advertise" style="color:var(--amber-mid);text-decoration:none">📢 Advertise</a>
-  <a href="mailto:hello@newlexcalendar.com" style="color:var(--amber-mid);text-decoration:none">✉️ hello@newlexcalendar.com</a>
-</footer>
-
-<!-- LISTING MODAL (auth + dashboard) -->
-<div class="modal-overlay" id="listingModal" onclick="modalOutside(event,'listingModal')">
-  <div class="modal-box" style="max-width:520px">
-    <button class="modal-close" onclick="closeModal('listingModal')">✕</button>
-    <div id="listingModalContent"></div>
+<!-- EVENT DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" onclick="modalOutsideClick(event,'detailModal')">
+  <div class="modal-box" style="max-width:640px">
+    <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    <div id="detailModalContent"></div>
   </div>
 </div>
 
 <script>
-const API = '';
-const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-
-const CATS = [
-  {id:'all',            label:'All Categories'},
-  {id:'restaurant',     label:'Restaurant & Food'},
-  {id:'auto',           label:'Auto & Transportation'},
-  {id:'health',         label:'Health & Medical'},
-  {id:'home',           label:'Home & Garden'},
-  {id:'shopping',       label:'Shopping & Retail'},
-  {id:'professional',   label:'Professional Services'},
-  {id:'church',         label:'Church & Non-Profit'},
-  {id:'other',          label:'Other'},
+const API='';
+const CATS=[
+  {id:'sports',    label:'Sports',          c:'#185FA5'},
+  {id:'government',label:'Government',      c:'#3B6D11'},
+  {id:'church',    label:'Church',          c:'#7F77DD'},
+  {id:'community', label:'Community',       c:'#BA7517'},
+  {id:'arts',      label:'Arts & Culture',  c:'#D4537E'},
+  {id:'fair',      label:'Fair & Festival', c:'#D85A30'},
+  {id:'food',      label:'Market & Food',   c:'#1D9E75'},
+  {id:'other',     label:'Other',           c:'#5F5E5A'},
 ];
-const catLabel = id => (CATS.find(c=>c.id===id)||CATS[CATS.length-1]).label;
+const DATE_FILTERS=[
+  {id:'upcoming', label:'All Upcoming'},
+  {id:'today',    label:'Today'},
+  {id:'week',     label:'This Week'},
+  {id:'month',    label:'This Month'},
+  {id:'all',      label:'Show All'},
+];
+const cc=id=>(CATS.find(c=>c.id===id)||CATS[7]).c;
+const cl=id=>(CATS.find(c=>c.id===id)||CATS[7]).label;
+const FREE=['free','free entry','free - bring a dish','free - public welcome','free - open to public','free admission'];
+const isFree=p=>FREE.includes((p||'').toLowerCase());
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-// UNIFIED AUTH - shared with calendar page
-let calToken = localStorage.getItem('nlcc_token') || null;
-let calUser  = JSON.parse(localStorage.getItem('nlcc_user') || 'null');
-let isAdmin  = !!(calUser && calUser.is_admin);
-let myListings = [];      // user's owned listings
-let allListings = [];
-let allAdvs     = [];
-let catFilter   = 'all';
-let srchQ       = '';
+let token=localStorage.getItem('nlcc_token')||null;
+let authUser=JSON.parse(localStorage.getItem('nlcc_user')||'null');
+let allEvs=[],allSponsors=[],activeFilters=new Set();
+let srchQ='',dateFilter='upcoming',editingId=null;
+let captchaA=0,captchaB=0,parsedImport=[];
 
-async function api(path, opts={}) {
-  const h = {'Content-Type':'application/json', ...(opts.headers||{})};
-  if (calToken) h['Authorization'] = 'Bearer ' + calToken;
-  const r = await fetch(API + path, {...opts, headers:h});
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error || 'Request failed');
+async function api(path,opts={}){
+  const h={'Content-Type':'application/json',...(opts.headers||{})};
+  if(token) h['Authorization']='Bearer '+token;
+  const r=await fetch(API+path,{...opts,headers:h});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||'Request failed');
   return d;
 }
 
-function setSession(token, user) {
-  calToken = token; calUser = user;
-  isAdmin = !!(user && user.is_admin);
-  localStorage.setItem('nlcc_token', token);
-  localStorage.setItem('nlcc_user', JSON.stringify(user));
-}
-function clearSession() {
-  calToken = null; calUser = null; isAdmin = false; myListings = [];
-  localStorage.removeItem('nlcc_token');
-  localStorage.removeItem('nlcc_user');
+async function init(){
+  renderAuth();
+  updateFilterPill();
+  await Promise.all([loadEvents(),loadSponsors()]);
 }
 
-async function refreshMyListings() {
-  if (!calToken) { myListings = []; return; }
-  try { myListings = await api('/api/listings/my'); }
-  catch(_) { myListings = []; }
+async function loadEvents(){
+  try{allEvs=await api('/api/events');renderEvents();}
+  catch(e){document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`;}
+}
+async function loadSponsors(){
+  try{allSponsors=await api('/api/display/sponsors');renderSponsors();}
+  catch(e){console.error(e);}
 }
 
-// Check URL params - handle Stripe redirect
-function checkURLParams() {
-  const p = new URLSearchParams(window.location.search);
-  const b = document.getElementById('alertBanner');
-  if (p.get('listing_paid') === '1') {
-    const sessionId = p.get('session_id');
-    const listingId = p.get('listing_id');
-    if (sessionId && listingId && calToken) {
-      verifyListingPayment(sessionId, listingId);
-    } else {
-      b.innerHTML = `<div class="alert alert-warning">Payment received but we couldn't verify your session. Please log in and contact hello@newlexcalendar.com if needed.</div>`;
-    }
-    window.history.replaceState({}, '', '/directory');
-  }
-  if (p.get('listing_canceled') === '1') {
-    b.innerHTML = `<div class="alert alert-warning">Payment cancelled. No charge was made.</div>`;
-    window.history.replaceState({}, '', '/directory');
-  }
+/* ── DATE FILTER HELPERS ── */
+function getToday(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function evDate(str){return new Date(str+'T00:00:00');}
+function matchesDate(dateStr){
+  const today=getToday();
+  const ed=evDate(dateStr);
+  if(dateFilter==='today')  return ed.toDateString()===today.toDateString();
+  if(dateFilter==='week'){const end=new Date(today);end.setDate(today.getDate()+7);return ed>=today&&ed<=end;}
+  if(dateFilter==='month')  return ed>=today&&ed.getMonth()===today.getMonth()&&ed.getFullYear()===today.getFullYear();
+  if(dateFilter==='upcoming') return ed>=today;
+  return true; // 'all'
 }
-
-async function verifyListingPayment(sessionId, listingId) {
-  const b = document.getElementById('alertBanner');
-  b.innerHTML = `<div class="alert alert-success">⏳ Activating your listing…</div>`;
-  try {
-    await api('/api/listings/my/verify-session', {
-      method: 'POST',
-      body: JSON.stringify({ session_id: sessionId, listing_id: listingId })
-    });
-    await refreshMyListings();
-    await loadAll();
-    b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your business listing is now live in the directory!</div>`;
-    renderNav();
-  } catch(e) {
-    b.innerHTML = `<div class="alert alert-warning">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@newlexcalendar.com">hello@newlexcalendar.com</a>.</div>`;
+/* ── FILTER MENU (new pill-based filter UI) ── */
+function toggleFilterMenu(e){
+  if(e) e.stopPropagation();
+  const menu=document.getElementById('filterMenu');
+  const wasOpen=menu.classList.contains('open');
+  menu.classList.toggle('open');
+  if(!wasOpen){
+    renderFilterMenu();
+    setTimeout(()=>{document.addEventListener('click',closeFilterOnOutside);},0);
+  } else {
+    document.removeEventListener('click',closeFilterOnOutside);
   }
 }
-
-// Load data
-async function loadAll() {
-  try {
-    const [listings, sponsors] = await Promise.all([
-      fetch('/api/listings').then(r=>r.json()),
-      fetch('/api/display/sponsors').then(r=>r.json()),
-    ]);
-    allListings = listings;
-    allAdvs     = sponsors.filter(s => s.source === 'advertiser');
-    renderAdvGrid();
-    renderListings();
-  } catch(e) { console.error(e); }
-}
-
-// Featured advertisers grid
-function renderAdvGrid() {
-  const grid = document.getElementById('advGrid');
-  let html = '';
-  if (allAdvs.length) {
-    html += allAdvs.map(a => `
-      <div class="adv-card">
-        <div class="adv-card-tag">⭐ Featured Business</div>
-        <div class="adv-card-name">${esc(a.name)}</div>
-        ${a.tagline ? `<div class="adv-card-tag2">${esc(a.tagline)}</div>` : ''}
-        ${a.phone   ? `<a class="adv-card-phone" href="tel:${esc(a.phone)}">📞 ${esc(a.phone)}</a>` : ''}
-        ${a.url     ? `<a class="adv-card-btn" href="${esc(a.url.startsWith('http')?a.url:'https://'+a.url)}" target="_blank" rel="noopener">Visit Website →</a>` : ''}
-      </div>`).join('');
-  }
-  // Fill remaining spots with placeholders up to 5
-  const remaining = Math.max(0, 3 - allAdvs.length);
-  for (let i = 0; i < remaining; i++) {
-    html += `<div class="adv-card adv-placeholder">
-      <div class="adv-card-tag" style="color:rgba(255,255,255,.25)">Featured Spot Available</div>
-      <div class="adv-card-name">Your Business Here</div>
-      <div class="adv-card-tag2">Advertise to the whole New Lexington community</div>
-      <a href="/advertise?tier=premium" class="adv-card-btn" style="background:rgba(186,117,23,.3);color:rgba(255,255,255,.6)">Claim This Spot — $50/mo</a>
-    </div>`;
-  }
-  grid.innerHTML = html;
-}
-
-// Category chips
-function renderCatChips() {
-  document.getElementById('catChips').innerHTML = CATS.map(c =>
-    `<span class="cat-chip${catFilter===c.id?' on':''}" onclick="setCat('${c.id}')">${c.label}</span>`
-  ).join('');
-}
-function setCat(id) { catFilter = id; renderCatChips(); renderListings(); }
-
-// Listings
-function renderListings() {
-  const q = srchQ.toLowerCase();
-  const f = allListings.filter(l => {
-    const mc = catFilter === 'all' || l.category === catFilter;
-    const mq = !q || l.business_name.toLowerCase().includes(q) ||
-               l.description.toLowerCase().includes(q) ||
-               l.address.toLowerCase().includes(q);
-    return mc && mq;
-  });
-
-  const cnt = document.getElementById('listingCount');
-  cnt.textContent = `${f.length} business${f.length!==1?'es':''} listed`;
-
-  const grid = document.getElementById('listingGrid');
-  if (!f.length) {
-    grid.innerHTML = `<div class="no-listings">No businesses found.<br><a href="#" onclick="openModal('listingModal');return false" style="color:var(--amber);font-weight:600">Be the first to list yours — $1 one-time</a></div>`;
-    return;
-  }
-  grid.innerHTML = f.map((l, idx) => `
-    <div class="listing-row" onclick='openListingDetail(${idx})'>
-      <span class="listing-name">${esc(l.business_name)}</span>
-      <span class="listing-cat-tag">${esc(catLabel(l.category))}</span>
-      <span class="listing-arrow">›</span>
-    </div>`).join('');
-  // Store filtered for click access
-  window._filteredListings = f;
-}
-
-function openListingDetail(idx) {
-  const l = window._filteredListings[idx];
-  if (!l) return;
-  const websiteUrl = l.website ? (l.website.startsWith('http') ? l.website : 'https://' + l.website) : '';
-  document.getElementById('listingModalContent').innerHTML = `
-    <div class="det-cat">${esc(catLabel(l.category))}</div>
-    <div class="det-name">${esc(l.business_name)}</div>
-    ${l.description ? `<div class="det-desc">${esc(l.description)}</div>` : ''}
-    <div class="det-info">
-      ${l.address ? `<div class="det-row"><span class="det-label">📍 Location</span><span class="det-value">${esc(l.address)}</span></div>` : ''}
-      ${l.phone   ? `<div class="det-row"><span class="det-label">📞 Phone</span><span class="det-value"><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></span></div>` : ''}
-      ${websiteUrl? `<div class="det-row"><span class="det-label">🌐 Website</span><span class="det-value"><a href="${esc(websiteUrl)}" target="_blank" rel="noopener">${esc(l.website)}</a></span></div>` : ''}
-    </div>
-    ${isAdmin ? `
-      <div class="admin-bar">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">🔐 Admin Controls</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-blue btn-sm" style="flex:1;min-width:100px;font-size:13px" onclick="adminEditListing(${idx})">✏️ Edit</button>
-          <button class="btn-danger" style="flex:1;min-width:100px;font-size:13px" onclick="adminDeleteListing(${l.id})">🗑 Delete</button>
-        </div>
-        <div class="err-msg" id="adminErr"></div>
-      </div>` : ''}
-  `;
-  document.getElementById('listingModal').classList.add('open');
-}
-
-function openAdminAddListing() {
-  document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">🔐 Admin: Add New Business</div>
-    <div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:14px">
-      Creating as admin. No payment will be charged. The listing will be active for 1 year.
-    </div>
-    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="aaBiz" placeholder="e.g. Joe's Diner"></div>
-    <div class="field"><label>Category</label>
-      <select id="aaCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select>
-    </div>
-    <div class="field"><label>Phone</label><input type="tel" id="aaPh" placeholder="(740) 555-1234"></div>
-    <div class="field"><label>Website</label><input type="text" id="aaWeb" placeholder="example.com"></div>
-    <div class="field"><label>Address</label><input type="text" id="aaAddr" placeholder="123 Main St, New Lexington OH"></div>
-    <div class="field"><label>Description</label><textarea id="aaDesc" style="height:70px;resize:none" placeholder="Brief description of the business..."></textarea></div>
-    <details style="margin-bottom:12px;font-size:13px">
-      <summary style="cursor:pointer;color:var(--text2);font-weight:600">Optional: Owner contact info</summary>
-      <div style="padding-top:8px">
-        <div class="field"><label>Owner Name (optional)</label><input type="text" id="aaOwnerName" placeholder="Defaults to business name"></div>
-        <div class="field"><label>Owner Email (optional)</label><input type="email" id="aaOwnerEmail" placeholder="Auto-generated if blank"></div>
-        <p style="font-size:11px;color:var(--text3);margin-top:-4px">If you don't provide owner info, the listing will be admin-managed.</p>
-      </div>
-    </details>
-    <div class="modal-actions">
-      <button class="btn-amber" onclick="adminCreateListing()">Add Business</button>
-      <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
-    </div>
-    <div class="ok-msg" id="aaOk"></div>
-    <div class="err-msg" id="aaErr"></div>
-  `;
-  document.getElementById('listingModal').classList.add('open');
-}
-
-async function adminCreateListing() {
-  try {
-    const payload = {
-      business_name: document.getElementById('aaBiz').value.trim(),
-      category: document.getElementById('aaCat').value,
-      phone: document.getElementById('aaPh').value.trim(),
-      website: document.getElementById('aaWeb').value.trim(),
-      address: document.getElementById('aaAddr').value.trim(),
-      description: document.getElementById('aaDesc').value.trim(),
-      owner_name: document.getElementById('aaOwnerName').value.trim(),
-      owner_email: document.getElementById('aaOwnerEmail').value.trim()
-    };
-    if (!payload.business_name) {
-      document.getElementById('aaErr').textContent = 'Business name is required.';
-      return;
-    }
-    const r = await fetch('/api/admin/listings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + calToken
-      },
-      body: JSON.stringify(payload)
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Create failed');
-    document.getElementById('aaOk').textContent = '✓ Business added!';
-    document.getElementById('aaErr').textContent = '';
-    await loadAll();
-    setTimeout(() => closeModal('listingModal'), 1200);
-  } catch(e) {
-    document.getElementById('aaErr').textContent = e.message;
+function closeFilterOnOutside(e){
+  const menu=document.getElementById('filterMenu');
+  const pill=document.getElementById('filterPill');
+  if(menu && !menu.contains(e.target) && !pill.contains(e.target)){
+    menu.classList.remove('open');
+    document.removeEventListener('click',closeFilterOnOutside);
   }
 }
-
-function adminEditListing(idx) {
-  const l = window._filteredListings[idx];
-  if (!l) return;
-  document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">🔐 Admin: Edit Business</div>
-    <div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:14px">
-      Editing as admin. Changes will be visible to everyone immediately.
-    </div>
-    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="aeBiz" value="${esc(l.business_name)}"></div>
-    <div class="field"><label>Category</label>
-      <select id="aeCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}"${l.category===c.id?' selected':''}>${c.label}</option>`).join('')}</select>
-    </div>
-    <div class="field"><label>Status</label>
-      <select id="aeStatus">
-        <option value="active"${l.status==='active'?' selected':''}>Active (visible)</option>
-        <option value="pending"${l.status==='pending'?' selected':''}>Pending Payment</option>
-        <option value="expired"${l.status==='expired'?' selected':''}>Expired (hidden)</option>
+function renderFilterMenu(){
+  document.getElementById('filterMenu').innerHTML=`
+    <div class="filter-section">
+      <div class="filter-section-label">📅 When</div>
+      <select class="filter-select" onchange="setDateFilter(this.value)">
+        ${DATE_FILTERS.map(f=>`<option value="${f.id}"${dateFilter===f.id?' selected':''}>${f.label}</option>`).join('')}
       </select>
     </div>
-    <div class="field"><label>Phone</label><input type="tel" id="aePh" value="${esc(l.phone||'')}"></div>
-    <div class="field"><label>Website</label><input type="text" id="aeWeb" value="${esc(l.website||'')}"></div>
-    <div class="field"><label>Address</label><input type="text" id="aeAddr" value="${esc(l.address||'')}"></div>
-    <div class="field"><label>Description</label><textarea id="aeDesc" style="height:70px;resize:none">${esc(l.description||'')}</textarea></div>
-    <div class="modal-actions">
-      <button class="btn-amber" onclick="adminSaveListing(${l.id}, ${idx})">Save Changes</button>
-      <button class="btn-ghost" onclick="openListingDetail(${idx})">Cancel</button>
+    <div class="filter-section">
+      <div class="filter-section-label">🏷️ What</div>
+      <div class="filter-cats">
+        ${CATS.map(c=>`
+          <label class="filter-cat-item${activeFilters.has(c.id)?' on':''}">
+            <input type="checkbox" ${activeFilters.has(c.id)?'checked':''} onchange="toggleFilter('${c.id}')">
+            <span class="cat-dot" style="background:${c.c}"></span>
+            ${c.label}
+          </label>
+        `).join('')}
+      </div>
     </div>
-    <div class="ok-msg" id="aeOk"></div>
-    <div class="err-msg" id="aeErr"></div>
+    ${(activeFilters.size>0||dateFilter!=='upcoming')?'<button class="filter-clear" onclick="clearAllFilters()">✕ Clear All Filters</button>':''}
   `;
+  updateFilterPill();
 }
-
-async function adminSaveListing(id, idx) {
-  try {
-    const payload = {
-      business_name: document.getElementById('aeBiz').value.trim(),
-      category: document.getElementById('aeCat').value,
-      status: document.getElementById('aeStatus').value,
-      phone: document.getElementById('aePh').value.trim(),
-      website: document.getElementById('aeWeb').value.trim(),
-      address: document.getElementById('aeAddr').value.trim(),
-      description: document.getElementById('aeDesc').value.trim(),
-    };
-    const r = await fetch('/api/admin/listings/' + id, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + calToken
-      },
-      body: JSON.stringify(payload)
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Save failed');
-    document.getElementById('aeOk').textContent = '✓ Saved!';
-    document.getElementById('aeErr').textContent = '';
-    await loadAll();
-    setTimeout(() => closeModal('listingModal'), 1200);
-  } catch(e) {
-    document.getElementById('aeErr').textContent = e.message;
-  }
-}
-
-async function adminDeleteListing(id) {
-  if (!confirm('Permanently delete this business listing? This cannot be undone.')) return;
-  try {
-    const r = await fetch('/api/admin/listings/' + id, {
-      method: 'DELETE',
-      headers: { 'Authorization': 'Bearer ' + calToken }
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Delete failed');
-    closeModal('listingModal');
-    await loadAll();
-  } catch(e) {
-    const el = document.getElementById('adminErr');
-    if (el) el.textContent = e.message;
-  }
-}
-
-document.getElementById('dirSearch').addEventListener('input', function() {
-  srchQ = this.value; renderListings();
-});
-
-// Nav
-function renderNav() {
-  const el = document.getElementById('navUser');
-  const floatCTA = document.getElementById('floatCTA');
-  const adminAddBtn = document.getElementById('adminAddBtn');
-  if (adminAddBtn) adminAddBtn.style.display = isAdmin ? 'inline-block' : 'none';
-  // Hide floating CTA only when user is logged in AND has at least one listing
-  if (floatCTA) floatCTA.style.display = 'flex';
-  if (calUser) {
-    el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 14px">
-        <span style="font-size:13px;color:#fff;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(calUser.name)}${calUser.is_admin ? ' (Admin)' : ''}</span>
-        ${myListings.length > 0 ? `<button onclick="openMyListings()" style="font-size:11px;padding:4px 10px;background:var(--amber);border:none;color:#fff;border-radius:100px;font-weight:600">My Businesses (${myListings.length})</button>` : ''}
-        <button onclick="doLogout()" style="font-size:11px;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.85);cursor:pointer;border-radius:100px;font-weight:600">Log out</button>
-      </div>`;
+function updateFilterPill(){
+  const pill=document.getElementById('filterPill');
+  const badge=document.getElementById('filterBadge');
+  if(!pill||!badge) return;
+  const total=activeFilters.size+(dateFilter!=='upcoming'&&dateFilter!=='all'?1:0);
+  if(total>0){
+    pill.classList.add('has-active');
+    badge.style.display='inline-flex';
+    badge.textContent=total;
   } else {
-    el.innerHTML = `<button onclick="openSignIn()" style="font-size:13px;padding:6px 14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:var(--r)">Sign In</button>`;
+    pill.classList.remove('has-active');
+    badge.style.display='none';
   }
 }
-
-function openSignIn() {
-  document.getElementById('listingModal').classList.add('open');
-  renderAuthModal('login');
+function clearAllFilters(){
+  activeFilters.clear();
+  dateFilter='upcoming';
+  renderFilterMenu();
+  renderEvents();
 }
+function renderDateFilters(){updateFilterPill();}
+function setDateFilter(id){dateFilter=id;renderFilterMenu();renderEvents();}
 
-// Modal helpers
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  if (calUser) {
-    // Logged in - go straight to add business form
-    showAddBusinessForm();
+/* ── SHARE ── */
+function fmtDateShort(d){
+  const dt=new Date(d+'T12:00:00');
+  return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+function shareEvent(ev){
+  const text=`📅 ${ev.name}\n📍 ${ev.location}\n🗓 ${fmtDateShort(ev.date)} · ${ev.time}\n💰 ${ev.price}\n📞 ${ev.contact}\n\nnewlexcalendar.com`;
+  if(navigator.share){
+    navigator.share({title:ev.name,text}).catch(()=>{});
   } else {
-    renderAuthModal('register');
+    navigator.clipboard.writeText(text).then(()=>showToast('📋 Copied to clipboard!')).catch(()=>showToast('📋 Couldn\'t copy'));
   }
 }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function modalOutside(e, id) { if (e.target.id === id) closeModal(id); }
-
-function openMyListings() {
-  document.getElementById('listingModal').classList.add('open');
-  renderMyListings();
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
 }
 
-// Auth forms - now using calendar credentials
-function renderAuthModal(tab) {
-  document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">${tab==='register' ? 'Create Account' : 'Sign In'}</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Use one account for the calendar AND directory. Sign in once, manage everything.</p>
+/* ── AUTH ── */
+function renderAuth(){
+  const el=document.getElementById('authArea');
+  const isAdm=authUser&&authUser.is_admin;
+  if(authUser){
+    const ini=authUser.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    el.innerHTML=`<div class="user-pill" style="position:relative">
+      <div class="avatar">${esc(ini)}</div>
+      <span class="user-name">${esc(authUser.name)}</span>
+      <button class="sign-out-btn" onclick="toggleAcctMenu(event)" style="padding-right:6px" title="Account menu">▾</button>
+      <div id="acctMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:200px;z-index:1000;color:var(--text);font-family:var(--font-body);overflow:hidden">
+        <button onclick="openChangePassword()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500">🔑 Change Password</button>
+        ${authUser.is_admin ? '' : `<button onclick="openDeleteAccount()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--danger);font-weight:500;border-top:1px solid var(--border)">🗑 Delete My Account</button>`}
+        <button onclick="doLogout();document.getElementById('acctMenu').style.display='none'" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:var(--surface2);border:none;cursor:pointer;color:var(--text);font-weight:600;border-top:1px solid var(--border)">Sign Out</button>
+      </div>
+    </div>`;
+    document.getElementById('importBtn').style.display='';
+  } else {
+    el.innerHTML=`<div class="auth-buttons">
+      <button class="register-btn" onclick="openAuthModal('su')">Register</button>
+      <button class="signin-btn" onclick="openAuthModal('si')">Sign In</button>
+    </div>`;
+    document.getElementById('importBtn').style.display='none';
+  }
+  document.getElementById('addSponsorBarBtn').style.display=isAdm?'':'none';
+  renderSponsors();
+}
+function setSession(tk,user){token=tk;authUser=user;localStorage.setItem('nlcc_token',tk);localStorage.setItem('nlcc_user',JSON.stringify(user));renderAuth();renderEvents();}
+function doLogout(){token=null;authUser=null;localStorage.removeItem('nlcc_token');localStorage.removeItem('nlcc_user');renderAuth();renderEvents();}
+
+/* ── AUTH MODAL ── */
+function openAuthModal(tab='si'){document.getElementById('evModalContent').innerHTML=buildAuthForm(tab);openModal('evModal');}
+function genCaptcha(){captchaA=Math.floor(Math.random()*12)+1;captchaB=Math.floor(Math.random()*12)+1;return`What is ${captchaA} + ${captchaB}?`;}
+function buildAuthForm(tab){
+  const cq=genCaptcha();
+  return`<div class="modal-title">Welcome</div>
     <div class="auth-tabs">
-      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderAuthModal('register')">Create Account</button>
-      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderAuthModal('login')">Sign In</button>
+      <button class="auth-tab ${tab==='si'?'on':''}" onclick="switchAuthTab('si')">Sign In</button>
+      <button class="auth-tab ${tab==='su'?'on':''}" onclick="switchAuthTab('su')">Register</button>
     </div>
-    ${tab === 'register' ? `
-      <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="lNm" placeholder="Your full name"></div>
-      <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="lEm" placeholder="you@email.com"></div>
-      <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="lPw" placeholder="6+ characters"></div>
-      <div class="field"><label>Address <span class="req">*</span></label><input type="text" id="lAddr" placeholder="New Lexington, OH"></div>
-      <div class="modal-actions">
-        <button class="btn-amber" onclick="doRegister()">Create Account</button>
-        <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
+    <div id="siPanel" style="display:${tab==='si'?'block':'none'}">
+      <div class="field"><label>Email</label><input type="email" id="liEm" placeholder="your@email.com" autocomplete="username"></div>
+      <div class="field"><label>Password</label><input type="password" id="liPw" autocomplete="current-password"></div>
+      <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doLogin()">Sign In</button></div>
+      <div class="err-msg" id="liErr"></div>
+      <div style="margin-top:14px;font-size:12px;color:var(--text2);text-align:center;line-height:1.7">
+        <a href="#" onclick="showForgotPassword();return false" style="color:var(--blue);text-decoration:none;font-weight:600">Forgot password?</a>
+        &nbsp;·&nbsp;
+        <a href="#" onclick="showForgotUsername();return false" style="color:var(--blue);text-decoration:none;font-weight:600">Forgot email?</a>
       </div>
-      <div class="err-msg" id="lErr"></div>
-    ` : `
-      <div class="field"><label>Email</label><input type="email" id="lEm" placeholder="you@email.com"></div>
-      <div class="field"><label>Password</label><input type="password" id="lPw"></div>
-      <div class="modal-actions">
-        <button class="btn-amber" onclick="doLogin()">Sign In</button>
-        <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
-      </div>
-      <div class="err-msg" id="lErr"></div>
-    `}`;
-}
-
-async function doRegister() {
-  try {
-    const payload = {
-      name:     document.getElementById('lNm').value.trim(),
-      email:    document.getElementById('lEm').value.trim(),
-      password: document.getElementById('lPw').value,
-      address:  document.getElementById('lAddr').value.trim() || 'New Lexington, OH'
-    };
-    const { token, user } = await api('/api/auth/register', { method:'POST', body:JSON.stringify(payload) });
-    setSession(token, user);
-    await refreshMyListings();
-    renderNav();
-    showAddBusinessForm();
-  } catch(e) { document.getElementById('lErr').textContent = e.message; }
-}
-
-async function doLogin() {
-  try {
-    const { token, user } = await api('/api/auth/login', { method:'POST', body:JSON.stringify({
-      email: document.getElementById('lEm').value.trim(),
-      password: document.getElementById('lPw').value
-    })});
-    setSession(token, user);
-    await refreshMyListings();
-    renderNav();
-    if (myListings.length > 0) renderMyListings();
-    else showAddBusinessForm();
-  } catch(e) { document.getElementById('lErr').textContent = e.message; }
-}
-
-// Add Business form (for already logged-in users)
-function showAddBusinessForm() {
-  document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">+ Add Your Business — $1 / year</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Hi <strong>${esc(calUser.name)}</strong>! Tell us about your business. After paying $1, your listing stays live for one full year.</p>
-    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="lBiz" placeholder="Your business name"></div>
-    <div class="field"><label>Category <span class="req">*</span></label>
-      <select id="lCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select>
     </div>
-    <div class="field"><label>Phone</label><input type="tel" id="lPh" placeholder="(740) 555-1234"></div>
-    <div class="field"><label>Website</label><input type="text" id="lWeb" placeholder="example.com"></div>
-    <div class="field"><label>Address</label><input type="text" id="lAddr" placeholder="123 Main St, New Lexington, OH"></div>
-    <div class="field"><label>Short Description</label><textarea id="lDesc" placeholder="Tell people what your business does (2-3 sentences)" style="height:70px;resize:none"></textarea></div>
+    <div id="suPanel" style="display:${tab==='su'?'block':'none'}">
+      <div class="field"><label>Full Name <span class="req">*</span></label><input type="text" id="rgNm"></div>
+      <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="rgEm" autocomplete="username"></div>
+      <div class="field"><label>Address <span class="req">*</span></label><input type="text" id="rgAddr" placeholder="Street, City, State"></div>
+      <div class="field"><label>Password (6+ chars) <span class="req">*</span></label><input type="password" id="rgPw" autocomplete="new-password"></div>
+      <div class="captcha-box"><span class="captcha-q">🤖 ${cq}</span><input type="number" id="rgCap" placeholder="?" inputmode="numeric"></div>
+      <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doRegister()">Create Account</button></div>
+      <div class="err-msg" id="rgErr"></div>
+    </div>`;
+}
+function switchAuthTab(t){document.getElementById('evModalContent').innerHTML=buildAuthForm(t);}
+async function doLogin(){
+  try{const {token:tk,user}=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:document.getElementById('liEm').value,password:document.getElementById('liPw').value})});setSession(tk,user);closeModal('evModal');}
+  catch(e){document.getElementById('liErr').textContent=e.message;}
+}
+async function doRegister(){
+  const cap=parseInt(document.getElementById('rgCap')?.value||'',10);
+  if(isNaN(cap)||cap!==captchaA+captchaB){document.getElementById('rgErr').textContent='Please answer the math question correctly.';return;}
+  try{
+    const {token:tk,user}=await api('/api/auth/register',{method:'POST',body:JSON.stringify({name:document.getElementById('rgNm').value,email:document.getElementById('rgEm').value,password:document.getElementById('rgPw').value,address:document.getElementById('rgAddr').value})});
+    setSession(tk,user);closeModal('evModal');
+  }catch(e){document.getElementById('rgErr').textContent=e.message;}
+}
+
+/* ── ACCOUNT MANAGEMENT ── */
+function toggleAcctMenu(e){
+  e.stopPropagation();
+  const m = document.getElementById('acctMenu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+  document.addEventListener('click', closeAcctMenu, { once: true });
+}
+function closeAcctMenu(){
+  const m = document.getElementById('acctMenu');
+  if (m) m.style.display = 'none';
+}
+
+function showForgotPassword(){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">Forgot Password?</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px">No worries — to reset your password, please email us with the email address on your account:</p>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:14px">
+      <a href="mailto:hello@newlexcalendar.com?subject=Password%20Reset%20Request" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@newlexcalendar.com</a>
+    </div>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.5">Include your full name and we'll verify it's you, then send you a new password to sign in with. We respond within 24 hours.</p>
     <div class="modal-actions">
-      <button class="btn-amber" onclick="createListingAndPay()">Continue to Payment — $1 →</button>
-      <button class="btn-ghost" onclick="${myListings.length > 0 ? 'renderMyListings()' : 'closeModal(\'listingModal\')'}">Cancel</button>
-    </div>
-    <div class="err-msg" id="lErr"></div>`;
-}
-
-async function createListingAndPay() {
-  try {
-    const businessName = document.getElementById('lBiz').value.trim();
-    if (!businessName) {
-      document.getElementById('lErr').textContent = 'Business name is required.';
-      return;
-    }
-    // Create the listing (pending status)
-    const listing = await api('/api/listings/create', { method:'POST', body:JSON.stringify({
-      business_name: businessName,
-      category:      document.getElementById('lCat').value,
-      phone:         document.getElementById('lPh').value.trim(),
-      website:       document.getElementById('lWeb').value.trim(),
-      address:       document.getElementById('lAddr').value.trim(),
-      description:   document.getElementById('lDesc').value.trim(),
-    })});
-    // Immediately start Stripe checkout
-    const { url } = await api('/api/listings/' + listing.id + '/checkout', { method:'POST' });
-    window.location.href = url;
-  } catch(e) { document.getElementById('lErr').textContent = e.message; }
-}
-
-// My Listings - dashboard showing all of the user's businesses
-function renderMyListings() {
-  if (!calUser) { renderAuthModal('login'); return; }
-  const statusMap = { active:'● Active', pending:'● Pending Payment', expired:'● Expired' };
-  const statusCls = { active:'status-active', pending:'status-pending', expired:'status-expired' };
-  document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">My Businesses</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Manage all the businesses you've added to the directory.</p>
-    ${myListings.length === 0 ? `
-      <div style="background:var(--surface2);padding:20px;border-radius:var(--r);text-align:center;color:var(--text2);margin-bottom:14px">
-        You haven't added any businesses yet.
-      </div>
-    ` : myListings.map(l => `
-      <div style="border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:6px">
-          <div>
-            <div style="font-weight:700;font-size:15px">${esc(l.business_name)}</div>
-            <div style="font-size:12px;color:var(--text2)">${esc(catLabel(l.category))}</div>
-          </div>
-          <span class="status-pill ${statusCls[l.status]||'status-pending'}" style="font-size:10px">${statusMap[l.status]||l.status}</span>
-        </div>
-        ${l.status === 'pending' ? `
-          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">💳 Complete Payment — $1</button>
-        ` : ''}
-        ${l.status === 'expired' ? `
-          <button class="btn-amber btn-sm" style="font-size:12px;width:100%;margin-top:6px" onclick="payForListing(${l.id})">🔄 Renew — $1</button>
-        ` : ''}
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <button class="btn-sm" style="flex:1;font-size:12px;background:var(--surface2);border:1px solid var(--border-md);color:var(--text)" onclick="editMyListing(${l.id})">✏️ Edit</button>
-          ${l.status === 'active' ? `<button class="btn-sm" style="flex:1;font-size:12px;background:var(--surface2);border:1px solid var(--border-md);color:var(--danger)" onclick="cancelMyListing(${l.id})">Cancel</button>` : ''}
-        </div>
-      </div>
-    `).join('')}
-    <div class="modal-actions" style="margin-top:14px">
-      <button class="btn-amber" onclick="showAddBusinessForm()">+ Add Another Business — $1</button>
-      <button class="btn-ghost" onclick="closeModal('listingModal')">Close</button>
-    </div>
-    <div class="upgrade-box">
-      <p>⭐ <strong>Want more visibility?</strong> Upgrade any business to a Premium Ad — featured at the top AND popup ad on the calendar.</p>
-      <a href="/advertise?tier=premium" class="btn-amber" style="font-size:13px;padding:7px 16px;display:inline-block;text-decoration:none">Premium Ad — $50/mo →</a>
+      <button class="btn-ghost" onclick="openAuthModal()">← Back to Sign In</button>
     </div>`;
 }
 
-async function payForListing(id) {
-  try {
-    const { url } = await api('/api/listings/' + id + '/checkout', { method:'POST' });
-    window.location.href = url;
-  } catch(e) { alert('Payment error: ' + e.message); }
-}
-
-function editMyListing(id) {
-  const l = myListings.find(x => x.id === id);
-  if (!l) return;
-  document.getElementById('listingModalContent').innerHTML = `
-    <div class="modal-title">Edit Business</div>
-    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="dBiz" value="${esc(l.business_name)}"></div>
-    <div class="field"><label>Category</label>
-      <select id="dCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}"${l.category===c.id?' selected':''}>${c.label}</option>`).join('')}</select>
+function showForgotUsername(){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">Forgot Your Email?</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Your username IS your email address. Try one of these:</p>
+    <ul style="font-size:14px;color:var(--text);line-height:1.8;padding-left:20px;margin-bottom:14px">
+      <li>Your personal email (Gmail, Yahoo, etc.)</li>
+      <li>The email you receive newsletters at</li>
+      <li>Your work email if you signed up at work</li>
+    </ul>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Still can't remember? Email us with your full name and any details about your account:</p>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:14px">
+      <a href="mailto:hello@newlexcalendar.com?subject=Forgot%20My%20Email" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@newlexcalendar.com</a>
     </div>
-    <div class="field"><label>Phone</label><input type="tel" id="dPh" value="${esc(l.phone||'')}"></div>
-    <div class="field"><label>Website</label><input type="text" id="dWeb" value="${esc(l.website||'')}"></div>
-    <div class="field"><label>Address</label><input type="text" id="dAddr" value="${esc(l.address||'')}"></div>
-    <div class="field"><label>Description</label><textarea id="dDesc" style="height:70px;resize:none">${esc(l.description||'')}</textarea></div>
     <div class="modal-actions">
-      <button class="btn-amber" onclick="saveMyListing(${id})">Save Changes</button>
-      <button class="btn-ghost" onclick="renderMyListings()">Back</button>
+      <button class="btn-ghost" onclick="openAuthModal()">← Back to Sign In</button>
+    </div>`;
+}
+
+function openChangePassword(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">🔑 Change Password</div>
+    <div class="field"><label>Current Password <span class="req">*</span></label><input type="password" id="cpCur" autocomplete="current-password"></div>
+    <div class="field"><label>New Password <span class="req">*</span></label><input type="password" id="cpNew" placeholder="6+ characters" autocomplete="new-password"></div>
+    <div class="field"><label>Confirm New Password <span class="req">*</span></label><input type="password" id="cpConfirm" autocomplete="new-password"></div>
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="doChangePassword()">Update Password</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
     </div>
-    <div class="ok-msg"  id="dOk"></div>
-    <div class="err-msg" id="dErr"></div>`;
+    <div class="ok-msg" id="cpOk"></div>
+    <div class="err-msg" id="cpErr"></div>`;
+  openModal('evModal');
 }
 
-async function saveMyListing(id) {
+async function doChangePassword(){
+  const cur = document.getElementById('cpCur').value;
+  const nw = document.getElementById('cpNew').value;
+  const cf = document.getElementById('cpConfirm').value;
+  const err = document.getElementById('cpErr');
+  err.textContent = '';
+  if (!cur || !nw) { err.textContent = 'All fields are required.'; return; }
+  if (nw.length < 6) { err.textContent = 'New password must be at least 6 characters.'; return; }
+  if (nw !== cf) { err.textContent = 'New passwords do not match.'; return; }
   try {
-    await api('/api/listings/my/' + id, { method:'PUT', body: JSON.stringify({
-      business_name: document.getElementById('dBiz').value.trim(),
-      category:      document.getElementById('dCat').value,
-      phone:         document.getElementById('dPh').value.trim(),
-      website:       document.getElementById('dWeb').value.trim(),
-      address:       document.getElementById('dAddr').value.trim(),
-      description:   document.getElementById('dDesc').value.trim(),
-    })});
-    await refreshMyListings();
-    await loadAll();
-    document.getElementById('dOk').textContent = '✓ Saved!';
-    setTimeout(() => renderMyListings(), 1200);
-  } catch(e) { document.getElementById('dErr').textContent = e.message; }
+    await api('/api/auth/password', { method:'PUT', body: JSON.stringify({ current_password: cur, new_password: nw })});
+    document.getElementById('cpOk').textContent = '✓ Password updated!';
+    setTimeout(() => closeModal('evModal'), 1500);
+  } catch(e) { err.textContent = e.message; }
 }
 
-async function cancelMyListing(id) {
-  if (!confirm('Cancel this listing? It will be hidden from the directory immediately.')) return;
+function openDeleteAccount(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title" style="color:var(--danger)">🗑 Delete My Account</div>
+    <div style="background:#FEE2E2;border:1.5px solid #F09595;color:#7F1D1D;padding:12px 14px;border-radius:var(--r);font-size:13px;margin-bottom:14px;line-height:1.5">
+      <strong>⚠️ This cannot be undone.</strong><br>
+      Deleting your account will permanently remove:
+      <ul style="margin-top:6px;padding-left:20px">
+        <li>Your account and login</li>
+        <li>All events you've posted</li>
+        <li>Any business listings you own</li>
+      </ul>
+    </div>
+    <div class="field"><label>Confirm with your password <span class="req">*</span></label><input type="password" id="daPw" autocomplete="current-password"></div>
+    <div class="modal-actions">
+      <button class="btn-amber" style="background:var(--danger);border-color:var(--danger)" onclick="doDeleteAccount()">Yes, Delete My Account</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="daErr"></div>`;
+  openModal('evModal');
+}
+
+async function doDeleteAccount(){
+  const pw = document.getElementById('daPw').value;
+  if (!pw) { document.getElementById('daErr').textContent = 'Password required.'; return; }
+  if (!confirm('Are you absolutely sure? This will permanently delete your account and all your data.')) return;
   try {
-    await api('/api/listings/my/' + id + '/cancel', { method:'POST' });
-    await refreshMyListings();
-    await loadAll();
-    renderMyListings();
-  } catch(e) { alert(e.message); }
+    await api('/api/auth/me', { method:'DELETE', body: JSON.stringify({ password: pw })});
+    doLogout();
+    closeModal('evModal');
+    alert('Your account has been deleted.');
+  } catch(e) { document.getElementById('daErr').textContent = e.message; }
 }
 
-function doLogout() { clearSession(); renderNav(); closeModal('listingModal'); }
+/* ── EVENT MODAL ── */
+function clickAddEvent(){if(!authUser){openAuthModal();return;}openEventModal(null);}
+function openEventModal(ev){
+  editingId=ev?ev.id:null;
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('evModalContent').innerHTML=`
+    <div class="modal-title">${ev?'Edit Event':'Post an Event'}</div>
+    <div class="field"><label>Event Name <span class="req">*</span></label><input type="text" id="fNm" value="${ev?esc(ev.name):''}" placeholder="Name of the event" oninput="checkDuplicate()"></div>
+    <div id="dupWarn" style="display:none;font-size:13px;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:6px;padding:8px 12px;margin-bottom:8px">⚠️ <span id="dupWarnText"></span></div>
+    <div class="field"><label>Location / Address <span class="req">*</span></label><input type="text" id="fLc" value="${ev?esc(ev.location):''}" placeholder="Where is it?"></div>
+    <div class="field frow">
+      <div><label>Date <span class="req">*</span></label><input type="date" id="fDt" value="${ev?ev.date:today}" onchange="checkDuplicate()"></div>
+      <div><label>Time</label><input type="text" id="fTm" value="${ev&&ev.time!=='TBD'?esc(ev.time):''}" placeholder="e.g. 7:00 PM"></div>
+    </div>
+    <div class="field frow">
+      <div><label>Price</label><input type="text" id="fPr" value="${ev?esc(ev.price):''}" placeholder="Free or $5"></div>
+      <div><label>Contact</label><input type="text" id="fCo" value="${ev&&ev.contact!=='-'?esc(ev.contact):''}" placeholder="Phone or email"></div>
+    </div>
+    <div class="field"><label>Category</label>
+      <select id="fCt">${CATS.map(c=>`<option value="${c.id}"${(ev?ev.cat:'')==c.id?' selected':''}>${c.label}</option>`).join('')}</select>
+    </div>
+    <div class="modal-actions">
+      <button class="${ev?'btn-blue':'btn-amber'}" onclick="doSubmitEvent()">${ev?'Save Changes':'Post Event'}</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="fErr"></div><div class="ok-msg" id="fOk"></div>`;
+  openModal('evModal');
+}
+async function doSubmitEvent(){
+  const payload={cat:document.getElementById('fCt').value,name:document.getElementById('fNm').value.trim(),location:document.getElementById('fLc').value.trim(),date:document.getElementById('fDt').value,time:document.getElementById('fTm').value.trim()||'TBD',price:document.getElementById('fPr').value.trim()||'Free',contact:document.getElementById('fCo').value.trim()||'-'};
+  if(!payload.name||!payload.location||!payload.date){document.getElementById('fErr').textContent='Name, location, and date are required.';return;}
+  try{
+    if(editingId){const u=await api('/api/events/'+editingId,{method:'PUT',body:JSON.stringify(payload)});allEvs=allEvs.map(e=>e.id===editingId?u:e);document.getElementById('fOk').textContent='✓ Event updated!';}
+    else{const n=await api('/api/events',{method:'POST',body:JSON.stringify(payload)});allEvs.push(n);document.getElementById('fOk').textContent='✓ Event posted!';}
+    allEvs.sort((a,b)=>a.date.localeCompare(b.date));renderEvents();setTimeout(()=>closeModal('evModal'),1200);
+  }catch(e){document.getElementById('fErr').textContent=e.message;}
+}
+async function deleteEvent(id){
+  if(!authUser||!confirm('Remove this event?'))return;
+  try{await api('/api/events/'+id,{method:'DELETE'});allEvs=allEvs.filter(e=>e.id!==id);renderEvents();}
+  catch(e){alert(e.message);}
+}
 
-// ── INACTIVITY AUTO-LOGOUT (30 min) ──
+/* ── RENDER EVENTS ── */
+function renderEvents(){
+  // Also re-render month view if active
+  if (typeof viewMode !== 'undefined' && viewMode === 'month') renderMonth();
+  const q=srchQ.toLowerCase();
+  const helpEl=document.getElementById('evHelp');
+  const f=allEvs.filter(e=>{
+    const mc=activeFilters.size===0||activeFilters.has(e.cat);
+    const mq=!q||e.name.toLowerCase().includes(q)||e.location.toLowerCase().includes(q)||cl(e.cat).toLowerCase().includes(q);
+    const md=matchesDate(e.date);
+    return mc&&mq&&md;
+  });
+  document.getElementById('evCount').textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
+  if(helpEl){helpEl.dataset.show = f.length > 0 ? 'block' : 'none';helpEl.style.display = (typeof viewMode === 'undefined' || viewMode === 'list') && f.length > 0 ? 'block' : 'none';}
+  const list=document.getElementById('evList');
+  if(!f.length){
+    const isPast=dateFilter==='upcoming';
+    list.innerHTML=`<div class="no-events">No events found${isPast?' for upcoming dates':''}.<br>
+      ${isPast?`<span style="font-size:14px"><a href="#" onclick="setDateFilter('all');return false" style="color:var(--amber)">Show all events including past</a> · </span>`:''}
+      <span style="font-size:14px">Tap <strong>+ ADD EVENT</strong> to be the first!</span></div>`;
+    return;
+  }
+  const grp={};f.forEach(e=>{(grp[e.date]=grp[e.date]||[]).push(e);});
+  const fmtD=d=>{
+    const dt=new Date(d+'T12:00:00');
+    const today=new Date();today.setHours(0,0,0,0);
+    const tmrw=new Date(today);tmrw.setDate(today.getDate()+1);
+    const evDay=new Date(dt);evDay.setHours(0,0,0,0);
+    const sameYear=dt.getFullYear()===today.getFullYear();
+    const weekday=dt.toLocaleDateString('en-US',{weekday:'short'});
+    const monthDay=dt.toLocaleDateString('en-US',sameYear?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'});
+    let badge='';
+    if(evDay.getTime()===today.getTime()) badge='<span class="today-badge">TODAY</span>';
+    else if(evDay.getTime()===tmrw.getTime()) badge='<span class="tmrw-badge">TOMORROW</span>';
+    return{weekday,monthDay,badge};
+  };
+  const isAdm=authUser&&authUser.is_admin;
+  const canAct=e=>authUser&&(e.added_by===authUser.id||isAdm);
+  list.innerHTML=Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>{
+    const f=fmtD(d);
+    return `
+    <div class="date-group">
+      <div class="date-col">
+        ${f.badge}
+        <div class="date-weekday">${f.weekday}</div>
+        <div class="date-monthday">${f.monthDay}</div>
+      </div>
+      <div class="events-col">
+    ${evs.map(e=>`
+      <div class="erow" onclick='openEventDetail(${JSON.stringify(e)})'>
+        <span class="dot" style="background:${cc(e.cat)}"></span>
+        <span class="ename">${esc(e.name)}</span>
+        <span class="em">${esc(e.time)}</span>
+        <span class="erow-arrow">›</span>
+      </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── CATEGORY FILTERS ── */
+function renderChips(){
+  updateFilterPill();
+}
+function toggleFilter(id){if(activeFilters.has(id))activeFilters.delete(id);else activeFilters.add(id);renderFilterMenu();renderEvents();}
+function clearFilters(){activeFilters.clear();renderFilterMenu();renderEvents();}
+
+/* ── SPONSORS ── */
+function renderSponsors(){
+  const isAdm=authUser&&authUser.is_admin;
+  const cards=document.getElementById('sponCards');
+  let html='';
+  if(allSponsors.length){
+    html+=allSponsors.map(s=>`
+      <div class="spon-card">
+        ${isAdm?`<div class="spon-admin"><button class="s-edit-btn" onclick="openSponsorModal(${s.id})">edit</button><button class="s-del-btn" onclick="deleteSponsor(${s.id})">del</button></div>`:''}
+        <div class="spon-name">${esc(s.name)}</div>
+        ${s.tagline?`<div class="spon-tag">${esc(s.tagline)}</div>`:''}
+        ${s.url?`<a class="spon-link" href="${esc(s.url)}" target="_blank" rel="noopener">Visit →</a>`:''}
+      </div>`).join('');
+  }
+  // Always show a polished "Advertise" card at the end
+  html+=`<div class="spon-card advertise-card" onclick="showAdvertiseInfo()">
+    <div class="spon-name" style="color:#EF9F27">Advertise Here</div>
+    <div class="spon-tag">Reach New Lexington — $25/mo</div>
+    <span class="spon-link">Learn more →</span>
+  </div>`;
+  cards.innerHTML=html;
+}
+
+function showAdvertiseInfo(){
+  document.getElementById('spModalContent').innerHTML=`
+    <div class="modal-title">📢 Advertise on NewLexCalendar.com</div>
+    <p style="font-size:15px;color:var(--text2);margin-bottom:16px;line-height:1.6">Reach hundreds of New Lexington and Perry County residents every month. Your business appears on the sponsor bar at the bottom of every page — always visible, never missed.</p>
+    <div style="background:var(--surface2);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:18px">
+      <div style="font-size:22px;font-weight:700;color:var(--amber);margin-bottom:4px">$25 / month</div>
+      <div style="font-size:14px;color:var(--text2)">✓ Business name &amp; tagline on every page<br>✓ Link to your website<br>✓ Cancel any time</div>
+    </div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:4px">Ready to reach New Lexington every day?</p>
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="window.location.href='/advertise'" style="flex:2">Get Started →</button>
+      <button class="btn-ghost" onclick="closeModal('spModal')">Close</button>
+    </div>`;
+  openModal('spModal');
+}
+
+function openSponsorModal(id){
+  const sp=id?allSponsors.find(s=>s.id===id):null;
+  document.getElementById('spModalContent').innerHTML=`
+    <div class="modal-title">${sp?'Edit Sponsor':'Add Sponsor'}</div>
+    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="spNm" value="${sp?esc(sp.name):''}" placeholder="Business or organization name"></div>
+    <div class="field"><label>Tagline</label><input type="text" id="spTg" value="${sp?esc(sp.tagline||''):''}" placeholder="Short description or slogan"></div>
+    <div class="field"><label>Website URL</label><input type="text" id="spUrl" value="${sp?esc(sp.url||''):''}" placeholder="https://..."></div>
+    <div class="modal-actions">
+      <button class="btn-amber" onclick="doSponsorSubmit(${id||0})">${sp?'Save Changes':'Add Sponsor'}</button>
+      <button class="btn-ghost" onclick="closeModal('spModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="spErr"></div>`;
+  openModal('spModal');
+}
+async function doSponsorSubmit(id){
+  const payload={name:document.getElementById('spNm').value.trim(),tagline:document.getElementById('spTg').value.trim(),url:document.getElementById('spUrl').value.trim()};
+  if(!payload.name){document.getElementById('spErr').textContent='Business name is required.';return;}
+  try{
+    if(id){const u=await api('/api/sponsors/'+id,{method:'PUT',body:JSON.stringify(payload)});allSponsors=allSponsors.map(s=>s.id===id?u:s);}
+    else{const n=await api('/api/sponsors',{method:'POST',body:JSON.stringify(payload)});allSponsors.push(n);}
+    renderSponsors();closeModal('spModal');
+  }catch(e){document.getElementById('spErr').textContent=e.message;}
+}
+async function deleteSponsor(id){
+  if(!confirm('Delete this sponsor?'))return;
+  try{await api('/api/sponsors/'+id,{method:'DELETE'});allSponsors=allSponsors.filter(s=>s.id!==id);renderSponsors();}
+  catch(e){alert(e.message);}
+}
+
+/* ── BULK IMPORT ── */
+function openImportModal(){
+  parsedImport=[];
+  document.getElementById('importModalContent').innerHTML=`
+    <div class="modal-title">📥 Bulk Import Events</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:12px">Paste CSV data or upload a file. Download the template for the correct format.</p>
+    <a class="import-template" onclick="downloadTemplate()">⬇ Download CSV Template</a>
+    <div class="field"><label>Paste CSV here</label>
+      <textarea class="import-csv-area" id="csvArea" placeholder="name,location,date,time,price,contact,category&#10;Annual Bake Sale,First Baptist Church,2026-06-15,10:00 AM,Free,(740) 555-1234,church"></textarea>
+    </div>
+    <div class="field"><label>Or upload a .csv file</label><input type="file" id="csvFile" accept=".csv,.txt" onchange="handleCSVFile(this)" style="font-size:13px;padding:7px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn-blue btn-sm" onclick="previewImport()">Preview</button>
+      <button class="btn-ghost btn-sm" onclick="document.getElementById('csvArea').value=''">Clear</button>
+    </div>
+    <div id="previewArea"></div>
+    <div class="modal-actions" id="importActions" style="display:none">
+      <button class="btn-amber" onclick="doImport()">Import Events</button>
+      <button class="btn-ghost" onclick="closeModal('importModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="impErr"></div><div class="ok-msg" id="impOk"></div>`;
+  openModal('importModal');
+}
+function downloadTemplate(){
+  const rows=['name,location,date,time,price,contact,category','Annual Bake Sale,First Baptist Church,2026-06-15,10:00 AM,Free,(740) 555-1234,church','Farmers Market,Main Street,2026-06-20,8:00 AM - Noon,Free Entry,info@market.org,food'];
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='newlex-events-template.csv';a.click();
+}
+function handleCSVFile(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{document.getElementById('csvArea').value=e.target.result;previewImport();};reader.readAsText(file);}
+function parseCSVLine(line){const result=[];let cur='';let inQ=false;for(let i=0;i<line.length;i++){if(line[i]==='"'){inQ=!inQ;}else if(line[i]===','&&!inQ){result.push(cur.trim());cur='';}else{cur+=line[i];}}result.push(cur.trim());return result;}
+function previewImport(){
+  const text=document.getElementById('csvArea').value.trim();
+  if(!text){document.getElementById('previewArea').innerHTML='';return;}
+  const lines=text.split('\n').filter(l=>l.trim());
+  const start=lines[0].toLowerCase().includes('name')?1:0;
+  parsedImport=lines.slice(start).map(line=>{const c=parseCSVLine(line);return{name:c[0]||'',location:c[1]||'',date:c[2]||'',time:c[3]||'TBD',price:c[4]||'Free',contact:c[5]||'-',cat:c[6]?.toLowerCase().trim()||'other'};}).filter(e=>e.name&&e.location&&e.date);
+  if(!parsedImport.length){document.getElementById('previewArea').innerHTML='<p style="color:var(--danger);font-size:13px">No valid rows found. Check your format.</p>';document.getElementById('importActions').style.display='none';return;}
+  document.getElementById('previewArea').innerHTML=`<p style="font-size:13px;color:var(--text2);margin-bottom:6px"><strong>${parsedImport.length}</strong> event${parsedImport.length!==1?'s':''} ready to import:</p>
+    <div class="preview-wrap"><table class="preview-table"><thead><tr><th>Name</th><th>Location</th><th>Date</th><th>Category</th></tr></thead>
+    <tbody>${parsedImport.map(e=>`<tr><td>${esc(e.name)}</td><td>${esc(e.location)}</td><td>${esc(e.date)}</td><td style="color:${cc(e.cat)}">${esc(cl(e.cat))}</td></tr>`).join('')}</tbody></table></div>`;
+  document.getElementById('importActions').style.display='flex';
+  document.getElementById('impErr').textContent='';document.getElementById('impOk').textContent='';
+}
+async function doImport(){
+  if(!parsedImport.length)return;
+  try{
+    const result=await api('/api/events/bulk',{method:'POST',body:JSON.stringify({events:parsedImport})});
+    await loadEvents();
+    document.getElementById('impOk').textContent=`✓ ${result.imported} event${result.imported!==1?'s':''} imported!`;
+    document.getElementById('importActions').style.display='none';
+    setTimeout(()=>closeModal('importModal'),2000);
+  }catch(e){document.getElementById('impErr').textContent=e.message;}
+}
+
+/* ── MODAL HELPERS ── */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function modalOutsideClick(e,id){if(e.target.id===id)closeModal(id);}
+document.getElementById('srch').addEventListener('input',function(){srchQ=this.value;renderEvents();});
+
+/* ── EVENT DETAIL + AD ── */
+function getRandomAd() {
+  const premium = allSponsors.filter(s => s.source === 'advertiser' && s.tier === 'premium');
+  if (!premium.length) return null;
+  return premium[Math.floor(Math.random() * premium.length)];
+}
+
+function fmtDateFull(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+}
+
+function openEventDetail(ev) {
+  const ad = getRandomAd();
+  const catColor = cc(ev.cat);
+  const catName  = cl(ev.cat);
+
+  const adHTML = ad ? `
+    <div class="ad-card ad-pulse">
+      <div class="ad-sponsored">📢 Sponsored</div>
+      <div class="ad-biz-name">${esc(ad.name)}</div>
+      ${ad.tagline ? `<div class="ad-tagline">${esc(ad.tagline)}</div>` : ''}
+      ${ad.phone   ? `<a class="ad-phone" href="tel:${esc(ad.phone)}">📞 ${esc(ad.phone)}</a>` : ''}
+      ${ad.url     ? `<a class="ad-website" href="${esc(ad.url.startsWith('http') ? ad.url : 'https://' + ad.url)}" target="_blank" rel="noopener">Visit Our Website →</a>` : ''}
+    </div>` : `
+    <div class="ad-no-ads">
+      <div style="font-size:28px">📢</div>
+      <div class="ad-no-ads-text"><strong>Your ad could be here</strong><br>Reach every New Lexington visitor for just $50/mo</div>
+      <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber);font-weight:600;text-decoration:none;margin-top:4px;display:inline-block">See ad options →</a>
+    </div>`;
+
+  document.getElementById('detailModalContent').innerHTML = `
+    <div class="ev-detail-cat" style="color:${catColor};border-color:${catColor};background:${catColor}18;margin-bottom:16px">
+      <span style="width:8px;height:8px;border-radius:50%;background:${catColor};display:inline-block"></span>
+      ${esc(catName)}
+    </div>
+    <div style="font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--text);margin-bottom:18px;line-height:1.3">${esc(ev.name)}</div>
+    <div class="ev-detail-grid">
+      <div class="ev-detail-info">
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">📍 Location</span>
+          <span class="ev-detail-value">${esc(ev.location)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">📅 Date</span>
+          <span class="ev-detail-value">${fmtDateFull(ev.date)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">🕐 Time</span>
+          <span class="ev-detail-value">${esc(ev.time)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">💰 Price</span>
+          <span class="ev-detail-value ${isFree(ev.price)?'pf':'pp'}">${esc(ev.price)}</span>
+        </div>
+        <div class="ev-detail-row">
+          <span class="ev-detail-label">📞 Contact</span>
+          <span class="ev-detail-value">${esc(ev.contact)}</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <a class="btn-amber btn-sm" style="flex:1;min-width:90px;text-align:center;text-decoration:none" href="/api/events/${ev.id}/ical">📅 Add to My Calendar</a>
+          <button class="btn-sm" style="flex:1;min-width:90px;background:var(--surface2);color:var(--text);border-color:var(--border-md)" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
+        </div>
+        ${authUser && (ev.added_by === authUser.id || authUser.is_admin) ? `
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="btn-blue btn-sm" style="flex:1;min-width:90px" onclick='closeModal("detailModal");openEventModal(${JSON.stringify(ev)})'>✏ Edit</button>
+            <button class="btn-sm" style="flex:1;min-width:90px;background:var(--danger-bg);color:var(--danger);border-color:#F09595" onclick='closeModal("detailModal");deleteEvent(${ev.id})'>🗑 Remove</button>
+          </div>` : ''}
+      </div>
+      ${adHTML}
+    </div>`;
+
+  openModal('detailModal');
+}
+
+/* ── DUPLICATE CHECK ── */
+function checkDuplicate() {
+  const nameEl = document.getElementById('fNm');
+  const dateEl = document.getElementById('fDt');
+  const warnEl = document.getElementById('dupWarn');
+  const warnTx = document.getElementById('dupWarnText');
+  if (!nameEl || !dateEl || !warnEl) return;
+
+  const name = nameEl.value.trim().toLowerCase();
+  const date = dateEl.value;
+  if (!name || !date) { warnEl.style.display='none'; return; }
+
+  const matches = allEvs.filter(e =>
+    e.name.trim().toLowerCase() === name && e.date === date &&
+    e.id !== editingId
+  );
+  const similar = allEvs.filter(e =>
+    e.name.trim().toLowerCase().includes(name.slice(0,10)) && e.id !== editingId &&
+    matches.length === 0
+  );
+
+  if (matches.length > 0) {
+    warnTx.textContent = 'This exact event already exists on that date.';
+    warnEl.style.display = 'block';
+    warnEl.style.background = '#FCEBEB';
+    warnEl.style.borderColor = '#F09595';
+    warnEl.style.color = '#A32D2D';
+  } else if (similar.length > 0) {
+    warnTx.textContent = 'Similar event found: "' + similar[0].name + '" on ' + new Date(similar[0].date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '. Make sure this is not a duplicate.';
+    warnEl.style.display = 'block';
+    warnEl.style.background = '#FEF3C7';
+    warnEl.style.borderColor = '#FCD34D';
+    warnEl.style.color = '#92400E';
+  } else {
+    warnEl.style.display = 'none';
+  }
+}
+
+/* ── INACTIVITY AUTO-LOGOUT (15 min admin / 60 min users) ── */
 let inactivityTimer = null;
 function resetInactivityTimer() {
   clearTimeout(inactivityTimer);
-  if (!calUser) return;
-  // Admin gets shorter timeout (15min); regular users 60min
-  const timeoutMs = calUser.is_admin ? 15 * 60 * 1000 : 60 * 60 * 1000;
+  if (!authUser) return;
+  const timeoutMs = authUser.is_admin ? 15 * 60 * 1000 : 60 * 60 * 1000;
   inactivityTimer = setTimeout(() => {
     doLogout();
     showInactivityNotice();
@@ -896,7 +1191,7 @@ function resetInactivityTimer() {
 }
 function showInactivityNotice() {
   const notice = document.createElement('div');
-  notice.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;padding:12px 22px;border-radius:8px;z-index:9999;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:90%;text-align:center';
+  notice.style.cssText = 'position:fixed;top:90px;left:50%;transform:translateX(-50%);background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;padding:12px 22px;border-radius:8px;z-index:9999;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:90%;text-align:center';
   notice.textContent = '⏱️ You have been logged out due to inactivity.';
   document.body.appendChild(notice);
   setTimeout(() => notice.remove(), 5000);
@@ -905,23 +1200,147 @@ function showInactivityNotice() {
   document.addEventListener(evt, resetInactivityTimer, { passive: true })
 );
 
-// Init
-checkURLParams();
-renderCatChips();
-(async () => {
-  await refreshMyListings();
-  renderNav();
-  await loadAll();
-  resetInactivityTimer();
-})();
+/* ── VIEW MODE (LIST / MONTH) ── */
+let viewMode = localStorage.getItem('nlcc_view') || 'list';
+let currentMonth = new Date();
+
+function setView(mode) {
+  viewMode = mode;
+  localStorage.setItem('nlcc_view', mode);
+  document.querySelectorAll('.view-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.view === mode));
+  document.getElementById('evList').style.display = mode === 'list' ? 'block' : 'none';
+  document.getElementById('monthView').style.display = mode === 'month' ? 'block' : 'none';
+  const help = document.getElementById('evHelp');
+  if (help) help.style.display = mode === 'list' ? help.dataset.show || 'none' : 'none';
+  if (mode === 'month') renderMonth();
+}
+
+function changeMonth(delta) {
+  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1);
+  renderMonth();
+}
+function goToToday() {
+  currentMonth = new Date();
+  renderMonth();
+}
+
+function renderMonth() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+  const q = srchQ.toLowerCase();
+  const filteredEvs = allEvs.filter(e => {
+    const mc = activeFilters.size === 0 || activeFilters.has(e.cat);
+    const mq = !q || e.name.toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || cl(e.cat).toLowerCase().includes(q);
+    return mc && mq;
+  });
+  const eventsByDate = {};
+  filteredEvs.forEach(e => { (eventsByDate[e.date] = eventsByDate[e.date] || []).push(e); });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yr = today.getFullYear();
+  const mo = String(today.getMonth() + 1).padStart(2, '0');
+  const dy = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yr}-${mo}-${dy}`;
+  const isMobile = window.innerWidth <= 600;
+
+  let html = `
+    <div class="month-nav">
+      <button class="month-nav-btn" onclick="changeMonth(-1)" title="Previous month">‹</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="month-title">${monthName}</div>
+        <button class="month-today-btn" onclick="goToToday()">Today</button>
+      </div>
+      <button class="month-nav-btn" onclick="changeMonth(1)" title="Next month">›</button>
+    </div>
+    <div class="month-grid">
+      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="dow-label">${d}</div>`).join('')}`;
+
+  // Previous month padding
+  for (let i = startDay - 1; i >= 0; i--) {
+    html += `<div class="day-cell other-month"><div class="day-num">${prevMonthLastDay - i}</div></div>`;
+  }
+
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const events = eventsByDate[dateStr] || [];
+    const isToday = dateStr === todayStr;
+    const hasEvents = events.length > 0;
+
+    let body = '';
+    if (isMobile) {
+      // Mobile: just colored dots
+      const dotHtml = events.slice(0, 6).map(e => `<span class="event-dot" style="background:${cc(e.cat)}"></span>`).join('');
+      body = `<div class="event-dots">${dotHtml}</div>${events.length > 6 ? `<div class="more-events">+${events.length-6}</div>` : ''}`;
+    } else {
+      // Desktop: 3 event pills + "+ N more"
+      const eventHtml = events.slice(0, 3).map(e =>
+        `<div class="event-pill" style="border-left-color:${cc(e.cat)};background:${cc(e.cat)}15;color:${cc(e.cat)}" onclick="event.stopPropagation();openEventDetail(${esc(JSON.stringify(e))})">${esc(e.name)}</div>`
+      ).join('');
+      const moreCount = events.length > 3 ? events.length - 3 : 0;
+      const moreHtml = moreCount > 0 ? `<div class="more-events">+${moreCount} more</div>` : '';
+      body = eventHtml + moreHtml;
+    }
+
+    const onClick = hasEvents ? `onclick="showDayEvents('${dateStr}')"` : '';
+    const cls = `day-cell${isToday ? ' today' : ''}${hasEvents ? ' has-events' : ''}`;
+    html += `<div class="${cls}" ${onClick}>
+      <div class="day-num">${day}</div>
+      ${body}
+    </div>`;
+  }
+
+  // Next month padding
+  const totalCells = startDay + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    html += `<div class="day-cell other-month"><div class="day-num">${d}</div></div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('monthView').innerHTML = html;
+}
+
+function showDayEvents(dateStr) {
+  const events = allEvs.filter(e => e.date === dateStr);
+  if (!events.length) return;
+  const date = new Date(dateStr + 'T12:00:00');
+  const dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('detailModalContent').innerHTML = `
+    <div class="modal-title">${dateLabel}</div>
+    <p style="color:var(--text2);margin-bottom:14px;font-size:14px">${events.length} event${events.length !== 1 ? 's' : ''} on this day. Tap one for details.</p>
+    ${events.map(e => `
+      <div class="erow" onclick='closeModal("detailModal");openEventDetail(${esc(JSON.stringify(e))})' style="margin-bottom:6px">
+        <span class="dot" style="background:${cc(e.cat)}"></span>
+        <span class="ename">${esc(e.name)}</span>
+        <span class="em">${esc(e.time)}</span>
+        <span class="erow-arrow">›</span>
+      </div>
+    `).join('')}`;
+  openModal('detailModal');
+}
+
+window.addEventListener('resize', () => { if (viewMode === 'month') renderMonth(); });
+
+init();
+resetInactivityTimer();
+// Initialize view on load
+setView(viewMode);
 </script>
-<!-- FLOATING STICKY CTA -->
-<a href="#" onclick="openModal('listingModal');return false" id="floatCTA" style="position:fixed;bottom:20px;right:20px;background:var(--amber);color:#fff;font-size:14px;font-weight:700;padding:14px 22px;border-radius:100px;text-decoration:none;box-shadow:0 6px 20px rgba(186,117,23,.4);z-index:500;display:flex;align-items:center;gap:6px;transition:transform .15s,box-shadow .15s">
-  <span style="font-size:18px;line-height:1">+</span> List My Business — $1
-</a>
+<!-- FLOATING ADD EVENT BUTTON -->
+<button id="addEventFloat" onclick="clickAddEvent()" style="position:fixed;bottom:20px;right:20px;background:var(--amber);color:#fff;font-size:14px;font-weight:700;padding:14px 22px;border-radius:100px;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(186,117,23,.4);z-index:500;display:flex;align-items:center;gap:6px;transition:transform .15s,box-shadow .15s">
+  <span style="font-size:18px;line-height:1">+</span> Add Event
+</button>
 <style>
-#floatCTA:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(186,117,23,.5)}
-@media(max-width:480px){#floatCTA{font-size:13px;padding:12px 18px;bottom:14px;right:14px}}
+#addEventFloat:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(186,117,23,.5)}
+@media(max-width:480px){#addEventFloat{font-size:13px;padding:12px 18px;bottom:14px;right:14px}}
 </style>
 </body>
 </html>
