@@ -156,6 +156,39 @@ app.post('/api/auth/login', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Change password
+app.put('/api/auth/password', requireAuth, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body || {};
+    if (!current_password || !new_password) return res.status(400).json({ error: 'Current and new password are required.' });
+    if (new_password.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+    const db = await getDb();
+    const row = await db.get('SELECT password_hash FROM users WHERE id=?', [req.user.id]);
+    if (!row || !bcrypt.compareSync(current_password, row.password_hash)) return res.status(401).json({ error: 'Current password is incorrect.' });
+    const newHash = bcrypt.hashSync(new_password, 10);
+    await db.run('UPDATE users SET password_hash=? WHERE id=?', [newHash, req.user.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete account (and all owned events + listings)
+app.delete('/api/auth/me', requireAuth, async (req, res) => {
+  try {
+    const { password } = req.body || {};
+    if (!password) return res.status(400).json({ error: 'Password required to confirm deletion.' });
+    const db = await getDb();
+    const row = await db.get('SELECT password_hash, is_admin FROM users WHERE id=?', [req.user.id]);
+    if (!row) return res.status(404).json({ error: 'Account not found.' });
+    if (row.is_admin) return res.status(403).json({ error: 'Admin accounts cannot be deleted via this endpoint.' });
+    if (!bcrypt.compareSync(password, row.password_hash)) return res.status(401).json({ error: 'Incorrect password.' });
+    // Cascade delete: events posted by user, listings owned by user, then user
+    await db.run('DELETE FROM events WHERE added_by=?', [req.user.id]);
+    await db.run('DELETE FROM listings WHERE user_id=?', [req.user.id]);
+    await db.run('DELETE FROM users WHERE id=?', [req.user.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── EVENTS ──
 app.get('/api/events', async (req, res) => {
   try {
