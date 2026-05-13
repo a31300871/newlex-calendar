@@ -4,6 +4,7 @@ const cors     = require('cors');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const path     = require('path');
+const crypto   = require('crypto');
 const { getDb } = require('./db');
 
 const app    = express();
@@ -414,6 +415,127 @@ app.get('/api/listings', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── UNIFIED AUTH LISTINGS ENDPOINTS (uses calendar user auth) ──
+
+// GET /api/listings/my - returns listings owned by current calendar user
+app.get('/api/listings/my', requireAuth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all('SELECT * FROM listings WHERE user_id=? ORDER BY created_at DESC', [req.user.id]);
+    res.json(rows.map(safeListing));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/create - create a listing tied to the calendar user (pending until paid)
+app.post('/api/listings/create', requireAuth, async (req, res) => {
+  try {
+    const { business_name, category, phone, website, address, description } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const db = await getDb();
+    // Generate placeholder email/password (won't be used since auth is via user_id)
+    const placeholderEmail = `user-${req.user.id}-${Date.now()}@newlexcalendar.local`;
+    const placeholderPwd = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+    const r = await db.run(
+      `INSERT INTO listings (user_id, owner_name, owner_email, password_hash, business_name, category, phone, website, address, description, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [
+        req.user.id,
+        req.user.name || business_name.trim(),
+        placeholderEmail,
+        placeholderPwd,
+        business_name.trim(),
+        category || 'other',
+        (phone||'').trim(),
+        (website||'').trim(),
+        (address||'').trim(),
+        (description||'').trim()
+      ]
+    );
+    const listing = await db.get('SELECT * FROM listings WHERE id=?', [r.lastID]);
+    res.json(safeListing(listing));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/:id/checkout - start Stripe checkout for a user's listing
+app.post('/api/listings/:id/checkout', requireAuth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const listing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [req.params.id, req.user.id]);
+    if (!listing) return res.status(404).json({ error: 'Listing not found.' });
+    if (!process.env.STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe is not configured.' });
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{ price: process.env.STRIPE_PRICE_LISTING, quantity: 1 }],
+      success_url: `${process.env.SITE_URL || 'https://www.newlexcalendar.com'}/directory?listing_paid=1&session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
+      cancel_url: `${process.env.SITE_URL || 'https://www.newlexcalendar.com'}/directory?listing_canceled=1`,
+      metadata: { listing_id: String(listing.id), user_id: String(req.user.id) }
+    });
+    res.json({ url: session.url });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/my/verify-session - verify Stripe checkout and activate
+app.post('/api/listings/my/verify-session', requireAuth, async (req, res) => {
+  try {
+    const { session_id, listing_id } = req.body || {};
+    if (!session_id || !listing_id) return res.status(400).json({ error: 'Missing session_id or listing_id.' });
+    if (!process.env.STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe is not configured.' });
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (session.payment_status !== 'paid') return res.status(400).json({ error: 'Payment not completed.' });
+    const db = await getDb();
+    const listing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [listing_id, req.user.id]);
+    if (!listing) return res.status(404).json({ error: 'Listing not found.' });
+    const expiresAt = new Date(); expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    await db.run(
+      "UPDATE listings SET status='active', expires_at=? WHERE id=?",
+      [expiresAt.toISOString(), listing_id]
+    );
+    const updated = await db.get('SELECT * FROM listings WHERE id=?', [listing_id]);
+    res.json(safeListing(updated));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/listings/my/:id - user can edit their own listing
+app.put('/api/listings/my/:id', requireAuth, async (req, res) => {
+  try {
+    const { business_name, category, phone, website, address, description } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const db = await getDb();
+    const existing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [req.params.id, req.user.id]);
+    if (!existing) return res.status(404).json({ error: 'Listing not found.' });
+    await db.run(
+      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=? WHERE id=?',
+      [
+        business_name.trim(),
+        category || 'other',
+        (phone||'').trim(),
+        (website||'').trim(),
+        (address||'').trim(),
+        (description||'').trim(),
+        req.params.id
+      ]
+    );
+    const updated = await db.get('SELECT * FROM listings WHERE id=?', [req.params.id]);
+    res.json(safeListing(updated));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/listings/my/:id/cancel - user can cancel their own listing
+app.post('/api/listings/my/:id/cancel', requireAuth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const existing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [req.params.id, req.user.id]);
+    if (!existing) return res.status(404).json({ error: 'Listing not found.' });
+    await db.run("UPDATE listings SET status='expired' WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── LEGACY: Original listing auth endpoints (kept for backward compat) ──
+
 // POST /api/listings/register
 app.post('/api/listings/register', async (req, res) => {
   try {
@@ -513,6 +635,55 @@ app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
     const db = await getDb();
     await db.run('DELETE FROM listings WHERE id=?', [req.params.id]);
     res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: create a new listing (no payment required)
+app.post('/api/admin/listings', requireAdmin, async (req, res) => {
+  try {
+    const { business_name, category, phone, website, address, description, owner_email, owner_name } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+
+    const db = await getDb();
+
+    // Generate placeholder email if not provided
+    let email = (owner_email || '').trim().toLowerCase();
+    if (!email) {
+      email = `admin-${Date.now()}-${crypto.randomBytes(3).toString('hex')}@newlexcalendar.local`;
+    }
+
+    // Check email uniqueness
+    const existing = await db.get('SELECT id FROM listings WHERE owner_email=?', [email]);
+    if (existing) return res.status(400).json({ error: 'A listing with that email already exists.' });
+
+    // Random password (admin-created listings aren't meant for owner login by default)
+    const randomPwd = crypto.randomBytes(16).toString('hex');
+    const hash = await bcrypt.hash(randomPwd, 10);
+
+    // 1-year expiration
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+    const result = await db.run(
+      `INSERT INTO listings
+       (owner_name, owner_email, password_hash, business_name, category, phone, website, address, description, status, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+      [
+        (owner_name || '').trim() || business_name.trim(),
+        email,
+        hash,
+        business_name.trim(),
+        category || 'other',
+        (phone || '').trim(),
+        (website || '').trim(),
+        (address || '').trim(),
+        (description || '').trim(),
+        expiresAt.toISOString()
+      ]
+    );
+
+    const listing = await db.get('SELECT * FROM listings WHERE id=?', [result.lastID]);
+    res.json(safeListing(listing));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
