@@ -88,6 +88,17 @@ async function getDb() {
   // listings: link to community user (unified auth)
   try { await _db.run("ALTER TABLE listings ADD COLUMN user_id INTEGER REFERENCES users(id)"); } catch(_) {}
   try { await _db.run("CREATE INDEX IF NOT EXISTS idx_listings_user ON listings(user_id)"); } catch(_) {}
+  // approval workflow + Town Crier (trusted submitter) status
+  try { await _db.run("ALTER TABLE users ADD COLUMN is_town_crier INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN status TEXT NOT NULL DEFAULT 'approved'"); } catch(_) {}
+  try { await _db.run("CREATE INDEX IF NOT EXISTS idx_events_status ON events(status)"); } catch(_) {}
+  // Zipcode-based scoping + affiliate links
+  try { await _db.run("ALTER TABLE events ADD COLUMN zipcode TEXT NOT NULL DEFAULT '43764'"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN affiliate_url TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE listings ADD COLUMN zipcode TEXT NOT NULL DEFAULT '43764'"); } catch(_) {}
+  try { await _db.run("ALTER TABLE users ADD COLUMN home_zipcode TEXT DEFAULT '43764'"); } catch(_) {}
+  try { await _db.run("CREATE INDEX IF NOT EXISTS idx_events_zipcode ON events(zipcode)"); } catch(_) {}
+  try { await _db.run("CREATE INDEX IF NOT EXISTS idx_listings_zipcode ON listings(zipcode)"); } catch(_) {}
 
   const { c } = await _db.get('SELECT COUNT(*) AS c FROM users');
   if (c === 0) {
