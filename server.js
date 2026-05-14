@@ -106,6 +106,16 @@ app.post('/api/stripe/webhook', async (req, res) => {
 );
 
 // ── AUTH HELPERS ──
+// Normalize phone to digits only (10 or 11 digit US format).
+// Returns '' if invalid (too short).
+function normalizePhone(raw) {
+  if (!raw) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  if (digits.length === 10) return digits;            // 7405551234
+  if (digits.length === 11 && digits[0] === '1') return digits.slice(1); // 17405551234 -> 7405551234
+  return '';
+}
+
 function requireAuth(req, res, next) {
   const h = req.headers.authorization;
   if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
@@ -132,26 +142,42 @@ function requireAdvertiser(req, res, next) {
 // ── USER AUTH ──
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, address } = req.body || {};
-    if (!name?.trim() || !email?.trim() || !password) return res.status(400).json({ error: 'Name, email, and password are required.' });
+    const { name, email, phone, password, address } = req.body || {};
+    if (!name?.trim() || !password) return res.status(400).json({ error: 'Name and password are required.' });
     if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
     if (!address?.trim()) return res.status(400).json({ error: 'Address is required.' });
+    const emailClean = (email || '').toLowerCase().trim();
+    const phoneClean = normalizePhone(phone);
+    if (!emailClean && !phoneClean) return res.status(400).json({ error: 'Please provide either an email or a phone number.' });
+    if (phone && !phoneClean) return res.status(400).json({ error: 'Phone number must be 10 digits (US format).' });
     const db = await getDb();
-    if (await db.get('SELECT id FROM users WHERE email=?', [email.toLowerCase()])) return res.status(409).json({ error: 'Email already registered.' });
+    if (emailClean && await db.get('SELECT id FROM users WHERE email=?', [emailClean])) return res.status(409).json({ error: 'Email already registered.' });
+    if (phoneClean && await db.get('SELECT id FROM users WHERE phone=?', [phoneClean])) return res.status(409).json({ error: 'Phone number already registered.' });
+    const emailForDb = emailClean || (`phone-${phoneClean}-${Date.now()}@local.placeholder`);
     const hash = bcrypt.hashSync(password, 10);
-    const r = await db.run('INSERT INTO users (name,email,password_hash,address) VALUES (?,?,?,?)', [name.trim(), email.toLowerCase(), hash, address.trim()]);
-    const user = { id: r.lastID, name: name.trim(), email: email.toLowerCase(), is_admin: 0, is_town_crier: 0 };
+    const r = await db.run('INSERT INTO users (name,email,phone,password_hash,address) VALUES (?,?,?,?,?)', [name.trim(), emailForDb, phoneClean || null, hash, address.trim()]);
+    const user = { id: r.lastID, name: name.trim(), email: emailClean, phone: phoneClean || '', is_admin: 0, is_town_crier: 0 };
     res.status(201).json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body || {};
+    const { email, identifier, password } = req.body || {};
+    const raw = (identifier || email || '').toString().trim();
+    if (!raw || !password) return res.status(401).json({ error: 'Email/phone and password are required.' });
     const db = await getDb();
-    const row = await db.get('SELECT * FROM users WHERE email=?', [email?.toLowerCase()]);
-    if (!row || !bcrypt.compareSync(password || '', row.password_hash)) return res.status(401).json({ error: 'Incorrect email or password.' });
-    const user = { id: row.id, name: row.name, email: row.email, is_admin: row.is_admin, is_town_crier: row.is_town_crier };
+    let row = null;
+    const phoneTry = normalizePhone(raw);
+    if (phoneTry) {
+      row = await db.get('SELECT * FROM users WHERE phone=?', [phoneTry]);
+    }
+    if (!row) {
+      row = await db.get('SELECT * FROM users WHERE email=?', [raw.toLowerCase()]);
+    }
+    if (!row || !bcrypt.compareSync(password || '', row.password_hash)) return res.status(401).json({ error: 'Incorrect email/phone or password.' });
+    const emailForUser = (row.email && row.email.endsWith('@local.placeholder')) ? '' : row.email;
+    const user = { id: row.id, name: row.name, email: emailForUser, phone: row.phone || '', is_admin: row.is_admin, is_town_crier: row.is_town_crier };
     res.json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -839,8 +865,10 @@ app.put('/api/admin/users/:id/town-crier', requireAdmin, async (req, res) => {
 app.get('/api/auth/me', requireAuth, async (req, res) => {
   try {
     const db = await getDb();
-    const row = await db.get('SELECT id, name, email, is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
-    res.json(row);
+    const u = await db.get('SELECT id,name,email,phone,address,is_admin,is_town_crier,home_zipcode FROM users WHERE id=?', [req.user.id]);
+    if (!u) return res.status(404).json({ error: 'User not found.' });
+    if (u.email && u.email.endsWith('@local.placeholder')) u.email = '';
+    res.json(u);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
