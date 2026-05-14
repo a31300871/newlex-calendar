@@ -606,9 +606,10 @@ function evDate(str){return new Date(str+'T00:00:00');}
 function matchesDate(dateStr){
   const today=getToday();
   const ed=evDate(dateStr);
-  if(dateFilter==='today')  return ed.toDateString()===today.toDateString();
+  if(dateFilter==='today')    return ed.toDateString()===today.toDateString();
+  if(dateFilter==='tomorrow'){const tmrw=new Date(today);tmrw.setDate(today.getDate()+1);return ed.toDateString()===tmrw.toDateString();}
   if(dateFilter==='week'){const end=new Date(today);end.setDate(today.getDate()+7);return ed>=today&&ed<=end;}
-  if(dateFilter==='month')  return ed>=today&&ed.getMonth()===today.getMonth()&&ed.getFullYear()===today.getFullYear();
+  if(dateFilter==='month')    return ed>=today&&ed.getMonth()===today.getMonth()&&ed.getFullYear()===today.getFullYear();
   if(dateFilter==='upcoming') return ed>=today;
   return true; // 'all'
 }
@@ -672,7 +673,10 @@ function openWhenPicker(e){
       <span>${o.label}</span>
       ${dateFilter===o.id?'<span class="fp-opt-check">✓</span>':''}
     </div>
-  `).join('');
+  `).join('') + `
+    <div style="border-top:1.5px solid var(--border);margin:6px -8px 0;padding:8px 8px 0 8px">
+      <button class="btn-amber" style="width:100%;padding:9px;font-size:14px;font-weight:700;border-radius:6px" onclick="closeAllPopovers()">Done</button>
+    </div>`;
   positionPopover(pop, 'fpWhen');
   setTimeout(()=>document.addEventListener('click', closePopoverOnOutside, { once:true }), 0);
 }
@@ -694,6 +698,9 @@ function openWhatPicker(e){
         ${c.label}
       </label>
     `).join('')}
+    <div style="border-top:1.5px solid var(--border);margin:6px -8px 0;padding:8px 8px 0 8px">
+      <button class="btn-amber" style="width:100%;padding:10px;font-size:14px;font-weight:700;border-radius:6px" onclick="closeAllPopovers()">Done</button>
+    </div>
   `;
   positionPopover(pop, 'fpWhat');
   setTimeout(()=>document.addEventListener('click', closePopoverOnOutside, { once:true }), 0);
