@@ -856,16 +856,20 @@ function renderAuthModal(tab) {
     </div>
     ${tab === 'register' ? `
       <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="lNm" placeholder="Your full name"></div>
-      <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="lEm" placeholder="you@email.com"></div>
+      <div style="background:var(--amber-lt);border:1.5px solid var(--amber);color:var(--amber-dk);padding:8px 12px;border-radius:var(--r);font-size:12px;margin-bottom:11px;font-weight:600">
+        💡 Provide either email OR phone (or both). At least one is required.
+      </div>
+      <div class="field"><label>Email</label><input type="email" id="lEm" placeholder="you@email.com"></div>
+      <div class="field"><label>Cell Phone</label><input type="tel" id="lPh" placeholder="(740) 555-1234" inputmode="tel"></div>
       <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="lPw" placeholder="6+ characters"></div>
-      <div class="field"><label>Address <span class="req">*</span></label><input type="text" id="lAddr" placeholder="New Lexington, OH"></div>
+      <div class="field"><label>Address <span class="req">*</span></label><input type="text" id="lAddr" placeholder="Street, City, State"></div>
       <div class="modal-actions">
         <button class="btn-amber" onclick="doRegister()">Create Account</button>
         <button class="btn-ghost" onclick="closeModal('listingModal')">Cancel</button>
       </div>
       <div class="err-msg" id="lErr"></div>
     ` : `
-      <div class="field"><label>Email</label><input type="email" id="lEm" placeholder="you@email.com"></div>
+      <div class="field"><label>Email or Phone</label><input type="text" id="lEm" placeholder="you@email.com or (740) 555-1234"></div>
       <div class="field"><label>Password</label><input type="password" id="lPw"></div>
       <div class="modal-actions">
         <button class="btn-amber" onclick="doLogin()">Sign In</button>
@@ -877,9 +881,16 @@ function renderAuthModal(tab) {
 
 async function doRegister() {
   try {
+    const email = document.getElementById('lEm').value.trim();
+    const phone = document.getElementById('lPh') ? document.getElementById('lPh').value.trim() : '';
+    if (!email && !phone) {
+      document.getElementById('lErr').textContent = 'Please provide either an email or a cell phone number.';
+      return;
+    }
     const payload = {
       name:     document.getElementById('lNm').value.trim(),
-      email:    document.getElementById('lEm').value.trim(),
+      email:    email,
+      phone:    phone,
       password: document.getElementById('lPw').value,
       address:  document.getElementById('lAddr').value.trim() || 'New Lexington, OH'
     };
@@ -894,7 +905,7 @@ async function doRegister() {
 async function doLogin() {
   try {
     const { token, user } = await api('/api/auth/login', { method:'POST', body:JSON.stringify({
-      email: document.getElementById('lEm').value.trim(),
+      identifier: document.getElementById('lEm').value.trim(),
       password: document.getElementById('lPw').value
     })});
     setSession(token, user);
