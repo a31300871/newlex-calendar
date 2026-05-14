@@ -409,8 +409,8 @@ function renderNav() {
       </div>`;
   } else {
     el.innerHTML = `
-      <button class="register-btn" onclick="renderAuthForm('register')">Register</button>
-      <button class="signin-btn" onclick="renderAuthForm('signin')">Sign In</button>`;
+      <button class="register-btn" onclick="showAuthAndScroll('register')">Register</button>
+      <button class="signin-btn" onclick="showAuthAndScroll('signin')">Sign In</button>`;
   }
 }
 
@@ -425,6 +425,16 @@ function renderPortal() {
 }
 
 /* ── AUTH FORMS ── */
+function showAuthAndScroll(tab) {
+  renderAuthForm(tab);
+  // Scroll smoothly to the form
+  const card = document.getElementById('portalCard');
+  if (card) {
+    setTimeout(() => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+}
 function renderAuthForm(tab) {
   document.getElementById('portalTitle').textContent = tab === 'register' ? 'Register Your Business' : 'Returning Advertiser';
   document.getElementById('portalSub').textContent   = tab === 'register' ? 'Set up your business advertiser account — separate from the community calendar, just for businesses buying ad space.' : 'Sign in to manage your listing and subscription.';
