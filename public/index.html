@@ -104,11 +104,11 @@ button:active{opacity:.8}
 }
 .add-event-nav-btn:hover{background:linear-gradient(135deg,#15803D,#14532D);box-shadow:0 3px 12px rgba(22,163,74,.35);transform:translateY(-1px)}
 .add-event-nav-btn svg{width:18px;height:18px;flex-shrink:0}
-.nav-spacer{display:inline-block;width:40px;flex-shrink:0}
+.nav-spacer{display:inline-block;width:64px;flex-shrink:0}
 @media(max-width:600px){
   .add-event-nav-btn{font-size:13px;padding:7px 12px;gap:5px}
   .add-event-nav-btn svg{width:16px;height:16px}
-  .nav-spacer{width:16px}
+  .nav-spacer{width:28px}
 }
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
 @media(max-width:600px){
@@ -122,8 +122,8 @@ button:active{opacity:.8}
 .search-wrap{
   display:flex;align-items:center;gap:4px;
   background:var(--surface);border:1.5px solid var(--border-md);
-  border-radius:10px;padding:5px;margin-bottom:8px;
-  transition:border-color .15s,box-shadow .15s
+  border-radius:10px;padding:5px 5px 5px 12px;margin-bottom:8px;
+  transition:border-color .15s,box-shadow .15s;position:relative
 }
 .search-wrap:focus-within{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
 .search-wrap input{
@@ -132,77 +132,7 @@ button:active{opacity:.8}
 }
 .search-wrap input:focus{box-shadow:none;border:none}
 
-/* Filter pill (inside search bar, left side) */
-.filter-pill{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:8px 14px;background:var(--surface2);
-  border:1.5px solid var(--border);border-radius:100px;
-  font-size:13px;font-weight:700;color:var(--text);
-  cursor:pointer;white-space:nowrap;flex-shrink:0;
-  font-family:var(--font-body);transition:all .15s
-}
-.filter-pill svg{width:14px;height:14px}
-.filter-pill:hover{background:var(--amber-lt);border-color:var(--amber)}
-.filter-pill.has-active{background:var(--amber);color:#fff;border-color:var(--amber)}
-.filter-pill.has-active:hover{background:var(--amber-dk)}
-.filter-badge{
-  background:#fff;color:var(--amber);
-  font-size:10px;font-weight:800;
-  padding:1px 6px;border-radius:100px;
-  min-width:18px;text-align:center;
-}
-.filter-pill:not(.has-active) .filter-badge{background:var(--amber);color:#fff}
 
-/* Filter dropdown menu */
-.filter-menu{
-  display:none;background:var(--surface);
-  border:1.5px solid var(--border-md);border-radius:var(--r-lg);
-  padding:14px;margin-bottom:14px;
-  box-shadow:0 6px 20px rgba(0,0,0,.08)
-}
-.filter-menu.open{display:block}
-.filter-section{margin-bottom:14px}
-.filter-section:last-child{margin-bottom:0}
-.filter-section-label{
-  display:flex;align-items:center;gap:6px;
-  font-size:11px;font-weight:800;letter-spacing:.06em;
-  text-transform:uppercase;color:var(--text3);
-  margin-bottom:7px
-}
-.filter-select{
-  width:100%;padding:10px 14px;font-size:14px;
-  border:1.5px solid var(--border-md);border-radius:var(--r);
-  background:var(--surface);cursor:pointer;font-weight:600;
-  color:var(--text)
-}
-.filter-cats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-@media(max-width:480px){.filter-cats{grid-template-columns:1fr}}
-.filter-cat-item{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 10px;border:1.5px solid var(--border-md);
-  border-radius:var(--r);cursor:pointer;font-size:13px;
-  transition:all .15s;user-select:none;font-weight:500
-}
-.filter-cat-item:hover{background:var(--surface2)}
-.filter-cat-item.on{
-  background:var(--amber-lt);border-color:var(--amber);
-  color:var(--amber-dk);font-weight:700
-}
-.filter-cat-item input{
-  margin:0;width:16px;height:16px;
-  accent-color:var(--amber);cursor:pointer;flex-shrink:0
-}
-.cat-dot{
-  width:9px;height:9px;border-radius:50%;flex-shrink:0
-}
-.filter-clear{
-  display:block;width:100%;margin-top:10px;
-  padding:9px;font-size:13px;font-weight:700;
-  border:1.5px solid var(--border-md);border-radius:var(--r);
-  background:var(--surface2);color:var(--text2);
-  cursor:pointer;transition:all .15s
-}
-.filter-clear:hover{background:var(--surface);color:var(--amber);border-color:var(--amber)}
 
 /* Category filters (legacy - kept for any references) */
 .toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
@@ -218,46 +148,36 @@ button:active{opacity:.8}
 
 .ev-count{font-size:14px;color:var(--text3);margin-bottom:12px}
 
-/* ── VIEW TOGGLE ── */
-.view-toggle{display:inline-flex;gap:2px;background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:3px;margin-bottom:10px}
-@media(max-width:600px){.view-toggle{display:none !important}}
-.view-btn{font-size:13px;padding:6px 14px;border:none;background:transparent;border-radius:5px;cursor:pointer;font-weight:600;color:var(--text2);transition:all .15s}
-.view-btn:hover{color:var(--text)}
-.view-btn.active{background:var(--navy);color:#fff}
+/* ── 3-PILL FILTER ROW (Area · When · What) ── */
+.filter-pills-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.fp{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px;color:var(--text);transition:all .15s;flex:1;min-width:130px;text-align:left}
+.fp:hover{border-color:var(--amber);background:var(--amber-lt)}
+.fp.active{border-color:var(--amber);background:var(--amber-lt)}
+.fp-icon{font-size:16px;flex-shrink:0}
+.fp-text{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.fp-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.fp-value{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp.active .fp-value{color:var(--amber-dk)}
+.fp-clear{padding:9px 14px;background:transparent;border:1.5px solid var(--border-md);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;flex-shrink:0;transition:all .15s}
+.fp-clear:hover{background:var(--surface2);color:var(--danger);border-color:var(--danger)}
 
-/* ── MONTH VIEW ── */
-.month-view{display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden}
-.month-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1.5px solid var(--border);background:var(--surface2)}
-.month-title{font-family:var(--font-head);font-size:19px;font-weight:700;color:var(--text)}
-.month-nav-btn{background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:var(--text);font-weight:700}
-.month-nav-btn:hover{background:var(--amber-lt);border-color:var(--amber)}
-.month-today-btn{font-size:12px;padding:6px 12px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;color:var(--text);font-weight:600}
-.month-today-btn:hover{background:var(--amber-lt);border-color:var(--amber)}
-.month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:110px}
-.dow-label{text-align:center;padding:8px 0;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;background:var(--surface2);border-bottom:1px solid var(--border)}
-.day-cell{min-width:0;border-right:1px solid var(--border);border-top:1px solid var(--border);padding:6px;display:flex;flex-direction:column;gap:3px;background:var(--surface);transition:background .15s;overflow:hidden}
-.day-cell.has-events{cursor:pointer}
-.day-cell.has-events:hover{background:var(--amber-lt)}
-.day-cell.other-month{background:var(--surface2);opacity:.5}
-.day-cell.today{background:rgba(186,117,23,.07)}
-.day-cell:nth-child(7n+7){border-right:none}
-.day-num{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;flex-shrink:0}
-.day-cell.today .day-num{background:var(--amber);color:#fff}
-.day-cell.other-month .day-num{color:var(--text3);font-weight:500}
-.event-pill{font-size:10px;padding:2px 5px;border-radius:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;border-left:2.5px solid;cursor:pointer;line-height:1.3;max-width:100%;min-width:0}
-.event-pill:hover{filter:brightness(.92)}
-.more-events{font-size:10px;color:var(--text2);font-weight:700;padding:1px 4px;cursor:pointer}
-.more-events:hover{color:var(--amber)}
-@media(max-width:600px){
-  .month-grid{grid-auto-rows:64px}
-  .day-cell{padding:3px;gap:2px}
-  .day-num{font-size:11px;width:18px;height:18px}
-  .event-pill{display:none}
-  .event-dots{display:flex;gap:2px;flex-wrap:wrap;margin-top:auto}
-  .event-dot{width:5px;height:5px;border-radius:50%}
-  .more-events{font-size:9px;padding:0;margin-top:1px}
-  .month-title{font-size:16px}
-  .month-nav-btn{width:30px;height:30px;font-size:16px}
+/* Popover menus */
+.fp-popover{display:none;position:absolute;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;z-index:300;max-width:340px;min-width:240px}
+.fp-popover.open{display:block}
+.fp-opt{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:14px;color:var(--text);transition:background .15s}
+.fp-opt:hover{background:var(--surface2)}
+.fp-opt.selected{background:var(--amber-lt);font-weight:700;color:var(--amber-dk)}
+.fp-opt input[type=checkbox]{margin:0;accent-color:var(--amber);width:16px;height:16px;cursor:pointer}
+.fp-opt .cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.fp-opt-check{margin-left:auto;color:var(--amber-dk);font-weight:700}
+@media(max-width:480px){
+  .filter-pills-row{gap:6px}
+  .fp{padding:8px 11px;min-width:0;flex:1 1 calc(33% - 4px)}
+  .fp-icon{font-size:14px}
+  .fp-label{font-size:9px}
+  .fp-value{font-size:12px}
+  .fp-clear{font-size:11px;padding:8px 10px;flex-basis:100%;margin-top:4px}
+  .fp-popover{left:8px !important;right:8px !important;max-width:none}
 }
 
 /* ── EVENT ROWS ── */
@@ -439,14 +359,6 @@ button:active{opacity:.8}
       </svg>
       Calendar
     </a>
-    <a href="/advertise" class="nav-btn" aria-label="Advertise">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 11v3l13 5V6L3 11z"/>
-        <path d="M18 9c1 1 1 5 0 6"/>
-        <path d="M20.5 7c2 2 2 8 0 10"/>
-      </svg>
-      Advertise
-    </a>
     <a href="/directory" class="nav-btn" aria-label="Directory">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9l1.5-5h15L21 9"/>
@@ -456,6 +368,14 @@ button:active{opacity:.8}
       </svg>
       Directory
     </a>
+    <a href="/advertise" class="nav-btn" aria-label="Advertise">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11v3l13 5V6L3 11z"/>
+        <path d="M18 9c1 1 1 5 0 6"/>
+        <path d="M20.5 7c2 2 2 8 0 10"/>
+      </svg>
+      Advertise
+    </a>
   </div>
 </header>
 
@@ -464,41 +384,36 @@ button:active{opacity:.8}
 
 <!-- PAGE BODY -->
 <div id="page">
-  <!-- ZIPCODE SCOPE PICKER -->
-  <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);flex-wrap:wrap">
-    <span style="font-size:13px;color:var(--text2);font-weight:600">📍 Showing:</span>
-    <button id="zipBtn" class="filter-pill" style="background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700" onclick="openZipPicker()">
-      <span id="zipBtnLabel">Zip 43764</span>
+  <!-- THREE FILTER PILLS: AREA, WHEN, WHAT -->
+  <div class="filter-pills-row" style="margin-top:14px">
+    <button class="fp" id="fpArea" onclick="openAreaPicker()">
+      <span class="fp-icon">📍</span>
+      <span class="fp-text"><span class="fp-label">Area</span><span class="fp-value" id="fpAreaValue">43764</span></span>
     </button>
-    <button id="allAreasBtn" class="filter-pill" onclick="toggleAllAreas()">🌎 All areas</button>
-    <span style="font-size:11px;color:var(--text3);margin-left:auto" id="zipResultCount"></span>
+    <button class="fp" id="fpWhen" onclick="openWhenPicker(event)">
+      <span class="fp-icon">📅</span>
+      <span class="fp-text"><span class="fp-label">When</span><span class="fp-value" id="fpWhenValue">All</span></span>
+    </button>
+    <button class="fp" id="fpWhat" onclick="openWhatPicker(event)">
+      <span class="fp-icon">🏷️</span>
+      <span class="fp-text"><span class="fp-label">Type</span><span class="fp-value" id="fpWhatValue">All types</span></span>
+    </button>
+    <button class="fp-clear" id="fpClear" onclick="clearAllFilters()" style="display:none">✕ Reset</button>
   </div>
 
   <div class="search-wrap" style="margin-top:10px">
-    <button class="filter-pill" id="filterPill" onclick="toggleFilterMenu(event)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 6h18M6 12h12M10 18h4"/>
-      </svg>
-      Filter
-      <span class="filter-badge" id="filterBadge" style="display:none">0</span>
-    </button>
-    <input type="text" id="srch" placeholder="Search events…">
+    <input type="text" id="srch" placeholder="🔍 Search events by name or location…" style="padding-left:14px">
     <button id="importBtn" onclick="openImportModal()" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:pointer;flex-shrink:0;font-size:13px" title="Bulk Import (admin)">📥</button>
   </div>
 
-  <!-- COLLAPSIBLE FILTER MENU -->
-  <div class="filter-menu" id="filterMenu"></div>
+  <!-- POPOVER MENUS (only one open at a time) -->
+  <div class="fp-popover" id="popWhen"></div>
+  <div class="fp-popover" id="popWhat"></div>
 
   <div class="ev-count" id="evCount"></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-    <div class="view-toggle">
-      <button class="view-btn active" data-view="list" onclick="setView('list')">📋 List</button>
-      <button class="view-btn" data-view="month" onclick="setView('month')">📅 Month</button>
-    </div>
-  </div>
-  <div id="evHelp" style="display:none;font-size:14px;color:var(--text);font-weight:700;margin-bottom:10px;padding:10px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any event below to see full details, location, and add it to your phone calendar.</div>
+
   <div id="evList"><div class="no-events">⏳ Loading events…</div></div>
-  <div id="monthView" class="month-view"></div>
+
 </div>
 
 <!-- FIXED SPONSOR BAR -->
@@ -584,7 +499,7 @@ async function api(path,opts={}){
 
 async function init(){
   renderAuth();
-  updateFilterPill();
+  updateFilterPills();
   updateZipDisplay();
   await Promise.all([loadEvents(),loadSponsors()]);
   await refreshPendingBadge();
@@ -647,6 +562,7 @@ async function saveZip(){
   }
   closeModal('evModal');
   updateZipDisplay();
+  updateFilterPills();
   await loadEvents();
 }
 
@@ -675,73 +591,130 @@ function matchesDate(dateStr){
   if(dateFilter==='upcoming') return ed>=today;
   return true; // 'all'
 }
-/* ── FILTER MENU (new pill-based filter UI) ── */
-function toggleFilterMenu(e){
-  if(e) e.stopPropagation();
-  const menu=document.getElementById('filterMenu');
-  const wasOpen=menu.classList.contains('open');
-  menu.classList.toggle('open');
-  if(!wasOpen){
-    renderFilterMenu();
-    setTimeout(()=>{document.addEventListener('click',closeFilterOnOutside);},0);
-  } else {
-    document.removeEventListener('click',closeFilterOnOutside);
+/* ── NEW 3-PILL FILTER SYSTEM ── */
+const WHEN_OPTIONS = [
+  { id: 'all',      label: 'All events',          icon: '🗓️' },
+  { id: 'today',    label: 'Today',               icon: '⭐' },
+  { id: 'tomorrow', label: 'Tomorrow',            icon: '⏭️' },
+  { id: 'week',     label: 'This week',           icon: '📅' },
+  { id: 'month',    label: 'This month',          icon: '🗓️' },
+  { id: 'upcoming', label: 'Upcoming only (hide past)', icon: '➡️' }
+];
+const WHEN_SHORT = { all:'All', today:'Today', tomorrow:'Tomorrow', week:'This week', month:'This month', upcoming:'Upcoming' };
+
+function updateFilterPills(){
+  // Area pill
+  const areaVal = document.getElementById('fpAreaValue');
+  const areaPill = document.getElementById('fpArea');
+  if (areaVal){
+    areaVal.textContent = showAllAreas ? 'All areas' : (currentZipcode || '43764');
+    if (areaPill) areaPill.classList.toggle('active', !!(showAllAreas || (currentZipcode && currentZipcode !== '43764')));
+  }
+  // When pill
+  const whenVal = document.getElementById('fpWhenValue');
+  const whenPill = document.getElementById('fpWhen');
+  if (whenVal){
+    whenVal.textContent = WHEN_SHORT[dateFilter] || 'All';
+    if (whenPill) whenPill.classList.toggle('active', dateFilter !== 'all');
+  }
+  // What pill
+  const whatVal = document.getElementById('fpWhatValue');
+  const whatPill = document.getElementById('fpWhat');
+  if (whatVal){
+    if (activeFilters.size === 0) whatVal.textContent = 'All types';
+    else if (activeFilters.size === 1) {
+      const c = CATS.find(x => x.id === [...activeFilters][0]);
+      whatVal.textContent = c ? c.label : 'Custom';
+    } else whatVal.textContent = activeFilters.size + ' selected';
+    if (whatPill) whatPill.classList.toggle('active', activeFilters.size > 0);
+  }
+  // Reset button
+  const clearBtn = document.getElementById('fpClear');
+  if (clearBtn){
+    const hasFilter = activeFilters.size > 0 || dateFilter !== 'all' || showAllAreas;
+    clearBtn.style.display = hasFilter ? 'inline-flex' : 'none';
   }
 }
-function closeFilterOnOutside(e){
-  const menu=document.getElementById('filterMenu');
-  const pill=document.getElementById('filterPill');
-  if(menu && !menu.contains(e.target) && !pill.contains(e.target)){
-    menu.classList.remove('open');
-    document.removeEventListener('click',closeFilterOnOutside);
-  }
+function updateFilterPill(){ updateFilterPills(); } // alias for compatibility
+
+function closeAllPopovers(){
+  document.querySelectorAll('.fp-popover.open').forEach(p => p.classList.remove('open'));
 }
-function renderFilterMenu(){
-  document.getElementById('filterMenu').innerHTML=`
-    <div class="filter-section">
-      <div class="filter-section-label">📅 When</div>
-      <select class="filter-select" onchange="setDateFilter(this.value)">
-        ${DATE_FILTERS.map(f=>`<option value="${f.id}"${dateFilter===f.id?' selected':''}>${f.label}</option>`).join('')}
-      </select>
+
+function openWhenPicker(e){
+  if (e) e.stopPropagation();
+  closeAllPopovers();
+  const pop = document.getElementById('popWhen');
+  pop.innerHTML = WHEN_OPTIONS.map(o => `
+    <div class="fp-opt${dateFilter===o.id?' selected':''}" onclick="setDateFilter('${o.id}');closeAllPopovers()">
+      <span style="font-size:16px">${o.icon}</span>
+      <span>${o.label}</span>
+      ${dateFilter===o.id?'<span class="fp-opt-check">✓</span>':''}
     </div>
-    <div class="filter-section">
-      <div class="filter-section-label">🏷️ What</div>
-      <div class="filter-cats">
-        ${CATS.map(c=>`
-          <label class="filter-cat-item${activeFilters.has(c.id)?' on':''}">
-            <input type="checkbox" ${activeFilters.has(c.id)?'checked':''} onchange="toggleFilter('${c.id}')">
-            <span class="cat-dot" style="background:${c.c}"></span>
-            ${c.label}
-          </label>
-        `).join('')}
-      </div>
+  `).join('');
+  positionPopover(pop, 'fpWhen');
+  setTimeout(()=>document.addEventListener('click', closePopoverOnOutside, { once:true }), 0);
+}
+
+function openWhatPicker(e){
+  if (e) e.stopPropagation();
+  closeAllPopovers();
+  const pop = document.getElementById('popWhat');
+  pop.innerHTML = `
+    <div class="fp-opt" onclick="event.stopPropagation();clearWhat()">
+      <span style="font-size:16px">⭐</span>
+      <span>All types ${activeFilters.size===0?'<span class="fp-opt-check">✓</span>':''}</span>
     </div>
-    ${(activeFilters.size>0||dateFilter!=='upcoming')?'<button class="filter-clear" onclick="clearAllFilters()">✕ Clear All Filters</button>':''}
+    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+    ${CATS.map(c => `
+      <label class="fp-opt${activeFilters.has(c.id)?' selected':''}" onclick="event.stopPropagation()">
+        <input type="checkbox" ${activeFilters.has(c.id)?'checked':''} onchange="toggleFilter('${c.id}');openWhatPicker(event)">
+        <span class="cat-dot" style="background:${c.c}"></span>
+        ${c.label}
+      </label>
+    `).join('')}
   `;
-  updateFilterPill();
+  positionPopover(pop, 'fpWhat');
+  setTimeout(()=>document.addEventListener('click', closePopoverOnOutside, { once:true }), 0);
 }
-function updateFilterPill(){
-  const pill=document.getElementById('filterPill');
-  const badge=document.getElementById('filterBadge');
-  if(!pill||!badge) return;
-  const total=activeFilters.size+(dateFilter!=='upcoming'&&dateFilter!=='all'?1:0);
-  if(total>0){
-    pill.classList.add('has-active');
-    badge.style.display='inline-flex';
-    badge.textContent=total;
-  } else {
-    pill.classList.remove('has-active');
-    badge.style.display='none';
-  }
+
+function clearWhat(){
+  activeFilters.clear();
+  updateFilterPills();
+  renderEvents();
+  closeAllPopovers();
 }
+
+function positionPopover(pop, anchorId){
+  const anchor = document.getElementById(anchorId);
+  if (!anchor) return;
+  const rect = anchor.getBoundingClientRect();
+  pop.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+  pop.style.left = (rect.left + window.scrollX) + 'px';
+  pop.classList.add('open');
+}
+
+function closePopoverOnOutside(e){
+  const isInside = e.target.closest('.fp-popover, .fp');
+  if (!isInside) closeAllPopovers();
+  else setTimeout(()=>document.addEventListener('click', closePopoverOnOutside, { once:true }), 0);
+}
+
 function clearAllFilters(){
   activeFilters.clear();
-  dateFilter='all';
-  renderFilterMenu();
+  dateFilter = 'all';
+  showAllAreas = false;
+  closeAllPopovers();
+  updateFilterPills();
   renderEvents();
+  loadEvents();
 }
-function renderDateFilters(){updateFilterPill();}
-function setDateFilter(id){dateFilter=id;renderFilterMenu();renderEvents();}
+
+function openAreaPicker(){
+  openZipPicker(); // existing function
+}
+
+function setDateFilter(id){ dateFilter=id; updateFilterPills(); renderEvents(); }
 
 /* ── SHARE ── */
 function fmtDateShort(d){
@@ -1131,10 +1104,7 @@ async function deleteEvent(id){
 
 /* ── RENDER EVENTS ── */
 function renderEvents(){
-  // Also re-render month view if active
-  if (typeof viewMode !== 'undefined' && viewMode === 'month') renderMonth();
   const q=srchQ.toLowerCase();
-  const helpEl=document.getElementById('evHelp');
   const f=allEvs.filter(e=>{
     const mc=activeFilters.size===0||activeFilters.has(e.cat);
     const mq=!q||e.name.toLowerCase().includes(q)||e.location.toLowerCase().includes(q)||cl(e.cat).toLowerCase().includes(q);
@@ -1142,7 +1112,7 @@ function renderEvents(){
     return mc&&mq&&md;
   });
   document.getElementById('evCount').textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
-  if(helpEl){helpEl.dataset.show = f.length > 0 ? 'block' : 'none';helpEl.style.display = (typeof viewMode === 'undefined' || viewMode === 'list') && f.length > 0 ? 'block' : 'none';}
+
   const list=document.getElementById('evList');
   if(!f.length){
     const isPast=dateFilter==='upcoming';
@@ -1192,10 +1162,10 @@ function renderEvents(){
 
 /* ── CATEGORY FILTERS ── */
 function renderChips(){
-  updateFilterPill();
+  updateFilterPills();
 }
-function toggleFilter(id){if(activeFilters.has(id))activeFilters.delete(id);else activeFilters.add(id);renderFilterMenu();renderEvents();}
-function clearFilters(){activeFilters.clear();renderFilterMenu();renderEvents();}
+function toggleFilter(id){if(activeFilters.has(id))activeFilters.delete(id);else activeFilters.add(id);updateFilterPills();renderEvents();}
+function clearFilters(){activeFilters.clear();updateFilterPills();renderEvents();}
 
 /* ── SPONSORS ── */
 function renderSponsors(){
@@ -1521,141 +1491,7 @@ function showPendingNotice() {
   document.addEventListener(evt, resetInactivityTimer, { passive: true })
 );
 
-/* ── VIEW MODE (LIST / MONTH) ── */
-let viewMode = localStorage.getItem('nlcc_view') || 'list';
-let currentMonth = new Date();
 
-function setView(mode) {
-  // Force list view on mobile - month grid is unusable on small screens
-  if (window.innerWidth <= 600 && mode === 'month') mode = 'list';
-  viewMode = mode;
-  localStorage.setItem('nlcc_view', mode);
-  document.querySelectorAll('.view-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.view === mode));
-  document.getElementById('evList').style.display = mode === 'list' ? 'block' : 'none';
-  document.getElementById('monthView').style.display = mode === 'month' ? 'block' : 'none';
-  const help = document.getElementById('evHelp');
-  if (help) help.style.display = mode === 'list' ? help.dataset.show || 'none' : 'none';
-  if (mode === 'month') renderMonth();
-}
-
-function changeMonth(delta) {
-  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1);
-  renderMonth();
-}
-function goToToday() {
-  currentMonth = new Date();
-  renderMonth();
-}
-
-function renderMonth() {
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const firstDay = new Date(year, month, 1);
-  const startDay = firstDay.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const prevMonthLastDay = new Date(year, month, 0).getDate();
-
-  const q = srchQ.toLowerCase();
-  const filteredEvs = allEvs.filter(e => {
-    const mc = activeFilters.size === 0 || activeFilters.has(e.cat);
-    const mq = !q || e.name.toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || cl(e.cat).toLowerCase().includes(q);
-    return mc && mq;
-  });
-  const eventsByDate = {};
-  filteredEvs.forEach(e => { (eventsByDate[e.date] = eventsByDate[e.date] || []).push(e); });
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  const yr = today.getFullYear();
-  const mo = String(today.getMonth() + 1).padStart(2, '0');
-  const dy = String(today.getDate()).padStart(2, '0');
-  const todayStr = `${yr}-${mo}-${dy}`;
-  const isMobile = window.innerWidth <= 600;
-
-  let html = `
-    <div class="month-nav">
-      <button class="month-nav-btn" onclick="changeMonth(-1)" title="Previous month">‹</button>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="month-title">${monthName}</div>
-        <button class="month-today-btn" onclick="goToToday()">Today</button>
-      </div>
-      <button class="month-nav-btn" onclick="changeMonth(1)" title="Next month">›</button>
-    </div>
-    <div class="month-grid">
-      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="dow-label">${d}</div>`).join('')}`;
-
-  // Previous month padding
-  for (let i = startDay - 1; i >= 0; i--) {
-    html += `<div class="day-cell other-month"><div class="day-num">${prevMonthLastDay - i}</div></div>`;
-  }
-
-  // Current month days
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const events = eventsByDate[dateStr] || [];
-    const isToday = dateStr === todayStr;
-    const hasEvents = events.length > 0;
-
-    let body = '';
-    if (isMobile) {
-      // Mobile: just colored dots
-      const dotHtml = events.slice(0, 6).map(e => `<span class="event-dot" style="background:${cc(e.cat)}"></span>`).join('');
-      body = `<div class="event-dots">${dotHtml}</div>${events.length > 6 ? `<div class="more-events">+${events.length-6}</div>` : ''}`;
-    } else {
-      // Desktop: 3 event pills + "+ N more"
-      const eventHtml = events.slice(0, 3).map(e =>
-        `<div class="event-pill" style="border-left-color:${cc(e.cat)};background:${cc(e.cat)}15;color:${cc(e.cat)}" onclick="event.stopPropagation();openEventDetail(${esc(JSON.stringify(e))})">${esc(e.name)}</div>`
-      ).join('');
-      const moreCount = events.length > 3 ? events.length - 3 : 0;
-      const moreHtml = moreCount > 0 ? `<div class="more-events">+${moreCount} more</div>` : '';
-      body = eventHtml + moreHtml;
-    }
-
-    const onClick = hasEvents ? `onclick="showDayEvents('${dateStr}')"` : '';
-    const cls = `day-cell${isToday ? ' today' : ''}${hasEvents ? ' has-events' : ''}`;
-    html += `<div class="${cls}" ${onClick}>
-      <div class="day-num">${day}</div>
-      ${body}
-    </div>`;
-  }
-
-  // Next month padding
-  const totalCells = startDay + daysInMonth;
-  const remaining = (7 - (totalCells % 7)) % 7;
-  for (let d = 1; d <= remaining; d++) {
-    html += `<div class="day-cell other-month"><div class="day-num">${d}</div></div>`;
-  }
-
-  html += '</div>';
-  document.getElementById('monthView').innerHTML = html;
-}
-
-function showDayEvents(dateStr) {
-  const events = allEvs.filter(e => e.date === dateStr);
-  if (!events.length) return;
-  const date = new Date(dateStr + 'T12:00:00');
-  const dateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  document.getElementById('detailModalContent').innerHTML = `
-    <div class="modal-title">${dateLabel}</div>
-    <p style="color:var(--text2);margin-bottom:14px;font-size:14px">${events.length} event${events.length !== 1 ? 's' : ''} on this day. Tap one for details.</p>
-    ${events.map(e => `
-      <div class="erow" onclick='closeModal("detailModal");openEventDetail(${esc(JSON.stringify(e))})' style="margin-bottom:6px">
-        <span class="dot" style="background:${cc(e.cat)}"></span>
-        <span class="ename">${esc(e.name)}</span>
-        <span class="erow-more">more</span>
-        <span class="erow-arrow">›</span>
-      </div>
-    `).join('')}`;
-  openModal('detailModal');
-}
-
-window.addEventListener('resize', () => { if (viewMode === 'month') renderMonth(); });
-
-init();
-resetInactivityTimer();
-// Initialize view on load
-setView(viewMode);
 </script>
 
 </body>
