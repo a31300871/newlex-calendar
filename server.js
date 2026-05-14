@@ -750,6 +750,61 @@ app.post('/api/listings/cancel', requireListing, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Notifications for current user (admins: pending counts; users: new events in their zipcodes)
+app.get('/api/notifications', requireAuth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const u = await db.get('SELECT id,is_admin,home_zipcode,notify_zipcodes,last_seen_events FROM users WHERE id=?', [req.user.id]);
+    if (!u) return res.status(404).json({ error: 'User not found.' });
+    const result = { admin: !!u.is_admin, items: [], count: 0 };
+    if (u.is_admin) {
+      // Admin: pending events + listings + bulk submissions
+      const pendingEvents = await db.all("SELECT e.id, e.name, e.date, e.zipcode, u.name AS submitter FROM events e LEFT JOIN users u ON u.id=e.added_by WHERE e.status='pending' ORDER BY e.created_at DESC LIMIT 20");
+      const pendingListings = await db.all("SELECT l.id, l.business_name, l.zipcode, u.name AS submitter FROM listings l LEFT JOIN users u ON u.id=l.user_id WHERE l.status IN ('pending','pending_review') ORDER BY l.created_at DESC LIMIT 20");
+      pendingEvents.forEach(e => result.items.push({ type: 'pending_event', id: e.id, title: `New event: ${e.name}`, sub: `${e.zipcode} · submitted by ${e.submitter || 'someone'}`, action: 'approvals' }));
+      pendingListings.forEach(l => result.items.push({ type: 'pending_listing', id: l.id, title: `New business: ${l.business_name}`, sub: `${l.zipcode || ''} · submitted by ${l.submitter || 'someone'}`, action: 'approvals' }));
+      result.count = result.items.length;
+    } else {
+      // Regular user: new events in subscribed zipcodes since last_seen_events
+      const zips = new Set([u.home_zipcode || '43764']);
+      (u.notify_zipcodes || '').split(',').map(z => z.trim()).filter(Boolean).forEach(z => zips.add(z));
+      const since = u.last_seen_events || new Date(Date.now() - 7*24*60*60*1000).toISOString(); // default: last 7 days
+      const placeholders = [...zips].map(() => '?').join(',');
+      const newEvents = await db.all(
+        `SELECT e.id, e.name, e.date, e.location, e.zipcode FROM events e WHERE e.status='approved' AND e.zipcode IN (${placeholders}) AND e.created_at > ? ORDER BY e.created_at DESC LIMIT 30`,
+        [...zips, since]
+      );
+      newEvents.forEach(e => result.items.push({ type: 'new_event', id: e.id, title: e.name, sub: `${e.location} · ${new Date(e.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${e.zipcode}`, action: 'event' }));
+      result.count = result.items.length;
+      result.zipcodes = [...zips];
+    }
+    res.json(result);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Mark notifications as seen (updates last_seen_events timestamp)
+app.put('/api/notifications/mark-seen', requireAuth, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run('UPDATE users SET last_seen_events=? WHERE id=?', [new Date().toISOString(), req.user.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update notify_zipcodes (comma-separated list)
+app.put('/api/notifications/zipcodes', requireAuth, async (req, res) => {
+  try {
+    const { zipcodes } = req.body || {};
+    const cleaned = (Array.isArray(zipcodes) ? zipcodes : (zipcodes||'').split(','))
+      .map(z => String(z).trim()).filter(z => /^\d{5}$/.test(z))
+      .filter((z, i, arr) => arr.indexOf(z) === i)
+      .join(',');
+    const db = await getDb();
+    await db.run('UPDATE users SET notify_zipcodes=? WHERE id=?', [cleaned, req.user.id]);
+    res.json({ success: true, notify_zipcodes: cleaned });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // Get all distinct zipcodes with their event counts (for zipcode picker)
 app.get('/api/zipcodes', async (req, res) => {
   try {
