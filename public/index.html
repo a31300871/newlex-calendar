@@ -59,9 +59,13 @@ button:active{opacity:.8}
   background:var(--navy);border-bottom:4px solid var(--amber);
   padding:10px 16px 10px;
 }
-.hdr-row1{display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:10px;min-height:42px}
-.hdr-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;line-height:1.15;text-align:center}
-.hdr-right{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px}
+@media(max-width:600px){
+  #hdr{padding:8px 12px 8px}
+  .hdr-row1{margin-bottom:8px;min-height:36px}
+}
+.hdr-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:42px}
+.hdr-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;line-height:1.15;text-align:left;flex:1;min-width:0}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 12px 5px 6px;min-width:0}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -75,7 +79,10 @@ button:active{opacity:.8}
 .register-btn:hover{background:#FFB740;border-color:#FFB740;color:var(--navy)}
 .auth-buttons{display:flex;align-items:center;gap:6px}
 @media(max-width:480px){
-  .signin-btn,.register-btn{font-size:12px;padding:6px 11px}
+  .signin-btn,.register-btn{font-size:11px;padding:5px 9px}
+}
+@media(max-width:380px){
+  .signin-btn,.register-btn{font-size:10px;padding:4px 7px}
 }
 
 /* ── BIG NAV BUTTONS ── */
@@ -106,9 +113,17 @@ button:active{opacity:.8}
 .add-event-nav-btn svg{width:18px;height:18px;flex-shrink:0}
 .nav-spacer{display:inline-block;width:64px;flex-shrink:0}
 @media(max-width:600px){
-  .add-event-nav-btn{font-size:13px;padding:7px 12px;gap:5px}
-  .add-event-nav-btn svg{width:16px;height:16px}
-  .nav-spacer{width:28px}
+  .add-event-nav-btn{font-size:11px;padding:6px 10px;gap:4px}
+  .add-event-nav-btn svg{width:14px;height:14px}
+  .nav-btn{font-size:11px;padding:6px 9px;gap:4px}
+  .nav-btn svg{width:14px;height:14px}
+  .nav-spacer{width:16px}
+  .hdr-row2{gap:4px}
+}
+@media(max-width:380px){
+  .add-event-nav-btn,.nav-btn{font-size:10px;padding:5px 7px;gap:3px}
+  .add-event-nav-btn svg,.nav-btn svg{width:13px;height:13px}
+  .nav-spacer{width:8px}
 }
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
 @media(max-width:600px){
@@ -317,8 +332,8 @@ button:active{opacity:.8}
 
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
-  :root{--hdr-h:108px;--about-h:0px;--spon-h:80px}
-  .hdr-title{font-size:15px}
+  :root{--hdr-h:130px;--about-h:0px;--spon-h:80px}
+  .hdr-title{font-size:14px}
   #addEventBtn{font-size:12px;padding:7px 11px}
   .user-name{display:none}
   .user-pill{padding:4px 10px 4px 5px}
@@ -492,8 +507,14 @@ async function api(path,opts={}){
   const h={'Content-Type':'application/json',...(opts.headers||{})};
   if(token) h['Authorization']='Bearer '+token;
   const r=await fetch(API+path,{...opts,headers:h});
+  const ct=r.headers.get('content-type')||'';
+  if(!ct.includes('application/json')){
+    const body=await r.text().catch(()=>'');
+    const preview=body.slice(0,80).replace(/\s+/g,' ').trim();
+    throw new Error(`Server error on ${path} (status ${r.status}). Got ${ct||'no content-type'}. Preview: ${preview}`);
+  }
   const d=await r.json();
-  if(!r.ok) throw new Error(d.error||'Request failed');
+  if(!r.ok) throw new Error(d.error||(`Request failed: ${path} (${r.status})`));
   return d;
 }
 
