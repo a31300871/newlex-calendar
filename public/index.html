@@ -1009,6 +1009,7 @@ async function loadApprovalsTab(tab){
           <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Submitted by ${esc(l.submitter_name||'unknown')} (${esc(l.submitter_email||'')})</div>
           <div style="display:flex;gap:6px">
             <button class="btn-sm" style="flex:1;background:#16A34A;color:#fff;border-color:#16A34A;font-weight:700" onclick="approveListing(${l.id})">✓ Approve</button>
+            <button class="btn-sm" style="flex:1;background:var(--danger-bg);color:var(--danger);border-color:#F09595" onclick="rejectListing(${l.id})">✕ Reject</button>
             <button class="btn-sm" style="flex:1;background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700" onclick="approveListingAndPromote(${l.id}, ${l.user_id})">🔔 Approve + Promote</button>
           </div>
         </div>`).join('');
@@ -1046,6 +1047,11 @@ async function approveAndPromote(eventId, userId){
     await api('/api/admin/users/'+userId+'/town-crier',{method:'PUT',body:JSON.stringify({is_town_crier:1})});
     await loadEvents(); await loadApprovalsTab('events');
   } catch(e) { alert(e.message); }
+}
+async function rejectListing(id){
+  if(!confirm('Reject and delete this business listing? This cannot be undone.')) return;
+  try { await api('/api/admin/listings/'+id+'/reject',{method:'DELETE'}); await loadApprovalsTab('listings'); }
+  catch(e){ alert('Error: '+e.message); }
 }
 async function approveListing(id){
   try { await api('/api/admin/listings/'+id+'/approve',{method:'PUT'}); await loadApprovalsTab('listings'); }
