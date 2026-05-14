@@ -255,23 +255,25 @@ app.post('/api/events', requireAuth, async (req, res) => {
 
 app.post('/api/events/bulk', requireAuth, async (req, res) => {
   try {
-    const { events } = req.body || {};
-    if (!Array.isArray(events) || !events.length) return res.status(400).json({ error: 'No events provided.' });
-    if (events.length > 200) return res.status(400).json({ error: 'Maximum 200 events per import.' });
+    const events = Array.isArray(req.body?.events) ? req.body.events : [];
+    if (!events.length) return res.status(400).json({ error: 'No events provided.' });
     const db = await getDb();
-    let imported = 0;
+    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
+    const status = (userRow && (userRow.is_admin || userRow.is_town_crier)) ? 'approved' : 'pending';
+    let inserted = 0, skipped = 0;
     for (const ev of events) {
-      if (!ev.name?.trim() || !ev.location?.trim() || !ev.date) continue;
-      const dup = await db.get(
-        "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=?",
-        [ev.name.trim(), ev.date]
+      if (!ev.name?.trim() || !ev.location?.trim() || !ev.date) { skipped++; continue; }
+      const dup = await db.get("SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status!='pending'",
+        [ev.name.trim(), ev.date]);
+      if (dup) { skipped++; continue; }
+      const zip = (ev.zipcode || '').toString().trim() || '43764';
+      await db.run(
+        'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+        [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time?.trim()||'TBD', ev.price?.trim()||'Free', ev.contact?.trim()||'-', req.user.id, status, zip, (ev.affiliate_url||'').trim()]
       );
-      if (dup) continue; // skip duplicates silently in bulk import
-      await db.run('INSERT INTO events (cat,name,location,date,time,price,contact,added_by) VALUES (?,?,?,?,?,?,?,?)',
-        [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time||'TBD', ev.price||'Free', ev.contact||'-', req.user.id]);
-      imported++;
+      inserted++;
     }
-    res.json({ success: true, imported });
+    res.json({ inserted, skipped, pending: status === 'pending' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -786,7 +788,7 @@ app.get('/api/admin/pending-listings', requireAdmin, async (req, res) => {
     const rows = await db.all(`
       SELECT l.*, u.name AS submitter_name, u.email AS submitter_email
       FROM listings l LEFT JOIN users u ON l.user_id = u.id
-      WHERE l.status='pending_review' ORDER BY l.created_at DESC
+      WHERE l.status IN ('pending_review','pending') ORDER BY l.created_at DESC
     `);
     res.json(rows.map(safeListing));
   } catch(e) { res.status(500).json({ error: e.message }); }
