@@ -418,7 +418,7 @@ button:active{opacity:.8}
 
   <div class="search-wrap" style="margin-top:10px">
     <input type="text" id="srch" placeholder="🔍 Search events by name or location…" style="padding-left:14px">
-    <button id="importBtn" onclick="openImportModal()" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:pointer;flex-shrink:0;font-size:13px" title="Bulk Import (admin)">📥</button>
+    <button id="importBtn" onclick="openImportModal()" style="display:none;background:var(--navy);color:#fff;border:1.5px solid var(--navy);border-radius:var(--r);padding:7px 12px;cursor:pointer;flex-shrink:0;font-size:12px;font-weight:700;white-space:nowrap;font-family:var(--font-body)" title="Bulk Add multiple events at once">📥 Bulk Add</button>
   </div>
 
   <!-- POPOVER MENUS (only one open at a time) -->
@@ -1287,12 +1287,24 @@ async function deleteSponsor(id){
 /* ── BULK IMPORT ── */
 function openImportModal(){
   parsedImport=[];
+  const isAdmin = authUser && authUser.is_admin;
+  const isTC = authUser && authUser.is_town_crier;
   document.getElementById('importModalContent').innerHTML=`
-    <div class="modal-title">📥 Bulk Import Events</div>
-    <p style="font-size:14px;color:var(--text2);margin-bottom:12px">Paste CSV data or upload a file. Download the template for the correct format.</p>
+    <div class="modal-title">📥 Bulk Add Events</div>
+    <div style="background:var(--surface2);border-left:3px solid var(--amber);padding:12px 14px;border-radius:8px;font-size:13px;line-height:1.55;color:var(--text);margin-bottom:14px">
+      <strong>How it works:</strong>
+      <ol style="margin:6px 0 0 0;padding-left:20px;font-size:12.5px;color:var(--text2)">
+        <li>Click <strong>⬇ Download Template</strong> below to get a CSV file</li>
+        <li>Open it in Excel/Google Sheets, fill in your events (one per row)</li>
+        <li>Required columns: <code style="font-size:11px;background:var(--surface);padding:1px 4px;border-radius:3px">name, location, date</code> (date = YYYY-MM-DD)</li>
+        <li>Save as CSV, then drag the file in below (or paste the content)</li>
+        <li>Click <strong>Preview</strong> to check it, then <strong>${isAdmin || isTC ? 'Import' : 'Submit for Review'}</strong></li>
+      </ol>
+      ${!isAdmin && !isTC ? '<div style="margin-top:8px;font-size:12px;color:var(--text2)">⏳ Your submissions go to the admin for review. Town Criers (trusted submitters) get instant publish.</div>' : ''}
+    </div>
     <a class="import-template" onclick="downloadTemplate()">⬇ Download CSV Template</a>
     <div class="field"><label>Paste CSV here</label>
-      <textarea class="import-csv-area" id="csvArea" placeholder="name,location,date,time,price,contact,category,zipcode,affiliate_url&#10;Annual Bake Sale,First Baptist Church,2026-06-15,10:00 AM,Free,(740) 555-1234,church"></textarea>
+      <textarea class="import-csv-area" id="csvArea" placeholder="name,location,date,time,price,contact,category,zipcode,affiliate_url&#10;Annual Bake Sale,First Baptist Church,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,"></textarea>
     </div>
     <div class="field"><label>Or upload a .csv file</label><input type="file" id="csvFile" accept=".csv,.txt" onchange="handleCSVFile(this)" style="font-size:13px;padding:7px"></div>
     <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -1301,16 +1313,16 @@ function openImportModal(){
     </div>
     <div id="previewArea"></div>
     <div class="modal-actions" id="importActions" style="display:none">
-      <button class="btn-amber" onclick="doImport()">Import Events</button>
+      <button class="btn-amber" onclick="doImport()">${isAdmin || isTC ? 'Import Events' : 'Submit for Review'}</button>
       <button class="btn-ghost" onclick="closeModal('importModal')">Cancel</button>
     </div>
     <div class="err-msg" id="impErr"></div><div class="ok-msg" id="impOk"></div>`;
   openModal('importModal');
 }
 function downloadTemplate(){
-  const rows=['name,location,date,time,price,contact,category,zipcode,affiliate_url','Annual Bake Sale,First Baptist Church,2026-06-15,10:00 AM,Free,(740) 555-1234,church','Farmers Market,Main Street,2026-06-20,8:00 AM - Noon,Free Entry,info@market.org,food'];
+  const rows=['name,location,date,time,price,contact,category,zipcode,affiliate_url','Annual Bake Sale,First Baptist Church,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,','Farmers Market,Main Street,2026-06-20,8:00 AM - Noon,Free,info@market.org,food,43764,'];
   const blob=new Blob([rows.join('\n')],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='newlex-events-template.csv';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='townbell-events-template.csv';a.click();
 }
 function handleCSVFile(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{document.getElementById('csvArea').value=e.target.result;previewImport();};reader.readAsText(file);}
 function parseCSVLine(line){const result=[];let cur='';let inQ=false;for(let i=0;i<line.length;i++){if(line[i]==='"'){inQ=!inQ;}else if(line[i]===','&&!inQ){result.push(cur.trim());cur='';}else{cur+=line[i];}}result.push(cur.trim());return result;}
