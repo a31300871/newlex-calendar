@@ -795,6 +795,14 @@ app.get('/api/admin/pending-listings', requireAdmin, async (req, res) => {
 });
 
 // Approve a pending listing
+app.delete('/api/admin/listings/:id/reject', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run('DELETE FROM listings WHERE id=?', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.put('/api/admin/listings/:id/approve', requireAdmin, async (req, res) => {
   try {
     const db = await getDb();
