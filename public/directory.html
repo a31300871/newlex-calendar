@@ -3,38 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Local Business Directory – New Lexington & Area</title>
-<meta name="description" content="Find local businesses in New Lexington and Perry County, Ohio. List your business for just FREE.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
+<title>Near and Far Events · Local Business Directory</title>
+<meta name="description" content="Find local businesses in your area. List your business for just FREE.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236366F1'/><stop offset='.5' stop-color='%23EC4899'/><stop offset='1' stop-color='%23F59E0B'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><path d='M16 7c-3.3 0-6 2.7-6 6 0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6zm0 8a2 2 0 110-4 2 2 0 010 4z' fill='white'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --amber:#BA7517;--amber-dk:#854F0B;--amber-lt:#FFF4E0;--amber-mid:#EF9F27;
-  --teal:#0F6E56;--navy:#1A2744;--navy2:#1E3260;--cream:#FAF8F4;
-  --border:rgba(0,0,0,0.09);--border-md:rgba(0,0,0,0.16);
-  --text:#1C1C1E;--text2:#5F5E5A;--text3:#888780;
-  --surface:#FFF;--surface2:#F5F3EE;
-  --danger:#A32D2D;--danger-bg:#FCEBEB;
+  /* Brand gradient (used on logo, accents) */
+  --grad-1:#6366F1;  /* indigo */
+  --grad-2:#EC4899;  /* pink */
+  --grad-3:#F59E0B;  /* amber */
+  --gradient:linear-gradient(135deg,#6366F1 0%,#EC4899 50%,#F59E0B 100%);
+
+  /* Primary action: indigo with vibrant glow */
+  --amber:#6366F1;       /* primary brand action (kept var name for compat) */
+  --amber-dk:#4F46E5;
+  --amber-lt:#EEF0FF;
+  --amber-mid:#A5B4FC;
+  --primary-glow:rgba(99,102,241,.40);
+
+  /* Secondary action: pink */
+  --blue:#EC4899;        /* secondary action (kept var name for compat) */
+  --blue-lt:#FDF2F8;
+  --pink-glow:rgba(236,72,153,.40);
+
+  /* Accent: amber/gold for highlights */
+  --accent:#F59E0B;
+  --accent-lt:#FEF3C7;
+  --accent-glow:rgba(245,158,11,.40);
+
+  /* Success: emerald */
+  --teal:#10B981;        /* kept var name */
+  --teal-lt:#D1FAE5;
+  --success-glow:rgba(16,185,129,.40);
+
+  /* Surfaces and text */
+  --cream:#FFFFFF;       /* page background — now pure white */
+  --surface:#FFFFFF;
+  --surface2:#F8FAFC;
+  --surface3:#F1F5F9;
+  --navy:#0F172A;        /* dark slate — used for sponsor bar / dark elements */
+  --navy2:#1E293B;
+  --text:#0F172A;
+  --text2:#475569;
+  --text3:#94A3B8;
+  --border:rgba(15,23,42,.08);
+  --border-md:rgba(15,23,42,.14);
+
+  /* Semantic */
+  --danger:#EF4444;
+  --danger-bg:#FEF2F2;
+
+  /* Glow shadow tokens (edge lighting extended beyond edges) */
+  --glow-sm:0 0 0 3px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.18);
+  --glow-md:0 0 0 4px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.28);
+  --glow-pink:0 0 0 4px rgba(236,72,153,.15),0 6px 20px rgba(236,72,153,.28);
+  --glow-amber:0 0 0 4px rgba(245,158,11,.15),0 6px 20px rgba(245,158,11,.30);
+  --shadow-soft:0 1px 3px rgba(15,23,42,.05),0 4px 16px rgba(15,23,42,.06);
+  --shadow-md:0 2px 6px rgba(15,23,42,.06),0 8px 28px rgba(15,23,42,.10);
+
+  /* Fonts and layout */
   --font-head:'Playfair Display',Georgia,serif;
   --font-body:'Source Sans 3',system-ui,sans-serif;
-  --r:8px;--r-lg:14px;
+  --hdr-h:130px;--about-h:0px;--spon-h:90px;--r:10px;--r-lg:16px;
 }
 html{font-size:16px}
-body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5}
+body{font-family:var(--font-body);background:var(--cream);
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.06), transparent 50%),
+    radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.05), transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.04), transparent 50%);
+  background-attachment:fixed;color:var(--text);line-height:1.5}
 input,select,textarea,button{font-family:var(--font-body);font-size:15px}
 input,select,textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(99,102,241,.15)}
 input::placeholder,textarea::placeholder{color:var(--text3)}
 button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s;font-size:15px;font-weight:500}
 button:hover{background:var(--surface2)}
 button:active{opacity:.8}
-.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
+.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700;box-shadow:var(--glow-sm);transition:all .18s}
 .btn-amber:hover{background:var(--amber-dk)}
 .btn-blue{background:#2355B5;color:#fff;border-color:#2355B5;font-weight:700}
-.btn-blue:hover{background:#1A3E8A}
+.btn-blue:hover{background:#DB2777;border-color:#DB2777;box-shadow:var(--glow-pink);transform:translateY(-1px)}
 .btn-navy{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
 .btn-navy:hover{background:var(--navy2)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
@@ -44,6 +97,7 @@ button:active{opacity:.8}
 /* ── NAV ── */
 nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16px;position:sticky;top:0;z-index:100}
 .hdr-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:38px}
+.brand-grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:800;letter-spacing:-.01em}
 .nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;text-decoration:none;line-height:1.15;text-align:center}
 .nav-brand span{color:var(--amber-mid)}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -145,12 +199,14 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 /* 3-Pill Filter style (matches calendar) */
 .fp{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px;color:var(--text);transition:all .15s;text-align:left}
 .fp:hover{border-color:var(--amber);background:var(--amber-lt)}
-.fp.active{border-color:var(--amber);background:var(--amber-lt)}
+.fp.active{border-color:transparent;background:var(--gradient);color:#fff;box-shadow:var(--glow-sm)}
 .fp-icon{font-size:16px;flex-shrink:0}
 .fp-text{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
 .fp-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
 .fp-value{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fp.active .fp-value{color:var(--amber-dk)}
+.fp.active .fp-value{color:#fff}
+.fp.active .fp-label{color:rgba(255,255,255,.85)}
+.fp.active .fp-icon{filter:brightness(1.2)}
 .fp-clear{padding:9px 14px;background:transparent;border:1.5px solid var(--border-md);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;flex-shrink:0;transition:all .15s}
 .fp-clear:hover{background:var(--surface2);color:var(--amber);border-color:var(--amber)}
 .fp-clear.active{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -224,13 +280,22 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
   .nav-brand{font-size:15px}
 }
 </style>
+
+<!-- Google Analytics 4 (GA4) — Replace G-XXXXXXXXXX with your own Measurement ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
   <div class="hdr-row1">
-    <a href="/" class="nav-brand">🔔 TownBell</a>
+    <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span></a>
     <div class="hdr-right"><span class="nav-user" id="navUser"></span></div>
   </div>
   <div class="hdr-row2">
@@ -267,8 +332,8 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 <!-- HERO -->
 <div class="hero">
   <div class="hero-tag">Local Business Directory</div>
-  <h1>New Lexington &amp; Area<br>Business Directory</h1>
-  <p>Find local businesses in Perry County. Get your business listed for just FREE.</p>
+  <h1>Local Business<br>Directory</h1>
+  <p>Find local businesses in your area. Get your business listed for just FREE.</p>
   <div class="hero-cta">
     <button class="btn-amber" style="font-size:16px;padding:11px 28px" onclick="openModal('listingModal')">+ List My Business — FREE one-time</button>
     <a href="/advertise" style="font-size:14px;color:rgba(255,255,255,.7);text-decoration:none;padding:11px 20px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r);display:inline-block">📢 Premium Advertising →</a>
@@ -281,7 +346,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <button class="fp" id="dirAreaPill" onclick="openDirZipPicker()" style="flex:1;max-width:340px">
         <span class="fp-icon">📍</span>
-        <span class="fp-text"><span class="fp-label">Area</span><span class="fp-value" id="dirZipLabel">43764</span></span>
+        <span class="fp-text"><span class="fp-label">Area</span><span class="fp-value" id="dirZipLabel">Set Zip</span></span>
       </button>
       <button class="fp-clear" id="dirAllAreasBtn" onclick="toggleDirAllAreas()">🌎 All areas</button>
     </div>
@@ -335,14 +400,14 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
   <h2>List Your Business Today</h2>
   <div class="price-tag">FREE</div>
   <div class="price-sub">One-time payment — listed for 1 year</div>
-  <p>Get found by New Lexington and Perry County residents. Your business name, phone, website, address, and description — all in one place.</p>
+  <p>Get found by local residents in your area. Your business name, phone, website, address, and description — all in one place.</p>
   <button class="btn-amber" style="font-size:16px;padding:12px 32px" onclick="openModal('listingModal')">+ Add My Business — FREE</button>
 </div>
 
 <footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap">
   <a href="/" style="color:var(--amber-mid);text-decoration:none">📅 Community Calendar</a>
   <a href="/advertise" style="color:var(--amber-mid);text-decoration:none">📢 Advertise</a>
-  <a href="mailto:hello@newlexcalendar.com" style="color:var(--amber-mid);text-decoration:none">✉️ hello@newlexcalendar.com</a>
+  <a href="mailto:hello@nearandfarevents.com" style="color:var(--amber-mid);text-decoration:none">✉️ hello@nearandfarevents.com</a>
 </footer>
 
 <!-- LISTING MODAL (auth + dashboard) -->
@@ -423,7 +488,7 @@ function checkURLParams() {
     if (sessionId && listingId && calToken) {
       verifyListingPayment(sessionId, listingId);
     } else {
-      b.innerHTML = `<div class="alert alert-warning">Payment received but we couldn't verify your session. Please log in and contact hello@newlexcalendar.com if needed.</div>`;
+      b.innerHTML = `<div class="alert alert-warning">Payment received but we couldn't verify your session. Please log in and contact hello@nearandfarevents.com if needed.</div>`;
     }
     window.history.replaceState({}, '', '/directory');
   }
@@ -446,7 +511,7 @@ async function verifyListingPayment(sessionId, listingId) {
     b.innerHTML = `<div class="alert alert-success">🎉 <strong>Payment successful!</strong> Your business listing is now live in the directory!</div>`;
     renderNav();
   } catch(e) {
-    b.innerHTML = `<div class="alert alert-warning">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@newlexcalendar.com">hello@newlexcalendar.com</a>.</div>`;
+    b.innerHTML = `<div class="alert alert-warning">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a>.</div>`;
   }
 }
 
@@ -474,7 +539,7 @@ async function openDirZipPicker(){
   document.getElementById('listingModalContent').innerHTML = `
     <div class="modal-title">📍 Choose Your Area</div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your 5-digit zipcode to see local businesses.</p>
-    <div class="field"><label>Your Zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="43764" value="${esc(cur)}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
+    <div class="field"><label>Your Zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="12345" value="${esc(cur)}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
     ${popular.length ? `
       <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Popular areas:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -492,6 +557,17 @@ function selectDirZip(z){ document.getElementById('zipInput').value = z; saveDir
 async function saveDirZip(){
   const z = document.getElementById('zipInput').value.trim();
   if (!/^\d{5}$/.test(z)) { document.getElementById('zipErr').textContent = 'Please enter a valid 5-digit zipcode.'; return; }
+  // Check enabled states for non-admin
+  if (!isAdmin) {
+    try {
+      const { enabled } = await api('/api/enabled-states');
+      const state = clientZipToState(z);
+      if (!state || !enabled.includes(state)) {
+        document.getElementById('zipErr').innerHTML = `🚧 Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: <strong>${enabled.join(', ')}</strong>.<br><br>We'll add more areas soon!`;
+        return;
+      }
+    } catch(_) {}
+  }
   localStorage.setItem('nlcc_zipcode', z);
   localStorage.setItem('nlcc_dir_all', '0');
   if (calToken) {
@@ -500,6 +576,14 @@ async function saveDirZip(){
   closeModal('listingModal');
   updateDirZipDisplay();
   await loadAll();
+}
+
+function clientZipToState(zip){
+  const z = parseInt(String(zip||'').substring(0,3), 10);
+  if (isNaN(z)) return null;
+  const ranges = [[10,27,'MA'],[28,29,'RI'],[30,38,'NH'],[39,49,'ME'],[50,59,'VT'],[60,69,'CT'],[70,89,'NJ'],[100,119,'NY'],[120,149,'NY'],[150,196,'PA'],[200,205,'DC'],[206,219,'MD'],[220,246,'VA'],[247,268,'WV'],[270,289,'NC'],[290,299,'SC'],[300,319,'GA'],[320,349,'FL'],[350,369,'AL'],[370,385,'TN'],[386,397,'MS'],[400,427,'KY'],[430,459,'OH'],[460,479,'IN'],[480,499,'MI'],[500,528,'IA'],[530,549,'WI'],[550,567,'MN'],[570,577,'SD'],[580,588,'ND'],[590,599,'MT'],[600,629,'IL'],[630,658,'MO'],[660,679,'KS'],[680,693,'NE'],[700,714,'LA'],[716,729,'AR'],[730,749,'OK'],[750,799,'TX'],[800,816,'CO'],[820,831,'WY'],[832,838,'ID'],[840,847,'UT'],[850,865,'AZ'],[870,884,'NM'],[889,898,'NV'],[900,961,'CA'],[967,968,'HI'],[970,979,'OR'],[980,994,'WA'],[995,999,'AK']];
+  for (const [s,e,st] of ranges) if (z>=s && z<=e) return st;
+  return null;
 }
 
 async function loadAll() {
@@ -535,7 +619,7 @@ function renderAdvGrid() {
     html += `<div class="adv-card adv-placeholder">
       <div class="adv-card-tag" style="color:rgba(255,255,255,.25)">Featured Spot Available</div>
       <div class="adv-card-name">Your Business Here</div>
-      <div class="adv-card-tag2">Advertise to the whole New Lexington community</div>
+      <div class="adv-card-tag2">Advertise to your local community</div>
       <a href="/advertise?tier=premium" class="adv-card-btn" style="background:rgba(186,117,23,.3);color:rgba(255,255,255,.6)">Claim This Spot — $50/mo</a>
     </div>`;
   }
@@ -617,7 +701,7 @@ function openAdminAddListing() {
     </div>
     <div class="field"><label>Phone</label><input type="tel" id="aaPh" placeholder="(740) 555-1234"></div>
     <div class="field"><label>Website</label><input type="text" id="aaWeb" placeholder="example.com"></div>
-    <div class="field"><label>Address</label><input type="text" id="aaAddr" placeholder="123 Main St, New Lexington OH"></div>
+    <div class="field"><label>Address</label><input type="text" id="aaAddr" placeholder="123 Main St, City, State"></div>
     <div class="field"><label>Description</label><textarea id="aaDesc" style="height:70px;resize:none" placeholder="Brief description of the business..."></textarea></div>
     <details style="margin-bottom:12px;font-size:13px">
       <summary style="cursor:pointer;color:var(--text2);font-weight:600">Optional: Owner contact info</summary>
@@ -892,7 +976,7 @@ async function doRegister() {
       email:    email,
       phone:    phone,
       password: document.getElementById('lPw').value,
-      address:  document.getElementById('lAddr').value.trim() || 'New Lexington, OH'
+      address:  document.getElementById('lAddr').value.trim() || ''
     };
     const { token, user } = await api('/api/auth/register', { method:'POST', body:JSON.stringify(payload) });
     setSession(token, user);
@@ -927,7 +1011,7 @@ function showAddBusinessForm() {
     <div class="field"><label>Category <span class="req">*</span></label>
       <select id="lCat">${CATS.filter(c=>c.id!=='all').map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select>
     </div>
-    <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="lZip" maxlength="5" value="${esc(defaultZip)}" placeholder="43764" inputmode="numeric"></div>
+    <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="lZip" maxlength="5" value="${esc(defaultZip)}" placeholder="12345" inputmode="numeric"></div>
     <div class="field"><label>Phone</label><input type="tel" id="lPh" placeholder="(740) 555-1234"></div>
     <div class="field"><label>Website</label><input type="text" id="lWeb" placeholder="example.com"></div>
     <div class="field"><label>Address</label><input type="text" id="lAddr" placeholder="123 Main St, City, State"></div>
