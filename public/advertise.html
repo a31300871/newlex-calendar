@@ -3,27 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advertise – TownBell</title>
-<meta name="description" content="Advertise your business on TownBell and reach the New Lexington community for just $25/month.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
+<title>Advertise – Near and Far Events</title>
+<meta name="description" content="Advertise your business on Near and Far Events and reach your local community for just $25/month.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236366F1'/><stop offset='.5' stop-color='%23EC4899'/><stop offset='1' stop-color='%23F59E0B'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><path d='M16 7c-3.3 0-6 2.7-6 6 0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6zm0 8a2 2 0 110-4 2 2 0 010 4z' fill='white'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --amber:#BA7517;--amber-dk:#854F0B;--amber-lt:#FFF4E0;--amber-mid:#EF9F27;
-  --teal:#0F6E56;--navy:#1A2744;--navy2:#1E3260;--cream:#FAF8F4;
-  --border:rgba(0,0,0,0.10);--border-md:rgba(0,0,0,0.16);
-  --text:#1C1C1E;--text2:#5F5E5A;--text3:#888780;
-  --surface:#FFF;--surface2:#F5F3EE;
-  --danger:#A32D2D;--danger-bg:#FCEBEB;
+  /* Brand gradient (used on logo, accents) */
+  --grad-1:#6366F1;  /* indigo */
+  --grad-2:#EC4899;  /* pink */
+  --grad-3:#F59E0B;  /* amber */
+  --gradient:linear-gradient(135deg,#6366F1 0%,#EC4899 50%,#F59E0B 100%);
+
+  /* Primary action: indigo with vibrant glow */
+  --amber:#6366F1;       /* primary brand action (kept var name for compat) */
+  --amber-dk:#4F46E5;
+  --amber-lt:#EEF0FF;
+  --amber-mid:#A5B4FC;
+  --primary-glow:rgba(99,102,241,.40);
+
+  /* Secondary action: pink */
+  --blue:#EC4899;        /* secondary action (kept var name for compat) */
+  --blue-lt:#FDF2F8;
+  --pink-glow:rgba(236,72,153,.40);
+
+  /* Accent: amber/gold for highlights */
+  --accent:#F59E0B;
+  --accent-lt:#FEF3C7;
+  --accent-glow:rgba(245,158,11,.40);
+
+  /* Success: emerald */
+  --teal:#10B981;        /* kept var name */
+  --teal-lt:#D1FAE5;
+  --success-glow:rgba(16,185,129,.40);
+
+  /* Surfaces and text */
+  --cream:#FFFFFF;       /* page background — now pure white */
+  --surface:#FFFFFF;
+  --surface2:#F8FAFC;
+  --surface3:#F1F5F9;
+  --navy:#0F172A;        /* dark slate — used for sponsor bar / dark elements */
+  --navy2:#1E293B;
+  --text:#0F172A;
+  --text2:#475569;
+  --text3:#94A3B8;
+  --border:rgba(15,23,42,.08);
+  --border-md:rgba(15,23,42,.14);
+
+  /* Semantic */
+  --danger:#EF4444;
+  --danger-bg:#FEF2F2;
+
+  /* Glow shadow tokens (edge lighting extended beyond edges) */
+  --glow-sm:0 0 0 3px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.18);
+  --glow-md:0 0 0 4px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.28);
+  --glow-pink:0 0 0 4px rgba(236,72,153,.15),0 6px 20px rgba(236,72,153,.28);
+  --glow-amber:0 0 0 4px rgba(245,158,11,.15),0 6px 20px rgba(245,158,11,.30);
+  --shadow-soft:0 1px 3px rgba(15,23,42,.05),0 4px 16px rgba(15,23,42,.06);
+  --shadow-md:0 2px 6px rgba(15,23,42,.06),0 8px 28px rgba(15,23,42,.10);
+
+  /* Fonts and layout */
   --font-head:'Playfair Display',Georgia,serif;
   --font-body:'Source Sans 3',system-ui,sans-serif;
-  --r:8px;--r-lg:14px;
+  --hdr-h:130px;--about-h:0px;--spon-h:90px;--r:10px;--r-lg:16px;
 }
 html{font-size:16px}
-body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5}
+body{font-family:var(--font-body);background:var(--cream);
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.06), transparent 50%),
+    radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.05), transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.04), transparent 50%);
+  background-attachment:fixed;color:var(--text);line-height:1.5}
 input,select,button{font-family:var(--font-body);font-size:15px}
 input,select{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
 input:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
@@ -31,7 +84,7 @@ input::placeholder{color:var(--text3)}
 button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s;font-size:15px;font-weight:500}
 button:hover{background:var(--surface2)}
 button:active{opacity:.8}
-.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
+.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700;box-shadow:var(--glow-sm);transition:all .18s}
 .btn-amber:hover{background:var(--amber-dk)}
 .btn-navy{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
 .btn-navy:hover{background:var(--navy2)}
@@ -43,6 +96,7 @@ button:active{opacity:.8}
 /* ── HEADER ── */
 nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16px}
 .hdr-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:38px}
+.brand-grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:800;letter-spacing:-.01em}
 .nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;text-decoration:none;line-height:1.15;text-align:center}
 .nav-brand span{color:var(--amber-mid)}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -162,13 +216,22 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 }
 .hdr-right{gap:6px !important}
 </style>
+
+<!-- Google Analytics 4 (GA4) — Replace G-XXXXXXXXXX with your own Measurement ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
   <div class="hdr-row1">
-    <a href="/" class="nav-brand">🔔 TownBell</a>
+    <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span></a>
     <div class="hdr-right"><span class="nav-user" id="navUser"></span></div>
   </div>
   <div class="hdr-row2">
@@ -205,7 +268,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 <!-- HERO -->
 <div class="hero">
   <div class="hero-tag">Advertise with Us</div>
-  <h1>Reach New Lexington<br>Every Single Day</h1>
+  <h1>Reach Your Community<br>Near &amp; Far</h1>
   <p>Your business on the sponsor bar of the community calendar — always visible, never missed.</p>
   <div class="hero-cta">
     <button class="btn-amber" style="font-size:17px;padding:12px 32px" onclick="scrollToPortal('premium')">⭐ Event Popup Ad — $50/mo</button>
@@ -226,7 +289,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
     <div class="benefit-card">
       <div class="benefit-icon">🏘️</div>
       <div class="benefit-title">Targeted Community</div>
-      <div class="benefit-text">Every visitor is a New Lexington or Perry County resident actively engaging with local events.</div>
+      <div class="benefit-text">Every visitor is a local resident actively engaging with local events.</div>
     </div>
     <div class="benefit-card">
       <div class="benefit-icon">🔗</div>
@@ -317,7 +380,7 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
   <p style="font-size:13px;color:var(--text3);max-width:500px;margin:0 auto">This portal is for <strong>businesses purchasing ad space only</strong>. If you are a community member looking to post events, <a href="/" style="color:var(--amber);text-decoration:none;font-weight:600">go back to the calendar</a> and register there.</p>
 </div>
 <footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px">
-  TownBell · <a href="/" style="color:var(--amber-mid);text-decoration:none">Back to Calendar</a> · <a href="mailto:hello@newlexcalendar.com" style="color:var(--amber-mid);text-decoration:none">hello@newlexcalendar.com</a>
+  Near and Far Events · <a href="/" style="color:var(--amber-mid);text-decoration:none">Back to Calendar</a> · <a href="mailto:hello@nearandfarevents.com" style="color:var(--amber-mid);text-decoration:none">hello@nearandfarevents.com</a>
 </footer>
 
 <script>
@@ -383,7 +446,7 @@ async function verifySession(sessionId) {
     renderPortal();
     banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Your ad is now live on the community calendar!</div>`;
   } catch(e) {
-    banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@newlexcalendar.com">hello@newlexcalendar.com</a> and we will activate it manually.</div>`;
+    banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a> and we will activate it manually.</div>`;
   }
 }
 
