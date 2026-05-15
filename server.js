@@ -15,7 +15,7 @@ const STRIPE_PRICE_BASIC   = process.env.STRIPE_PRICE_ID      || '';
 const STRIPE_PRICE_PREMIUM = process.env.STRIPE_PRICE_PREMIUM || '';
 const STRIPE_PRICE_LISTING = process.env.STRIPE_PRICE_LISTING || '';
 const STRIPE_WEBHOOK       = process.env.STRIPE_WEBHOOK_SECRET || '';
-const SITE_URL = process.env.SITE_URL || 'https://www.newlexcalendar.com';
+const SITE_URL = process.env.SITE_URL || 'https://www.nearandfarevents.com';
 
 const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
 
@@ -114,6 +114,60 @@ function normalizePhone(raw) {
   if (digits.length === 10) return digits;            // 7405551234
   if (digits.length === 11 && digits[0] === '1') return digits.slice(1); // 17405551234 -> 7405551234
   return '';
+}
+
+// ============================================================
+// STATE-BASED ZIPCODE RESTRICTIONS (admin-controlled rollout)
+// ============================================================
+// Approximate ZIP3 → state mapping (USPS sectional center boundaries).
+// Covers ~99% of US zipcodes correctly for state-level filtering.
+const ZIP3_RANGES = [
+  [10,27,'MA'],[28,29,'RI'],[30,38,'NH'],[39,49,'ME'],[50,59,'VT'],
+  [60,69,'CT'],[70,89,'NJ'],[100,119,'NY'],[120,149,'NY'],[150,196,'PA'],
+  [200,205,'DC'],[206,219,'MD'],[220,246,'VA'],[247,268,'WV'],[270,289,'NC'],
+  [290,299,'SC'],[300,319,'GA'],[320,349,'FL'],[350,369,'AL'],[370,385,'TN'],
+  [386,397,'MS'],[400,427,'KY'],[430,459,'OH'],[460,479,'IN'],[480,499,'MI'],
+  [500,528,'IA'],[530,549,'WI'],[550,567,'MN'],[570,577,'SD'],[580,588,'ND'],
+  [590,599,'MT'],[600,629,'IL'],[630,658,'MO'],[660,679,'KS'],[680,693,'NE'],
+  [700,714,'LA'],[716,729,'AR'],[730,749,'OK'],[750,799,'TX'],[800,816,'CO'],
+  [820,831,'WY'],[832,838,'ID'],[840,847,'UT'],[850,865,'AZ'],[870,884,'NM'],
+  [889,898,'NV'],[900,961,'CA'],[967,968,'HI'],[970,979,'OR'],[980,994,'WA'],
+  [995,999,'AK']
+];
+
+function zipToState(zip) {
+  const z = parseInt(String(zip||'').substring(0,3), 10);
+  if (isNaN(z)) return null;
+  for (const [start, end, state] of ZIP3_RANGES) {
+    if (z >= start && z <= end) return state;
+  }
+  return null;
+}
+
+let _enabledStatesCache = null;
+let _enabledStatesCacheAt = 0;
+async function getEnabledStates(db) {
+  // Cache for 30 seconds
+  if (_enabledStatesCache && Date.now() - _enabledStatesCacheAt < 30000) {
+    return _enabledStatesCache;
+  }
+  try {
+    const row = await db.get('SELECT value FROM settings WHERE key=?', ['enabled_states']);
+    const raw = row?.value || 'OH';
+    const list = raw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    _enabledStatesCache = list;
+    _enabledStatesCacheAt = Date.now();
+    return list;
+  } catch(_) {
+    return ['OH'];
+  }
+}
+
+async function isZipEnabled(db, zipcode) {
+  const state = zipToState(zipcode);
+  if (!state) return false; // Unknown zipcode is treated as disabled
+  const enabled = await getEnabledStates(db);
+  return enabled.includes(state);
 }
 
 function requireAuth(req, res, next) {
@@ -253,7 +307,17 @@ app.get('/api/events', async (req, res) => {
       sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved'" + zipFilter + " ORDER BY e.date ASC,e.time ASC";
       params = zipParam;
     }
-    res.json(await db.all(sql, params));
+    const rows = await db.all(sql, params);
+    // Filter out events in non-enabled states for non-admin users
+    if (!isAdmin) {
+      const enabled = await getEnabledStates(db);
+      const filtered = rows.filter(r => {
+        const st = zipToState(r.zipcode);
+        return st && enabled.includes(st);
+      });
+      return res.json(filtered);
+    }
+    res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -262,6 +326,14 @@ app.post('/api/events', requireAuth, async (req, res) => {
     const { cat, name, location, date, time, price, contact, zipcode, affiliate_url } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
+    // Validate zipcode is in an enabled state (skip for admin)
+    if (!req.user.is_admin) {
+      const zipState = zipToState(zipcode);
+      const enabled = await getEnabledStates(db);
+      if (!zipState || !enabled.includes(zipState)) {
+        return res.status(403).json({ error: `Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: ${enabled.join(', ')}.` });
+      }
+    }
     const dup = await db.get(
       "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status!='pending'",
       [name.trim(), date]
@@ -284,11 +356,18 @@ app.post('/api/events/bulk', requireAuth, async (req, res) => {
     const events = Array.isArray(req.body?.events) ? req.body.events : [];
     if (!events.length) return res.status(400).json({ error: 'No events provided.' });
     const db = await getDb();
+    const enabled = await getEnabledStates(db);
+    const skipState = !req.user.is_admin;
     const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
     const status = (userRow && (userRow.is_admin || userRow.is_town_crier)) ? 'approved' : 'pending';
     let inserted = 0, skipped = 0;
     for (const ev of events) {
       if (!ev.name?.trim() || !ev.location?.trim() || !ev.date) { skipped++; continue; }
+      // State restriction (non-admin)
+      if (skipState) {
+        const st = zipToState(ev.zipcode || '');
+        if (!st || !enabled.includes(st)) { skipped++; continue; }
+      }
       const dup = await db.get("SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status!='pending'",
         [ev.name.trim(), ev.date]);
       if (dup) { skipped++; continue; }
@@ -513,7 +592,23 @@ function requireListing(req, res, next) {
 app.get('/api/listings', async (req, res) => {
   try {
     const db = await getDb();
-    const rows = await db.all("SELECT id,business_name,category,phone,website,address,description,created_at FROM listings WHERE status='active' ORDER BY business_name ASC");
+    let isAdmin = false;
+    const auth = req.headers.authorization;
+    if (auth && auth.startsWith('Bearer ')) {
+      try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; } catch(_) {}
+    }
+    const zipcode = (req.query.zipcode||'').toString().trim();
+    const rows = zipcode
+      ? await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,created_at FROM listings WHERE status='active' AND zipcode=? ORDER BY business_name ASC", [zipcode])
+      : await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,created_at FROM listings WHERE status='active' ORDER BY business_name ASC");
+    if (!isAdmin) {
+      const enabled = await getEnabledStates(db);
+      const filtered = rows.filter(r => {
+        const st = zipToState(r.zipcode);
+        return st && enabled.includes(st);
+      });
+      return res.json(filtered);
+    }
     res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -542,7 +637,15 @@ app.post('/api/listings/create-free', requireAuth, async (req, res) => {
     const { business_name, category, phone, website, address, description, zipcode } = req.body || {};
     if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const db = await getDb();
-    const placeholderEmail = `user-${req.user.id}-${Date.now()}@newlexcalendar.local`;
+    // Validate zipcode state (skip for admin)
+    if (!req.user.is_admin) {
+      const zipState = zipToState(zipcode);
+      const enabled = await getEnabledStates(db);
+      if (!zipState || !enabled.includes(zipState)) {
+        return res.status(403).json({ error: `Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: ${enabled.join(', ')}.` });
+      }
+    }
+    const placeholderEmail = `user-${req.user.id}-${Date.now()}@nearandfarevents.local`;
     const placeholderPwd = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
     const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
     const skipReview = !!(userRow && (userRow.is_admin || userRow.is_town_crier));
@@ -568,7 +671,7 @@ app.post('/api/listings/create', requireAuth, async (req, res) => {
     const { business_name, category, phone, website, address, description } = req.body || {};
     if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const db = await getDb();
-    const placeholderEmail = `user-${req.user.id}-${Date.now()}@newlexcalendar.local`;
+    const placeholderEmail = `user-${req.user.id}-${Date.now()}@nearandfarevents.local`;
     const placeholderPwd = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
     // Town Criers and admins skip 'pending_review' status after payment;
     // others land in 'pending_review' after payment (admin must approve)
@@ -600,8 +703,8 @@ app.post('/api/listings/:id/checkout', requireAuth, async (req, res) => {
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: [{ price: process.env.STRIPE_PRICE_LISTING, quantity: 1 }],
-      success_url: `${process.env.SITE_URL || 'https://www.newlexcalendar.com'}/directory?listing_paid=1&session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
-      cancel_url: `${process.env.SITE_URL || 'https://www.newlexcalendar.com'}/directory?listing_canceled=1`,
+      success_url: `${process.env.SITE_URL || 'https://www.nearandfarevents.com'}/directory?listing_paid=1&session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
+      cancel_url: `${process.env.SITE_URL || 'https://www.nearandfarevents.com'}/directory?listing_canceled=1`,
       metadata: { listing_id: String(listing.id), user_id: String(req.user.id) }
     });
     res.json({ url: session.url });
@@ -727,7 +830,7 @@ app.put('/api/listings/me', requireListing, async (req, res) => {
 
 // POST /api/listings/checkout (one-time payment)
 app.post('/api/listings/checkout', requireListing, async (req, res) => {
-  if (!stripe || !STRIPE_PRICE_LISTING) return res.status(503).json({ error: 'Payment not configured. Contact hello@newlexcalendar.com' });
+  if (!stripe || !STRIPE_PRICE_LISTING) return res.status(503).json({ error: 'Payment not configured. Contact hello@nearandfarevents.com' });
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -747,6 +850,57 @@ app.post('/api/listings/cancel', requireListing, async (req, res) => {
     const db = await getDb();
     await db.run("UPDATE listings SET status='expired' WHERE id=?", [req.listing.id]);
     res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Admin: get enabled states + per-state counts
+app.get('/api/admin/states', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const enabled = await getEnabledStates(db);
+    // Get all distinct zipcodes that have content to compute per-state counts
+    const evRows = await db.all("SELECT DISTINCT zipcode FROM events WHERE zipcode IS NOT NULL AND zipcode != ''");
+    const lsRows = await db.all("SELECT DISTINCT zipcode FROM listings WHERE zipcode IS NOT NULL AND zipcode != ''");
+    const userRows = await db.all("SELECT DISTINCT home_zipcode FROM users WHERE home_zipcode IS NOT NULL AND home_zipcode != ''");
+    const stateStats = {};
+    for (const r of evRows) {
+      const st = zipToState(r.zipcode);
+      if (st) { stateStats[st] = stateStats[st] || { events: 0, listings: 0, users: 0 }; stateStats[st].events++; }
+    }
+    for (const r of lsRows) {
+      const st = zipToState(r.zipcode);
+      if (st) { stateStats[st] = stateStats[st] || { events: 0, listings: 0, users: 0 }; stateStats[st].listings++; }
+    }
+    for (const r of userRows) {
+      const st = zipToState(r.home_zipcode);
+      if (st) { stateStats[st] = stateStats[st] || { events: 0, listings: 0, users: 0 }; stateStats[st].users++; }
+    }
+    res.json({ enabled, stateStats });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/admin/states', requireAdmin, async (req, res) => {
+  try {
+    const { states } = req.body || {};
+    if (!Array.isArray(states)) return res.status(400).json({ error: 'states must be an array' });
+    const cleaned = states.map(s => String(s).trim().toUpperCase()).filter(s => /^[A-Z]{2}$/.test(s));
+    const db = await getDb();
+    const value = cleaned.join(',');
+    await db.run(
+      'INSERT INTO settings (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+      ['enabled_states', value]
+    );
+    _enabledStatesCache = null; // invalidate cache
+    res.json({ success: true, enabled: cleaned });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Public endpoint: which states are currently live (for user-facing error messages)
+app.get('/api/enabled-states', async (req, res) => {
+  try {
+    const db = await getDb();
+    const enabled = await getEnabledStates(db);
+    res.json({ enabled });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -809,6 +963,11 @@ app.put('/api/notifications/zipcodes', requireAuth, async (req, res) => {
 app.get('/api/zipcodes', async (req, res) => {
   try {
     const db = await getDb();
+    let isAdmin = false;
+    const auth = req.headers.authorization;
+    if (auth && auth.startsWith('Bearer ')) {
+      try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; } catch(_) {}
+    }
     const evRows = await db.all("SELECT zipcode, COUNT(*) as count FROM events WHERE status='approved' AND date >= date('now') GROUP BY zipcode ORDER BY count DESC");
     const lsRows = await db.all("SELECT zipcode, COUNT(*) as count FROM listings WHERE status='active' GROUP BY zipcode");
     const combined = {};
@@ -817,7 +976,16 @@ app.get('/api/zipcodes', async (req, res) => {
       if (combined[r.zipcode]) combined[r.zipcode].listings = r.count;
       else combined[r.zipcode] = { zipcode: r.zipcode, events: 0, listings: r.count };
     });
-    res.json(Object.values(combined).sort((a, b) => (b.events + b.listings) - (a.events + a.listings)));
+    let list = Object.values(combined);
+    // Filter to only enabled states (non-admin)
+    if (!isAdmin) {
+      const enabled = await getEnabledStates(db);
+      list = list.filter(o => {
+        const st = zipToState(o.zipcode);
+        return st && enabled.includes(st);
+      });
+    }
+    res.json(list.sort((a, b) => (b.events + b.listings) - (a.events + a.listings)));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -947,7 +1115,7 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
     // Generate placeholder email if not provided
     let email = (owner_email || '').trim().toLowerCase();
     if (!email) {
-      email = `admin-${Date.now()}-${crypto.randomBytes(3).toString('hex')}@newlexcalendar.local`;
+      email = `admin-${Date.now()}-${crypto.randomBytes(3).toString('hex')}@nearandfarevents.local`;
     }
 
     // Check email uniqueness
@@ -1126,7 +1294,7 @@ app.get('/api/events/:id/ical', async (req, res) => {
     if (event.contact && event.contact !== '-') desc += `Contact: ${event.contact}\n`;
     if (event.price)   desc += `Price: ${event.price}\n`;
     if (event.time && event.time !== 'TBD') desc += `Time: ${event.time}\n`;
-    desc += '\nFull details at https://www.newlexcalendar.com\n';
+    desc += '\nFull details at https://www.nearandfarevents.com\n';
     if (sponsor) {
       desc += '\n----------------------------------------\n';
       desc += `📢 SPONSORED BY: ${sponsor.business_name}\n`;
@@ -1139,11 +1307,11 @@ app.get('/api/events/:id/ical', async (req, res) => {
     let ics = '';
     ics += 'BEGIN:VCALENDAR\r\n';
     ics += 'VERSION:2.0\r\n';
-    ics += 'PRODID:-//NewLexCalendar//EN\r\n';
+    ics += 'PRODID:-//NearAndFarEvents//EN\r\n';
     ics += 'CALSCALE:GREGORIAN\r\n';
     ics += 'METHOD:PUBLISH\r\n';
     ics += 'BEGIN:VEVENT\r\n';
-    ics += `UID:event-${event.id}-${Date.now()}@newlexcalendar.com\r\n`;
+    ics += `UID:event-${event.id}-${Date.now()}@nearandfarevents.com\r\n`;
     ics += `DTSTAMP:${fmtICS(new Date())}\r\n`;
     if (t.allDay) {
       const startDate = event.date.replace(/-/g, '');
@@ -1159,7 +1327,7 @@ app.get('/api/events/:id/ical', async (req, res) => {
     ics += `SUMMARY:${escICS(event.name)}\r\n`;
     ics += `LOCATION:${escICS(event.location)}\r\n`;
     ics += `DESCRIPTION:${escICS(desc)}\r\n`;
-    ics += `URL:https://www.newlexcalendar.com\r\n`;
+    ics += `URL:https://www.nearandfarevents.com\r\n`;
     ics += 'END:VEVENT\r\n';
     ics += 'END:VCALENDAR\r\n';
 
