@@ -133,16 +133,16 @@ button:active{opacity:.8}
 .brand-grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:900}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
-.user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 12px 5px 6px;min-width:0}
-.avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.user-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
-.sign-out-btn{font-size:12px;color:rgba(255,255,255,.6);background:transparent;border:none;padding:0;cursor:pointer;white-space:nowrap;font-family:var(--font-body);flex-shrink:0}
-.sign-out-btn:hover{color:#fff;background:transparent}
-.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
-.signin-btn{color:#fff;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.30)}
-.signin-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
-.register-btn{color:var(--navy);background:var(--amber-mid);border:1.5px solid var(--amber-mid)}
-.register-btn:hover{background:#FFB740;border-color:#FFB740;color:var(--navy)}
+.user-pill{display:flex;align-items:center;gap:7px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:100px;padding:5px 12px 5px 6px;min-width:0;box-shadow:0 2px 8px rgba(99,102,241,.08)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--gradient);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,.30)}
+.user-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.sign-out-btn{font-size:14px;color:var(--text2);background:transparent;border:none;padding:0;cursor:pointer;white-space:nowrap;font-family:var(--font-body);flex-shrink:0;font-weight:700}
+.sign-out-btn:hover{color:var(--amber);background:transparent}
+.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .18s;font-family:var(--font-body)}
+.signin-btn{color:var(--amber);background:var(--surface);border:1.5px solid var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.06)}
+.signin-btn:hover{background:var(--amber-lt);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.20);transform:translateY(-1px)}
+.register-btn{color:#fff;background:var(--gradient);border:1.5px solid transparent;box-shadow:0 2px 6px rgba(99,102,241,.20),0 0 0 3px rgba(236,72,153,.08)}
+.register-btn:hover{box-shadow:0 4px 14px rgba(99,102,241,.35),0 0 0 4px rgba(236,72,153,.15);transform:translateY(-1px)}
 .auth-buttons{display:flex;align-items:center;gap:6px}
 @media(max-width:480px){
   .signin-btn,.register-btn{font-size:11px;padding:5px 9px}
@@ -155,14 +155,14 @@ button:active{opacity:.8}
 .nav-btn{
   display:inline-flex;align-items:center;gap:8px;
   padding:9px 16px;border-radius:100px;
-  font-size:15px;font-weight:700;color:rgba(255,255,255,.7);
-  background:transparent;border:1.5px solid transparent;
-  text-decoration:none;transition:all .15s;cursor:pointer;
+  font-size:15px;font-weight:700;color:var(--text2);
+  background:var(--surface);border:1.5px solid var(--border-md);
+  text-decoration:none;transition:all .2s cubic-bezier(.4,0,.2,1);cursor:pointer;
   font-family:var(--font-body);white-space:nowrap;
 }
-.nav-btn:hover{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.15)}
-.nav-btn.active{color:#fff;background:var(--amber);border-color:var(--amber);box-shadow:0 2px 8px rgba(186,117,23,.30)}
-.nav-btn.active:hover{background:var(--amber-dk);border-color:var(--amber-dk);color:#fff}
+.nav-btn:hover{color:var(--amber);background:var(--amber-lt);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10),0 4px 12px rgba(99,102,241,.15);transform:translateY(-1px)}
+.nav-btn.active{color:#fff;background:var(--gradient);border-color:transparent;box-shadow:0 0 0 3px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.35),0 3px 10px rgba(236,72,153,.20)}
+.nav-btn.active:hover{color:#fff;box-shadow:0 0 0 4px rgba(99,102,241,.18),0 8px 24px rgba(99,102,241,.40),0 4px 12px rgba(236,72,153,.25);transform:translateY(-2px)}
 /* Add Event INSIDE search bar */
 #addEventInline:hover{background:linear-gradient(135deg,#15803D,#14532D);box-shadow:0 3px 10px rgba(22,163,74,.35)}
 @media(max-width:480px){
