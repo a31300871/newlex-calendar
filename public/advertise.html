@@ -93,27 +93,40 @@ button:active{opacity:.8}
 .btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#F09595;font-weight:600}
 .btn-danger:hover{background:#FCDBDB}
 
-/* ── HEADER ── */
-nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16px}
+/* ── HEADER (matches calendar page) ── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
+  box-shadow:0 1px 0 rgba(15,23,42,0.04),0 8px 24px -16px rgba(99,102,241,0.25);
+}
+nav::after{
+  content:'';position:absolute;left:0;right:0;bottom:-3px;height:3px;
+  background:var(--gradient);
+  filter:blur(0.5px);
+  box-shadow:0 0 18px rgba(99,102,241,0.45),0 0 30px rgba(236,72,153,0.3);
+}
 .hdr-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:38px}
 .brand-grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:800;letter-spacing:-.01em}
-.nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;text-decoration:none;line-height:1.15;text-align:center}
-.nav-brand span{color:var(--amber-mid)}
+.nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text);text-decoration:none;line-height:1.15;text-align:center}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .nav-btn{
   display:inline-flex;align-items:center;gap:8px;
   padding:9px 16px;border-radius:100px;
-  font-size:15px;font-weight:700;color:rgba(255,255,255,.7);
-  background:transparent;border:1.5px solid transparent;
-  text-decoration:none;transition:all .15s;cursor:pointer;
+  font-size:15px;font-weight:700;color:var(--text2);
+  background:var(--surface);border:1.5px solid var(--border-md);
+  text-decoration:none;transition:all .2s cubic-bezier(.4,0,.2,1);cursor:pointer;
   font-family:var(--font-body);white-space:nowrap;
 }
-.nav-btn:hover{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.15)}
-.nav-btn.active{color:#fff;background:var(--amber);border-color:var(--amber);box-shadow:0 2px 8px rgba(186,117,23,.30)}
-.nav-btn.active:hover{background:var(--amber-dk);border-color:var(--amber-dk);color:#fff}
+.nav-btn:hover{color:var(--amber);background:var(--amber-lt);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10),0 4px 12px rgba(99,102,241,.15);transform:translateY(-1px)}
+.nav-btn.active{color:#fff;background:var(--gradient);border-color:transparent;box-shadow:0 0 0 3px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.35),0 3px 10px rgba(236,72,153,.20)}
+.nav-btn.active:hover{color:#fff;background:var(--gradient);box-shadow:0 0 0 4px rgba(99,102,241,.18),0 8px 24px rgba(99,102,241,.40),0 4px 12px rgba(236,72,153,.25);transform:translateY(-2px);filter:brightness(1.08)}
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
-.nav-user{font-size:14px;color:#fff;font-weight:600}
+.nav-user{font-size:14px;color:var(--text);font-weight:600}
 @media(max-width:600px){
   .nav-btn{font-size:13px;padding:7px 12px;gap:6px}
   .nav-btn svg{width:18px;height:18px}
@@ -203,11 +216,11 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 }
 
 /* Unified Sign In / Register buttons (match other pages) */
-.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-body);border:1.5px solid;line-height:1}
-.signin-btn{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.30)}
-.signin-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
-.register-btn{color:var(--navy);background:var(--amber-mid);border-color:var(--amber-mid)}
-.register-btn:hover{background:#FFB740;border-color:#FFB740;color:var(--navy)}
+.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .18s;font-family:var(--font-body);border:1.5px solid;line-height:1}
+.signin-btn{color:var(--amber);background:var(--surface);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.06)}
+.signin-btn:hover{background:var(--amber-lt);color:var(--amber-dk);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.20);transform:translateY(-1px)}
+.register-btn{color:#fff;background:var(--gradient);border-color:transparent;box-shadow:0 2px 6px rgba(99,102,241,.20),0 0 0 3px rgba(236,72,153,.08)}
+.register-btn:hover{background:var(--gradient);box-shadow:0 4px 14px rgba(99,102,241,.35),0 0 0 4px rgba(236,72,153,.15);transform:translateY(-1px);filter:brightness(1.08)}
 @media(max-width:480px){
   .signin-btn,.register-btn{font-size:11px;padding:5px 9px}
 }
