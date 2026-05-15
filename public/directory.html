@@ -94,42 +94,55 @@ button:active{opacity:.8}
 .btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
 .btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#F09595;font-weight:600}
 
-/* ── NAV ── */
-nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16px;position:sticky;top:0;z-index:100}
+/* ── HEADER (matches calendar page) ── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
+  box-shadow:0 1px 0 rgba(15,23,42,0.04),0 8px 24px -16px rgba(99,102,241,0.25);
+}
+nav::after{
+  content:'';position:absolute;left:0;right:0;bottom:-3px;height:3px;
+  background:var(--gradient);
+  filter:blur(0.5px);
+  box-shadow:0 0 18px rgba(99,102,241,0.45),0 0 30px rgba(236,72,153,0.3);
+}
 .hdr-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:38px}
 .brand-grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:800;letter-spacing:-.01em}
-.nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;text-decoration:none;line-height:1.15;text-align:center}
-.nav-brand span{color:var(--amber-mid)}
+.nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text);text-decoration:none;line-height:1.15;text-align:center}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .nav-btn{
   display:inline-flex;align-items:center;gap:8px;
   padding:9px 16px;border-radius:100px;
-  font-size:15px;font-weight:700;color:rgba(255,255,255,.7);
-  background:transparent;border:1.5px solid transparent;
-  text-decoration:none;transition:all .15s;cursor:pointer;
+  font-size:15px;font-weight:700;color:var(--text2);
+  background:var(--surface);border:1.5px solid var(--border-md);
+  text-decoration:none;transition:all .2s cubic-bezier(.4,0,.2,1);cursor:pointer;
   font-family:var(--font-body);white-space:nowrap;
 }
-.nav-btn:hover{color:#fff;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.15)}
-.nav-btn.active{color:#fff;background:var(--amber);border-color:var(--amber);box-shadow:0 2px 8px rgba(186,117,23,.30)}
-.nav-btn.active:hover{background:var(--amber-dk);border-color:var(--amber-dk);color:#fff}
+.nav-btn:hover{color:var(--amber);background:var(--amber-lt);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10),0 4px 12px rgba(99,102,241,.15);transform:translateY(-1px)}
+.nav-btn.active{color:#fff;background:var(--gradient);border-color:transparent;box-shadow:0 0 0 3px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.35),0 3px 10px rgba(236,72,153,.20)}
+.nav-btn.active:hover{color:#fff;background:var(--gradient);box-shadow:0 0 0 4px rgba(99,102,241,.18),0 8px 24px rgba(99,102,241,.40),0 4px 12px rgba(236,72,153,.25);transform:translateY(-2px);filter:brightness(1.08)}
 .nav-btn svg{width:22px;height:22px;flex-shrink:0}
-.nav-user{font-size:13px;color:#fff;font-weight:600}
+.nav-user{font-size:13px;color:var(--text);font-weight:600}
 
-/* Unified Sign In / Register buttons (match calendar page) */
-.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
-.signin-btn{color:#fff;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.30)}
-.signin-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
-.register-btn{color:var(--navy);background:var(--amber-mid);border:1.5px solid var(--amber-mid)}
-.register-btn:hover{background:#FFB740;border-color:#FFB740;color:var(--navy)}
+/* Auth buttons (match calendar page) */
+.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .18s;font-family:var(--font-body)}
+.signin-btn{color:var(--amber);background:var(--surface);border:1.5px solid var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.06)}
+.signin-btn:hover{background:var(--amber-lt);color:var(--amber-dk);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.20);transform:translateY(-1px)}
+.register-btn{color:#fff;background:var(--gradient);border:1.5px solid transparent;box-shadow:0 2px 6px rgba(99,102,241,.20),0 0 0 3px rgba(236,72,153,.08)}
+.register-btn:hover{background:var(--gradient);box-shadow:0 4px 14px rgba(99,102,241,.35),0 0 0 4px rgba(236,72,153,.15);transform:translateY(-1px);filter:brightness(1.08)}
 .auth-buttons{display:flex;align-items:center;gap:6px}
-.user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 6px;min-width:0;position:relative}
-.user-pill .avatar{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.user-pill .user-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;padding:0 4px}
-.user-pill .pill-btn{font-size:11px;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.85);cursor:pointer;border-radius:100px;font-weight:600;white-space:nowrap;font-family:var(--font-body)}
-.user-pill .pill-btn:hover{background:rgba(255,255,255,.10);color:#fff}
-.user-pill .pill-btn.amber{background:var(--amber);border-color:var(--amber);color:#fff}
-.user-pill .pill-btn.amber:hover{background:var(--amber-dk)}
+.user-pill{display:flex;align-items:center;gap:7px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:100px;padding:5px 6px 5px 6px;min-width:0;position:relative;box-shadow:0 2px 8px rgba(99,102,241,.08)}
+.user-pill .avatar{width:30px;height:30px;border-radius:50%;background:var(--gradient);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(99,102,241,.30)}
+.user-pill .user-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;padding:0 4px}
+.user-pill .pill-btn{font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border-md);color:var(--text2);cursor:pointer;border-radius:100px;font-weight:600;white-space:nowrap;font-family:var(--font-body)}
+.user-pill .pill-btn:hover{background:var(--surface2);color:var(--text)}
+.user-pill .pill-btn.amber{background:var(--gradient);border-color:transparent;color:#fff}
+.user-pill .pill-btn.amber:hover{filter:brightness(1.08)}
 @media(max-width:480px){
   .signin-btn,.register-btn{font-size:12px;padding:6px 11px}
   .user-pill .user-name{max-width:80px;font-size:12px}
@@ -176,30 +189,15 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 .adv-placeholder .adv-card-tag2{color:rgba(255,255,255,.25)}
 
 /* ── DIRECTORY ── */
-.dir-controls{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.dir-search{flex:1;min-width:200px;position:relative}
-.dir-search input{padding-left:38px}
-.dir-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text3);pointer-events:none}
-.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.cat-chip{font-size:12px;padding:4px 12px;border-radius:100px;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
-.cat-chip:hover{background:var(--surface2)}
-.cat-chip.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:600}
+/* 3-Pill filter row (matches calendar) */
+.filter-pills-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cat-chips{display:none}  /* removed in favor of popover */
+.cat-chip{display:none}
 
-/* Filter pill (zipcode picker, scope buttons) */
-.filter-pill{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:7px 14px;background:var(--surface2);
-  border:1.5px solid var(--border-md);border-radius:100px;
-  font-size:13px;font-weight:700;color:var(--text);
-  cursor:pointer;white-space:nowrap;flex-shrink:0;
-  font-family:var(--font-body);transition:all .15s
-}
-.filter-pill:hover{background:var(--amber-lt);border-color:var(--amber)}
-
-/* 3-Pill Filter style (matches calendar) */
-.fp{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px;color:var(--text);transition:all .15s;text-align:left}
-.fp:hover{border-color:var(--amber);background:var(--amber-lt)}
-.fp.active{border-color:transparent;background:var(--gradient);color:#fff;box-shadow:var(--glow-sm)}
+/* Filter pill (matches calendar) */
+.fp{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px;color:var(--text);transition:all .2s cubic-bezier(.4,0,.2,1);flex:1;min-width:130px;text-align:left}
+.fp:hover{border-color:var(--amber);background:linear-gradient(135deg,var(--amber-lt),#FFF);box-shadow:0 0 0 3px rgba(99,102,241,.08),0 4px 14px rgba(99,102,241,.12);transform:translateY(-1px)}
+.fp.active{border-color:transparent;background:var(--gradient);color:#fff;box-shadow:0 0 0 4px rgba(99,102,241,.18),0 8px 24px rgba(99,102,241,.35),0 4px 14px rgba(236,72,153,.25);transform:translateY(-1px)}
 .fp-icon{font-size:16px;flex-shrink:0}
 .fp-text{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
 .fp-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
@@ -208,14 +206,35 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 .fp.active .fp-label{color:rgba(255,255,255,.85)}
 .fp.active .fp-icon{filter:brightness(1.2)}
 .fp-clear{padding:9px 14px;background:transparent;border:1.5px solid var(--border-md);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;flex-shrink:0;transition:all .15s}
-.fp-clear:hover{background:var(--surface2);color:var(--amber);border-color:var(--amber)}
-.fp-clear.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.fp-clear:hover{background:var(--surface2);color:var(--danger);border-color:var(--danger)}
 
-/* Listing rows - one-line clickable */
+/* Popover (matches calendar) */
+.fp-popover{display:none;position:absolute;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;z-index:300;max-width:340px;min-width:240px}
+.fp-popover.open{display:block}
+.fp-opt{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:14px;color:var(--text);transition:background .15s}
+.fp-opt:hover{background:var(--surface2)}
+.fp-opt.selected{background:var(--amber-lt);font-weight:700;color:var(--amber-dk)}
+.fp-opt .cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.fp-opt-check{margin-left:auto;color:var(--amber-dk);font-weight:700}
+
+@media(max-width:480px){
+  .filter-pills-row{gap:6px}
+  .fp{padding:8px 11px;min-width:0;flex:1 1 calc(50% - 4px)}
+  .fp-icon{font-size:14px}
+  .fp-label{font-size:9px}
+  .fp-value{font-size:12px}
+  .fp-clear{font-size:11px;padding:8px 10px;flex-basis:100%;margin-top:4px}
+  .fp-popover{left:8px !important;right:8px !important;max-width:none}
+}
+
+/* Listing rows - one-line clickable (modernized to match calendar event rows) */
 .listing-list{display:flex;flex-direction:column;gap:6px}
-.listing-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:all .15s}
-.listing-row:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
-.listing-row:hover .listing-arrow{color:var(--amber);transform:translateX(3px)}
+.listing-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.listing-row::before{content:'';position:absolute;inset:0;border-radius:var(--r);background:linear-gradient(135deg,rgba(99,102,241,.04),rgba(236,72,153,.04));opacity:0;transition:opacity .2s;pointer-events:none;z-index:0}
+.listing-row>*{position:relative;z-index:1}
+.listing-row:hover{border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10),0 6px 20px rgba(99,102,241,.18),0 2px 8px rgba(236,72,153,.10);transform:translateY(-2px)}
+.listing-row:hover::before{opacity:1}
+.listing-row:hover .listing-arrow{color:var(--amber);transform:translateX(4px)}
 .listing-name{font-size:15px;font-weight:700;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .listing-cat-tag{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--amber-dk);background:var(--amber-lt);border-radius:100px;padding:3px 10px;white-space:nowrap;flex-shrink:0}
 .listing-arrow{color:var(--amber);font-size:18px;font-weight:700;flex-shrink:0;transition:transform .15s,color .15s}
@@ -329,53 +348,42 @@ nav{background:var(--navy);border-bottom:4px solid var(--amber);padding:12px 16p
 <!-- ALERTS -->
 <div id="alertBanner"></div>
 
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-tag">Local Business Directory</div>
-  <h1>Local Business<br>Directory</h1>
-  <p>Find local businesses in your area. Get your business listed for just FREE.</p>
-  <div class="hero-cta">
-    <button class="btn-amber" style="font-size:16px;padding:11px 28px" onclick="openModal('listingModal')">+ List My Business — FREE one-time</button>
-    <a href="/advertise" style="font-size:14px;color:rgba(255,255,255,.7);text-decoration:none;padding:11px 20px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r);display:inline-block">📢 Premium Advertising →</a>
-  </div>
-</div>
+<!-- PAGE BODY -->
+<div id="page" class="section" style="padding-top:24px">
 
-<!-- AREA FILTER PILL -->
-<div style="background:var(--surface);border-bottom:1.5px solid var(--border-md);padding:10px 16px">
-  <div class="section" style="padding-top:0;padding-bottom:0">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <button class="fp" id="dirAreaPill" onclick="openDirZipPicker()" style="flex:1;max-width:340px">
-        <span class="fp-icon">📍</span>
-        <span class="fp-text"><span class="fp-label">Area</span><span class="fp-value" id="dirZipLabel">Set Zip</span></span>
-      </button>
-      <button class="fp-clear" id="dirAllAreasBtn" onclick="toggleDirAllAreas()">🌎 All areas</button>
-    </div>
+  <!-- THREE FILTER PILLS: AREA · TYPE (matches calendar design) -->
+  <div class="filter-pills-row" style="margin-top:6px">
+    <button class="fp" id="dirAreaPill" onclick="openDirZipPicker()">
+      <span class="fp-icon">📍</span>
+      <span class="fp-text"><span class="fp-label">Area</span><span class="fp-value" id="dirZipLabel">Set Zip</span></span>
+    </button>
+    <button class="fp" id="dirWhatPill" onclick="openDirWhatPicker(event)">
+      <span class="fp-icon">🏷️</span>
+      <span class="fp-text"><span class="fp-label">Type</span><span class="fp-value" id="dirWhatValue">All types</span></span>
+    </button>
+    <button class="fp-clear" id="dirFpClear" onclick="clearAllDirFilters()" style="display:none">✕ Reset</button>
   </div>
-</div>
 
-<!-- BUSINESS DIRECTORY (now at top) -->
-<div class="section">
-  <div class="section-head">
+  <!-- SEARCH + ADD BUSINESS (matches calendar's search + Add Event) -->
+  <div class="search-wrap" style="margin-top:10px;display:flex;gap:8px;align-items:center">
+    <input type="text" id="dirSearch" placeholder="🔍 Search businesses by name or category…" style="flex:1;padding-left:14px">
+    <button id="addBusinessInline" onclick="openModal('listingModal')" style="background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;border:1.5px solid #16A34A;border-radius:var(--r);padding:7px 14px;cursor:pointer;flex-shrink:0;font-size:13px;font-weight:700;white-space:nowrap;font-family:var(--font-body);display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(22,163,74,.25)" title="List your business for free">
+      <span style="font-size:16px;line-height:1;font-weight:300">+</span> List My Business
+    </button>
+  </div>
+
+  <!-- POPOVER MENU FOR TYPE FILTER -->
+  <div class="fp-popover" id="dirPopWhat"></div>
+
+  <!-- HEADER ROW WITH COUNT + ADMIN -->
+  <div class="section-head" style="margin-top:18px;margin-bottom:14px">
     <div>
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div>
-          <div class="section-title">📋 Business Directory</div>
-          <div class="section-sub" id="listingCount">Loading listings…</div>
-        </div>
-        <button id="adminAddBtn" class="btn-blue btn-sm" style="display:none;font-size:13px;padding:8px 14px" onclick="openAdminAddListing()">🔐 Admin: + Add Business</button>
-      </div>
-      <div id="dirHelp" style="display:none;font-size:13px;color:var(--text3);font-style:italic;margin-top:8px;padding:8px 14px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--amber)">💡 Tap any business below to see contact info, address, and website.</div>
+      <div class="section-title">📋 Business Directory</div>
+      <div class="section-sub" id="listingCount">Loading listings…</div>
     </div>
+    <button id="adminAddBtn" class="btn-blue btn-sm" style="display:none;font-size:13px;padding:8px 14px" onclick="openAdminAddListing()">🔐 Admin: + Add Business</button>
   </div>
 
-  <div class="dir-controls">
-    <div class="dir-search">
-      <span class="dir-search-icon">🔍</span>
-      <input type="text" id="dirSearch" placeholder="Search businesses…">
-    </div>
-  </div>
-
-  <div class="cat-chips" id="catChips"></div>
   <div class="listing-list" id="listingGrid"></div>
 </div>
 
@@ -626,13 +634,70 @@ function renderAdvGrid() {
   grid.innerHTML = html;
 }
 
-// Category chips
-function renderCatChips() {
-  document.getElementById('catChips').innerHTML = CATS.map(c =>
-    `<span class="cat-chip${catFilter===c.id?' on':''}" onclick="setCat('${c.id}')">${c.label}</span>`
-  ).join('');
+// Type filter popover (matches calendar's openWhatPicker)
+function openDirWhatPicker(ev) {
+  ev?.stopPropagation();
+  const pop = document.getElementById('dirPopWhat');
+  if (pop.classList.contains('open')) { pop.classList.remove('open'); return; }
+  pop.innerHTML = CATS.map(c => `
+    <div class="fp-opt${catFilter===c.id?' selected':''}" onclick="setCat('${c.id}');closeDirPopover()">
+      <span>${c.label}</span>
+      ${catFilter===c.id?'<span class="fp-opt-check">✓</span>':''}
+    </div>
+  `).join('') + `
+    <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">
+      <button class="btn-amber" style="width:100%;font-size:13px" onclick="closeDirPopover()">Done</button>
+    </div>`;
+  // Position popover under the pill
+  const pill = document.getElementById('dirWhatPill');
+  const rect = pill.getBoundingClientRect();
+  pop.style.position = 'absolute';
+  pop.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+  pop.style.left = rect.left + 'px';
+  pop.classList.add('open');
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', dirOutsideClose, { once: true });
+  }, 0);
 }
-function setCat(id) { catFilter = id; renderCatChips(); renderListings(); }
+function dirOutsideClose(e){
+  const pop = document.getElementById('dirPopWhat');
+  const pill = document.getElementById('dirWhatPill');
+  if (pop && !pop.contains(e.target) && !pill.contains(e.target)) closeDirPopover();
+}
+function closeDirPopover(){
+  document.getElementById('dirPopWhat')?.classList.remove('open');
+}
+
+function setCat(id) {
+  catFilter = id;
+  const lbl = (CATS.find(c => c.id === id)?.label) || 'All types';
+  document.getElementById('dirWhatValue').textContent = lbl;
+  const pill = document.getElementById('dirWhatPill');
+  if (id === 'all') pill.classList.remove('active');
+  else pill.classList.add('active');
+  updateDirFilterPills();
+  renderListings();
+}
+
+function clearAllDirFilters(){
+  catFilter = 'all';
+  document.getElementById('dirWhatValue').textContent = 'All types';
+  document.getElementById('dirWhatPill').classList.remove('active');
+  srchQ = '';
+  document.getElementById('dirSearch').value = '';
+  updateDirFilterPills();
+  renderListings();
+}
+
+function updateDirFilterPills(){
+  const any = (catFilter !== 'all') || srchQ;
+  const r = document.getElementById('dirFpClear');
+  if (r) r.style.display = any ? '' : 'none';
+}
+
+// Stub kept for compatibility (no chips rendered anymore)
+function renderCatChips() { /* replaced by popover */ }
 
 // Listings
 function renderListings() {
@@ -836,7 +901,7 @@ async function adminDeleteListing(id) {
 }
 
 document.getElementById('dirSearch').addEventListener('input', function() {
-  srchQ = this.value; renderListings();
+  srchQ = this.value; updateDirFilterPills(); renderListings();
 });
 
 // Nav
