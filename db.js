@@ -99,6 +99,17 @@ async function getDb() {
   try { await _db.run("ALTER TABLE users ADD COLUMN home_zipcode TEXT DEFAULT '43764'"); } catch(_) {}
   try { await _db.run("CREATE INDEX IF NOT EXISTS idx_events_zipcode ON events(zipcode)"); } catch(_) {}
   try { await _db.run("CREATE INDEX IF NOT EXISTS idx_listings_zipcode ON listings(zipcode)"); } catch(_) {}
+  // Site settings (admin-controlled key/value pairs)
+  await _db.run(`CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  )`);
+  // Default: only Ohio enabled at launch (controlled rollout for legal compliance)
+  try {
+    const existing = await _db.get('SELECT value FROM settings WHERE key=?', ['enabled_states']);
+    if (!existing) await _db.run('INSERT INTO settings (key,value) VALUES (?,?)', ['enabled_states', 'OH']);
+  } catch(_) {}
+
   // Phone as alternate login method (email OR phone required)
   try { await _db.run("ALTER TABLE users ADD COLUMN phone TEXT"); } catch(_) {}
   try { await _db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL AND phone != ''"); } catch(_) {}
@@ -109,11 +120,11 @@ async function getDb() {
 
   const { c } = await _db.get('SELECT COUNT(*) AS c FROM users');
   if (c === 0) {
-    const ADMIN_EMAIL = 'admin@newlexington.com';
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@nearandfarevents.com';
     const ADMIN_PASS  = process.env.ADMIN_PASSWORD || 'admin2024!';
     const adminHash   = bcrypt.hashSync(ADMIN_PASS, 10);
     const { lastID: adminId } = await _db.run(
-      "INSERT INTO users (name,email,password_hash,address,is_admin) VALUES ('NL Admin',?,?,'New Lexington, OH',1)",
+      "INSERT INTO users (name,email,password_hash,address,is_admin) VALUES ('Near and Far Events Admin',?,?,'',1)",
       [ADMIN_EMAIL, adminHash]
     );
     console.log('DB seeded. Admin: ' + ADMIN_EMAIL + ' / ' + ADMIN_PASS);
