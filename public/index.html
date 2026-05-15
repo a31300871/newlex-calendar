@@ -3,40 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TownBell · Your town's community calendar</title>
-<meta name="description" content="TownBell — your town's free community event calendar. Sports, church, government, fairs, and more.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A2744'/><rect x='5' y='11' width='22' height='15' rx='2' fill='%23BA7517'/><rect x='5' y='9' width='22' height='6' rx='2' fill='%23854F0B'/><rect x='9' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><rect x='20' y='7' width='3' height='5' rx='1.5' fill='%23fff'/><text x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='9' fill='white' text-anchor='middle'>NL</text></svg>">
+<title>Near and Far Events · Discover what's happening, near and far</title>
+<meta name="description" content="Near and Far Events — your community event calendar, near and far. Sports, church, government, fairs, and more.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236366F1'/><stop offset='.5' stop-color='%23EC4899'/><stop offset='1' stop-color='%23F59E0B'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><path d='M16 7c-3.3 0-6 2.7-6 6 0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6zm0 8a2 2 0 110-4 2 2 0 010 4z' fill='white'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --amber:#BA7517;--amber-dk:#854F0B;--amber-lt:#FFF4E0;
-  --teal:#0F6E56;--navy:#1A2744;--navy2:#1E3260;--cream:#FAF8F4;
-  --border:rgba(0,0,0,0.09);--border-md:rgba(0,0,0,0.16);
-  --text:#1C1C1E;--text2:#5F5E5A;--text3:#888780;
-  --surface:#FFF;--surface2:#F5F3EE;
-  --danger:#A32D2D;--danger-bg:#FCEBEB;
-  --blue:#2355B5;--blue-lt:#EEF4FF;
+  /* Brand gradient (used on logo, accents) */
+  --grad-1:#6366F1;  /* indigo */
+  --grad-2:#EC4899;  /* pink */
+  --grad-3:#F59E0B;  /* amber */
+  --gradient:linear-gradient(135deg,#6366F1 0%,#EC4899 50%,#F59E0B 100%);
+
+  /* Primary action: indigo with vibrant glow */
+  --amber:#6366F1;       /* primary brand action (kept var name for compat) */
+  --amber-dk:#4F46E5;
+  --amber-lt:#EEF0FF;
+  --amber-mid:#A5B4FC;
+  --primary-glow:rgba(99,102,241,.40);
+
+  /* Secondary action: pink */
+  --blue:#EC4899;        /* secondary action (kept var name for compat) */
+  --blue-lt:#FDF2F8;
+  --pink-glow:rgba(236,72,153,.40);
+
+  /* Accent: amber/gold for highlights */
+  --accent:#F59E0B;
+  --accent-lt:#FEF3C7;
+  --accent-glow:rgba(245,158,11,.40);
+
+  /* Success: emerald */
+  --teal:#10B981;        /* kept var name */
+  --teal-lt:#D1FAE5;
+  --success-glow:rgba(16,185,129,.40);
+
+  /* Surfaces and text */
+  --cream:#FFFFFF;       /* page background — now pure white */
+  --surface:#FFFFFF;
+  --surface2:#F8FAFC;
+  --surface3:#F1F5F9;
+  --navy:#0F172A;        /* dark slate — used for sponsor bar / dark elements */
+  --navy2:#1E293B;
+  --text:#0F172A;
+  --text2:#475569;
+  --text3:#94A3B8;
+  --border:rgba(15,23,42,.08);
+  --border-md:rgba(15,23,42,.14);
+
+  /* Semantic */
+  --danger:#EF4444;
+  --danger-bg:#FEF2F2;
+
+  /* Glow shadow tokens (edge lighting extended beyond edges) */
+  --glow-sm:0 0 0 3px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.18);
+  --glow-md:0 0 0 4px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.28);
+  --glow-pink:0 0 0 4px rgba(236,72,153,.15),0 6px 20px rgba(236,72,153,.28);
+  --glow-amber:0 0 0 4px rgba(245,158,11,.15),0 6px 20px rgba(245,158,11,.30);
+  --shadow-soft:0 1px 3px rgba(15,23,42,.05),0 4px 16px rgba(15,23,42,.06);
+  --shadow-md:0 2px 6px rgba(15,23,42,.06),0 8px 28px rgba(15,23,42,.10);
+
+  /* Fonts and layout */
   --font-head:'Playfair Display',Georgia,serif;
   --font-body:'Source Sans 3',system-ui,sans-serif;
-  --hdr-h:118px;--about-h:0px;--spon-h:90px;--r:8px;--r-lg:14px;
+  --hdr-h:130px;--about-h:0px;--spon-h:90px;--r:10px;--r-lg:16px;
 }
 html{font-size:16px}
 body{font-family:var(--font-body);background:var(--cream);color:var(--text);line-height:1.5;
-  padding-top:calc(var(--hdr-h) + var(--about-h));padding-bottom:var(--spon-h)}
+  padding-top:calc(var(--hdr-h) + var(--about-h));padding-bottom:var(--spon-h);
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.06), transparent 50%),
+    radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.05), transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.04), transparent 50%);
+  background-attachment:fixed}
 input,select,textarea,button{font-family:var(--font-body);font-size:15px}
 input,select,textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(99,102,241,.15)}
 input::placeholder,textarea::placeholder{color:var(--text3)}
 button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s,opacity .15s;font-size:15px;font-weight:500}
 button:hover{background:var(--surface2)}
 button:active{opacity:.8}
-.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700}
-.btn-amber:hover{background:var(--amber-dk);border-color:var(--amber-dk)}
-.btn-blue{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700}
-.btn-blue:hover{background:#1A3E8A}
+.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700;box-shadow:var(--glow-sm);transition:all .18s}
+.btn-amber:hover{background:var(--amber-dk);border-color:var(--amber-dk);box-shadow:var(--glow-md);transform:translateY(-1px)}
+.btn-blue{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;box-shadow:0 0 0 3px rgba(236,72,153,.12),0 4px 12px rgba(236,72,153,.20);transition:all .18s}
+.btn-blue:hover{background:#DB2777;border-color:#DB2777;box-shadow:var(--glow-pink);transform:translateY(-1px)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
 .btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
 .btn-sm{font-size:13px;padding:6px 14px}
@@ -56,15 +108,29 @@ button:active{opacity:.8}
 /* ── FIXED HEADER ── */
 #hdr{
   position:fixed;top:0;left:0;right:0;z-index:200;
-  background:var(--navy);border-bottom:4px solid var(--amber);
-  padding:10px 16px 10px;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px 12px;
+  box-shadow:0 1px 0 rgba(15,23,42,0.04),0 8px 24px -16px rgba(99,102,241,0.25);
+}
+/* Bright gradient strip at bottom of header (the "edge lighting") */
+#hdr::after{
+  content:'';position:absolute;left:0;right:0;bottom:-3px;height:3px;
+  background:var(--gradient);
+  filter:blur(0.5px);
+  box-shadow:0 0 18px rgba(99,102,241,0.45),0 0 30px rgba(236,72,153,0.3);
 }
 @media(max-width:600px){
   #hdr{padding:8px 12px 8px}
   .hdr-row1{margin-bottom:8px;min-height:36px}
 }
 .hdr-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:42px}
-.hdr-title{font-family:var(--font-head);font-size:20px;font-weight:700;color:#fff;line-height:1.15;text-align:left;flex:1;min-width:0}
+.hdr-title{font-family:var(--font-head);font-size:21px;font-weight:800;line-height:1.1;text-align:left;flex:1;min-width:0;color:var(--text);letter-spacing:-.01em}
+.hdr-title span:first-child{font-size:1.05em}
+/* Apply gradient to brand name (everything after the emoji and space) */
+.brand-grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:900}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 12px 5px 6px;min-width:0}
@@ -171,14 +237,16 @@ button:active{opacity:.8}
 
 /* ── 3-PILL FILTER ROW (Area · When · What) ── */
 .filter-pills-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.fp{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px;color:var(--text);transition:all .15s;flex:1;min-width:130px;text-align:left}
-.fp:hover{border-color:var(--amber);background:var(--amber-lt)}
-.fp.active{border-color:var(--amber);background:var(--amber-lt)}
+.fp{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px;color:var(--text);transition:all .2s cubic-bezier(.4,0,.2,1);flex:1;min-width:130px;text-align:left}
+.fp:hover{border-color:var(--amber);background:linear-gradient(135deg,var(--amber-lt),#FFF);box-shadow:0 0 0 3px rgba(99,102,241,.08),0 4px 14px rgba(99,102,241,.12);transform:translateY(-1px)}
+.fp.active{border-color:transparent;background:var(--gradient);color:#fff;box-shadow:0 0 0 4px rgba(99,102,241,.18),0 8px 24px rgba(99,102,241,.35),0 4px 14px rgba(236,72,153,.25);transform:translateY(-1px)}
 .fp-icon{font-size:16px;flex-shrink:0}
 .fp-text{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
 .fp-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
 .fp-value{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fp.active .fp-value{color:var(--amber-dk)}
+.fp.active .fp-value{color:#fff}
+.fp.active .fp-label{color:rgba(255,255,255,.85)}
+.fp.active .fp-icon{filter:brightness(1.2)}
 .fp-clear{padding:9px 14px;background:transparent;border:1.5px solid var(--border-md);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;flex-shrink:0;transition:all .15s}
 .fp-clear:hover{background:var(--surface2);color:var(--danger);border-color:var(--danger)}
 
@@ -200,6 +268,15 @@ button:active{opacity:.8}
   .fp-clear{font-size:11px;padding:8px 10px;flex-basis:100%;margin-top:4px}
   .fp-popover{left:8px !important;right:8px !important;max-width:none}
 }
+
+/* States picker grid */
+.states-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;max-height:50vh;overflow-y:auto;padding:8px;background:var(--surface2);border-radius:8px;border:1.5px solid var(--border)}
+.state-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .12s;font-size:13px}
+.state-row:hover{border-color:var(--amber);background:var(--amber-lt)}
+.state-row input[type=checkbox]{margin:0;accent-color:var(--amber);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.state-name{flex:1;color:var(--text);font-weight:500;line-height:1.2;font-size:12px}
+.state-name strong{font-weight:800;color:var(--amber-dk);margin-right:2px}
+.state-count{font-size:10px;color:var(--text3);font-weight:600;white-space:nowrap}
 
 /* ── EVENT ROWS ── */
 /* Side-by-side date layout */
@@ -229,9 +306,12 @@ button:active{opacity:.8}
   .events-col .erow-arrow{font-size:15px}
   .events-col .dot{width:8px;height:8px}
 }
-.erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:all .15s;cursor:pointer;overflow:hidden}
-.erow:hover{border-color:var(--amber);background:var(--amber-lt);box-shadow:0 3px 10px rgba(186,117,23,.12);transform:translateY(-1px)}
-.erow:hover .erow-arrow{color:var(--amber);transform:translateX(3px)}
+.erow{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:var(--surface);font-size:14px;transition:all .2s cubic-bezier(.4,0,.2,1);cursor:pointer;overflow:hidden;position:relative}
+.erow::before{content:'';position:absolute;inset:0;border-radius:var(--r);background:linear-gradient(135deg,rgba(99,102,241,.04),rgba(236,72,153,.04));opacity:0;transition:opacity .2s;pointer-events:none;z-index:0}
+.erow>*{position:relative;z-index:1}
+.erow:hover{border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10),0 6px 20px rgba(99,102,241,.18),0 2px 8px rgba(236,72,153,.10);transform:translateY(-2px)}
+.erow:hover::before{opacity:1}
+.erow:hover .erow-arrow{color:var(--amber);transform:translateX(4px)}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .ename{font-weight:700;font-size:15px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .em{color:var(--text2);font-size:14px;white-space:nowrap;flex-shrink:0}
@@ -370,7 +450,7 @@ button:active{opacity:.8}
 <!-- FIXED HEADER -->
 <header id="hdr">
   <div class="hdr-row1">
-    <div class="hdr-title"><span style="font-size:1.1em">🔔</span> TownBell<br><span style="font-size:.6em;font-weight:500;opacity:.7;letter-spacing:.02em">Your town's community calendar</span></div>
+    <div class="hdr-title"><span style="font-size:1.1em;display:inline-block;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.6em;font-weight:500;opacity:.7;letter-spacing:.02em">Discover what's happening, near and far</span></div>
     <div class="hdr-right" id="authArea"></div>
   </div>
   <div class="hdr-row2">
@@ -410,7 +490,7 @@ button:active{opacity:.8}
   <div class="filter-pills-row" style="margin-top:14px">
     <button class="fp" id="fpArea" onclick="openAreaPicker()">
       <span class="fp-icon">📍</span>
-      <span class="fp-text"><span class="fp-label">Area</span><span class="fp-value" id="fpAreaValue">43764</span></span>
+      <span class="fp-text"><span class="fp-label">Area</span><span class="fp-value" id="fpAreaValue">Set Zip</span></span>
     </button>
     <button class="fp" id="fpWhen" onclick="openWhenPicker(event)">
       <span class="fp-icon">📅</span>
@@ -453,9 +533,6 @@ button:active{opacity:.8}
     <button class="modal-close" onclick="closeModal('evModal')">✕</button>
     <div id="evModalContent"></div>
   </div>
-</div>
-
-<!-- IMPORT MODAL -->
 </div>
 
 <!-- SPONSOR MODAL -->
@@ -522,6 +599,15 @@ async function api(path,opts={}){
   return d;
 }
 
+// Client-side ZIP3 → state lookup (matches server)
+function clientZipToState(zip){
+  const z = parseInt(String(zip||'').substring(0,3), 10);
+  if (isNaN(z)) return null;
+  const ranges = [[10,27,'MA'],[28,29,'RI'],[30,38,'NH'],[39,49,'ME'],[50,59,'VT'],[60,69,'CT'],[70,89,'NJ'],[100,119,'NY'],[120,149,'NY'],[150,196,'PA'],[200,205,'DC'],[206,219,'MD'],[220,246,'VA'],[247,268,'WV'],[270,289,'NC'],[290,299,'SC'],[300,319,'GA'],[320,349,'FL'],[350,369,'AL'],[370,385,'TN'],[386,397,'MS'],[400,427,'KY'],[430,459,'OH'],[460,479,'IN'],[480,499,'MI'],[500,528,'IA'],[530,549,'WI'],[550,567,'MN'],[570,577,'SD'],[580,588,'ND'],[590,599,'MT'],[600,629,'IL'],[630,658,'MO'],[660,679,'KS'],[680,693,'NE'],[700,714,'LA'],[716,729,'AR'],[730,749,'OK'],[750,799,'TX'],[800,816,'CO'],[820,831,'WY'],[832,838,'ID'],[840,847,'UT'],[850,865,'AZ'],[870,884,'NM'],[889,898,'NV'],[900,961,'CA'],[967,968,'HI'],[970,979,'OR'],[980,994,'WA'],[995,999,'AK']];
+  for (const [s,e,st] of ranges) if (z>=s && z<=e) return st;
+  return null;
+}
+
 async function init(){
   renderAuth();
   updateFilterPills();
@@ -552,7 +638,7 @@ async function openZipPicker(){
   document.getElementById('evModalContent').innerHTML = `
     <div class="modal-title">📍 Choose Your Area</div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your 5-digit zipcode to see local events. You can switch areas anytime.</p>
-    <div class="field"><label>Your Zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="43764" value="${esc(currentZipcode||'')}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
+    <div class="field"><label>Your Zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="12345" value="${esc(currentZipcode||'')}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
     ${popularZips.length ? `
       <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Popular zipcodes:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -577,6 +663,17 @@ async function saveZip(){
   if (!/^\d{5}$/.test(zip)) {
     document.getElementById('zipErr').textContent = 'Please enter a valid 5-digit zipcode.';
     return;
+  }
+  // Check enabled states for non-admin users
+  if (!authUser || !authUser.is_admin) {
+    try {
+      const { enabled } = await api('/api/enabled-states');
+      const state = clientZipToState(zip);
+      if (!state || !enabled.includes(state)) {
+        document.getElementById('zipErr').innerHTML = `🚧 Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: <strong>${enabled.join(', ')}</strong>.<br><br>We'll add more areas soon!`;
+        return;
+      }
+    } catch(_) {}
   }
   currentZipcode = zip;
   showAllAreas = false;
@@ -754,7 +851,7 @@ function fmtDateShort(d){
   return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
 function shareEvent(ev){
-  const text=`📅 ${ev.name}\n📍 ${ev.location}\n🗓 ${fmtDateShort(ev.date)} · ${ev.time}\n💰 ${ev.price}\n📞 ${ev.contact}\n\nnewlexcalendar.com`;
+  const text=`📅 ${ev.name}\n📍 ${ev.location}\n🗓 ${fmtDateShort(ev.date)} · ${ev.time}\n💰 ${ev.price}\n📞 ${ev.contact}\n\nnearandfarevents.com`;
   if(navigator.share){
     navigator.share({title:ev.name,text}).catch(()=>{});
   } else {
@@ -896,7 +993,7 @@ function showForgotPassword(){
     <div class="modal-title">Forgot Password?</div>
     <p style="font-size:14px;color:var(--text2);margin-bottom:14px">No worries — to reset your password, please email us with the email address on your account:</p>
     <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:14px">
-      <a href="mailto:hello@newlexcalendar.com?subject=Password%20Reset%20Request" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@newlexcalendar.com</a>
+      <a href="mailto:hello@nearandfarevents.com?subject=Password%20Reset%20Request" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@nearandfarevents.com</a>
     </div>
     <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.5">Include your full name and we'll verify it's you, then send you a new password to sign in with. We respond within 24 hours.</p>
     <div class="modal-actions">
@@ -915,7 +1012,7 @@ function showForgotUsername(){
     </ul>
     <p style="font-size:14px;color:var(--text2);margin-bottom:14px">Still can't remember? Email us with your full name and any details about your account:</p>
     <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:14px">
-      <a href="mailto:hello@newlexcalendar.com?subject=Forgot%20My%20Email" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@newlexcalendar.com</a>
+      <a href="mailto:hello@nearandfarevents.com?subject=Forgot%20My%20Email" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@nearandfarevents.com</a>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" onclick="openAuthModal()">← Back to Sign In</button>
@@ -989,6 +1086,94 @@ async function doDeleteAccount(){
 }
 
 /* ── ADMIN APPROVAL PANEL ── */
+// US states for the controlled rollout admin panel
+const US_STATES = [
+  {code:'AL',name:'Alabama'},{code:'AK',name:'Alaska'},{code:'AZ',name:'Arizona'},{code:'AR',name:'Arkansas'},
+  {code:'CA',name:'California'},{code:'CO',name:'Colorado'},{code:'CT',name:'Connecticut'},{code:'DC',name:'D.C.'},
+  {code:'DE',name:'Delaware'},{code:'FL',name:'Florida'},{code:'GA',name:'Georgia'},{code:'HI',name:'Hawaii'},
+  {code:'ID',name:'Idaho'},{code:'IL',name:'Illinois'},{code:'IN',name:'Indiana'},{code:'IA',name:'Iowa'},
+  {code:'KS',name:'Kansas'},{code:'KY',name:'Kentucky'},{code:'LA',name:'Louisiana'},{code:'ME',name:'Maine'},
+  {code:'MD',name:'Maryland'},{code:'MA',name:'Massachusetts'},{code:'MI',name:'Michigan'},{code:'MN',name:'Minnesota'},
+  {code:'MS',name:'Mississippi'},{code:'MO',name:'Missouri'},{code:'MT',name:'Montana'},{code:'NE',name:'Nebraska'},
+  {code:'NV',name:'Nevada'},{code:'NH',name:'New Hampshire'},{code:'NJ',name:'New Jersey'},{code:'NM',name:'New Mexico'},
+  {code:'NY',name:'New York'},{code:'NC',name:'North Carolina'},{code:'ND',name:'North Dakota'},{code:'OH',name:'Ohio'},
+  {code:'OK',name:'Oklahoma'},{code:'OR',name:'Oregon'},{code:'PA',name:'Pennsylvania'},{code:'RI',name:'Rhode Island'},
+  {code:'SC',name:'South Carolina'},{code:'SD',name:'South Dakota'},{code:'TN',name:'Tennessee'},{code:'TX',name:'Texas'},
+  {code:'UT',name:'Utah'},{code:'VT',name:'Vermont'},{code:'VA',name:'Virginia'},{code:'WA',name:'Washington'},
+  {code:'WV',name:'West Virginia'},{code:'WI',name:'Wisconsin'},{code:'WY',name:'Wyoming'}
+];
+
+async function openStatesPanel(){
+  const dd = document.getElementById('acctMenu');
+  if (dd) dd.style.display = 'none';
+  let data;
+  try { data = await api('/api/admin/states'); }
+  catch(e) { alert('Error loading states: ' + e.message); return; }
+  const enabled = new Set(data.enabled || []);
+  const stats = data.stateStats || {};
+  window._statesSelected = new Set(enabled);
+  const rows = US_STATES.map(s => {
+    const stat = stats[s.code] || {};
+    const counts = [];
+    if (stat.events) counts.push(`${stat.events} ev`);
+    if (stat.listings) counts.push(`${stat.listings} biz`);
+    if (stat.users) counts.push(`${stat.users} usr`);
+    const countText = counts.length ? counts.join(' · ') : '';
+    return `<label class="state-row" data-state="${s.code}">
+      <input type="checkbox" ${enabled.has(s.code)?'checked':''} onchange="toggleStateSel('${s.code}',this.checked)">
+      <span class="state-name"><strong>${s.code}</strong> · ${s.name}</span>
+      ${countText ? `<span class="state-count">${countText}</span>` : ''}
+    </label>`;
+  }).join('');
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">🌎 Allowed States</div>
+    <div style="background:var(--surface2);border-left:3px solid var(--amber);padding:11px 14px;border-radius:8px;font-size:13px;line-height:1.55;color:var(--text);margin-bottom:14px">
+      <strong>Controlled rollout:</strong> Only zipcodes in checked states are visible to end users. Disabled states are hidden from non-admins (events, listings, zipcode picker). Admin always sees everything.
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn-sm" style="background:var(--surface2);border:1.5px solid var(--border-md);font-weight:600" onclick="selectAllStates(true)">Select all</button>
+      <button class="btn-sm" style="background:var(--surface2);border:1.5px solid var(--border-md);font-weight:600" onclick="selectAllStates(false)">Clear all</button>
+      <button class="btn-sm" style="background:var(--surface2);border:1.5px solid var(--border-md);font-weight:600;margin-left:auto" onclick="showOnlyActiveStates()">Show only with content</button>
+    </div>
+    <div class="states-grid">${rows}</div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-amber" onclick="saveAllowedStates()">Save Changes</button>
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+    </div>
+    <div class="err-msg" id="stErr"></div><div class="ok-msg" id="stOk"></div>`;
+  openModal('evModal');
+}
+
+function toggleStateSel(code, checked){
+  if (checked) window._statesSelected.add(code);
+  else window._statesSelected.delete(code);
+}
+
+function selectAllStates(on){
+  window._statesSelected = new Set(on ? US_STATES.map(s => s.code) : []);
+  document.querySelectorAll('.state-row input[type=checkbox]').forEach(cb => {
+    cb.checked = on;
+  });
+}
+
+function showOnlyActiveStates(){
+  document.querySelectorAll('.state-row').forEach(row => {
+    const hasCount = row.querySelector('.state-count');
+    row.style.display = hasCount ? '' : 'none';
+  });
+}
+
+async function saveAllowedStates(){
+  const states = [...window._statesSelected];
+  try {
+    await api('/api/admin/states', { method:'PUT', body: JSON.stringify({ states }) });
+    document.getElementById('stOk').textContent = `✓ Saved. ${states.length} state${states.length===1?'':'s'} now active.`;
+    setTimeout(() => { closeModal('evModal'); loadEvents(); }, 800);
+  } catch(e) {
+    document.getElementById('stErr').textContent = e.message;
+  }
+}
+
 async function openApprovalsPanel(){
   closeAcctMenu();
   document.getElementById('evModalContent').innerHTML = `
@@ -1140,7 +1325,7 @@ function openEventModal(ev){
     <div class="field"><label>Category</label>
       <select id="fCt">${CATS.map(c=>`<option value="${c.id}"${(ev?ev.cat:'')==c.id?' selected':''}>${c.label}</option>`).join('')}</select>
     </div>
-    <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="fZip" maxlength="5" value="${ev?esc(ev.zipcode||currentZipcode||'43764'):(currentZipcode||'43764')}" placeholder="43764" inputmode="numeric"></div>
+    <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="fZip" maxlength="5" value="${ev?esc(ev.zipcode||currentZipcode||'43764'):(currentZipcode||'43764')}" placeholder="12345" inputmode="numeric"></div>
     <div class="field"><label>🎟️ Ticket Link (optional)</label><input type="text" id="fAff" value="${ev?esc(ev.affiliate_url||''):''}" placeholder="https://ticketmaster.com/... or affiliate URL"><div style="font-size:11px;color:var(--text3);margin-top:3px">Paste a ticket purchase URL — a "Get Tickets" button will appear on the event.</div></div>
     <div class="modal-actions">
       <button class="${ev?'btn-blue':'btn-amber'}" onclick="doSubmitEvent()">${ev?'Save Changes':'Post Event'}</button>
@@ -1302,7 +1487,7 @@ function renderSponsors(){
   // Always show a polished "Advertise" card at the end
   html+=`<div class="spon-card advertise-card" onclick="showAdvertiseInfo()">
     <div class="spon-name" style="color:#EF9F27">Advertise Here</div>
-    <div class="spon-tag">Reach New Lexington — $25/mo</div>
+    <div class="spon-tag">Reach Your Community — $25/mo</div>
     <span class="spon-link">Learn more →</span>
   </div>`;
   cards.innerHTML=html;
@@ -1310,13 +1495,13 @@ function renderSponsors(){
 
 function showAdvertiseInfo(){
   document.getElementById('spModalContent').innerHTML=`
-    <div class="modal-title">📢 Advertise on NewLexCalendar.com</div>
-    <p style="font-size:15px;color:var(--text2);margin-bottom:16px;line-height:1.6">Reach hundreds of New Lexington and Perry County residents every month. Your business appears on the sponsor bar at the bottom of every page — always visible, never missed.</p>
+    <div class="modal-title">📢 Advertise on Near and Far Events</div>
+    <p style="font-size:15px;color:var(--text2);margin-bottom:16px;line-height:1.6">Reach hundreds of local residents every month. Your business appears on the sponsor bar at the bottom of every page — always visible, never missed.</p>
     <div style="background:var(--surface2);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:18px">
       <div style="font-size:22px;font-weight:700;color:var(--amber);margin-bottom:4px">$25 / month</div>
       <div style="font-size:14px;color:var(--text2)">✓ Business name &amp; tagline on every page<br>✓ Link to your website<br>✓ Cancel any time</div>
     </div>
-    <p style="font-size:14px;color:var(--text2);margin-bottom:4px">Ready to reach New Lexington every day?</p>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:4px">Ready to reach your community every day?</p>
     <div class="modal-actions">
       <button class="btn-amber" onclick="window.location.href='/advertise'" style="flex:2">Get Started →</button>
       <button class="btn-ghost" onclick="closeModal('spModal')">Close</button>
@@ -1397,7 +1582,7 @@ function openImportModal(){
 function downloadTemplate(){
   const rows=['name,location,date,time,price,contact,category,zipcode,affiliate_url','Annual Bake Sale,First Baptist Church,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,','Farmers Market,Main Street,2026-06-20,8:00 AM - Noon,Free,info@market.org,food,43764,'];
   const blob=new Blob([rows.join('\n')],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='townbell-events-template.csv';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nearandfarevents-template.csv';a.click();
 }
 function handleCSVFile(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{document.getElementById('csvArea').value=e.target.result;previewImport();};reader.readAsText(file);}
 function parseCSVLine(line){const result=[];let cur='';let inQ=false;for(let i=0;i<line.length;i++){if(line[i]==='"'){inQ=!inQ;}else if(line[i]===','&&!inQ){result.push(cur.trim());cur='';}else{cur+=line[i];}}result.push(cur.trim());return result;}
@@ -1509,7 +1694,7 @@ function openEventDetail(ev) {
     </div>` : `
     <div class="ad-no-ads">
       <div style="font-size:28px">📢</div>
-      <div class="ad-no-ads-text"><strong>Your ad could be here</strong><br>Reach every New Lexington visitor for just $50/mo</div>
+      <div class="ad-no-ads-text"><strong>Your ad could be here</strong><br>Reach every local visitor for just $50/mo</div>
       <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber);font-weight:600;text-decoration:none;margin-top:4px;display:inline-block">See ad options →</a>
     </div>`;
 
