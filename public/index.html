@@ -1177,6 +1177,8 @@ async function saveZip(){
     } catch(_) {}
   }
   currentZipcode = zip;
+  // Re-fetch zip-dependent sponsor data after zip change
+  loadSponsors();
   showAllAreas = false;
   localStorage.setItem('nlcc_zipcode', zip);
   // Save to user account if logged in
@@ -1198,7 +1200,7 @@ async function loadEvents(){
   catch(e){document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`;}
 }
 async function loadSponsors(){
-  try{const [s, p] = await Promise.all([api('/api/display/sponsors'), api('/api/display/popup-ads')]); allSponsors=s; allPopupAds=p||[]; renderSponsors();}
+  try{const z = currentZipcode||''; const [s, p] = await Promise.all([api('/api/display/sponsors?zipcode='+encodeURIComponent(z)), api('/api/display/popup-ads?zipcode='+encodeURIComponent(z))]); allSponsors=s; allPopupAds=p||[]; renderSponsors();}
   catch(e){console.error(e);}
 }
 
@@ -1496,7 +1498,12 @@ function openGuestEventModal(){
     <div class="field"><label>Time</label>
       ${buildTimePickerHTML('gu', '', '', 0)}
     </div>
-    <div class="field"><label>Price</label><input type="text" id="guEvPrice" placeholder="Free"></div>
+    <div class="field"><label>Price</label>
+      <div style="display:flex;gap:6px;align-items:stretch">
+        <input type="text" id="guEvPrice" placeholder="$" style="flex:1">
+        <button type="button" onclick="document.getElementById('guEvPrice').value='Free'" style="background:var(--surface2);border:1.5px solid var(--border-md);color:var(--text);font-size:13px;font-weight:700;padding:0 14px;border-radius:var(--r);cursor:pointer;font-family:var(--font-body);white-space:nowrap">Free</button>
+      </div>
+    </div>
     <div class="field"><label>Category</label>
       <select id="guEvCat">
         <option value="community">Community</option>
@@ -1836,6 +1843,7 @@ async function refreshAdsList(){
             </div>
             ${a.tagline ? `<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.45">${esc(a.tagline)}</div>` : ''}
             <div style="font-size:11px;color:var(--text3);margin-top:6px">${esc(a.email||'')} ${a.phone?'· '+esc(a.phone):''} ${a.url?'· <a href="'+esc(a.url)+'" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;font-weight:600">website ↗</a>':''}</div>
+            <div style="font-size:11px;color:var(--amber-dk);margin-top:6px;font-weight:700">📍 ${a.statewide_state ? 'State-wide: '+esc(a.statewide_state) : a.zipcode ? 'Zip '+esc(a.zipcode) : '⚠ NO ZIP SET (only shows to no-zip viewers)'}</div>
           </div>
           <button onclick="deleteAdvertiser(${a.id}, ${JSON.stringify(a.business_name||a.name||'').replace(/"/g,'&quot;')}, ${a.stripe_subscription_id?1:0})" style="background:transparent;color:#DC2626;border:1.5px solid #DC2626;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;flex-shrink:0">🗑 Delete</button>
         </div>
@@ -1874,6 +1882,11 @@ function openManualAdvertiser(){
     <div class="field"><label>Tagline (short, ≤80 chars)</label><input type="text" id="maTag" placeholder="Honest auto repair since 1995" maxlength="80"></div>
     <div class="field"><label>Website URL</label><input type="url" id="maUrl" placeholder="https://example.com"></div>
     <div class="field"><label>Phone</label><input type="tel" id="maPh" placeholder="(740) 555-1234"></div>
+    <div class="field"><label>🎯 Target Zipcode <span class="req">*</span></label><input type="text" id="maZip" placeholder="43764" maxlength="5" inputmode="numeric" style="font-size:16px"></div>
+    <div class="field"><label>OR State-wide (2-letter code, optional)</label><input type="text" id="maState" placeholder="OH (leave blank for zip-specific)" maxlength="2" style="text-transform:uppercase;font-size:15px"></div>
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:9px 13px;margin-bottom:11px;font-size:12px;color:var(--text2);line-height:1.55">
+      <strong style="color:var(--amber-dk)">Where will this ad show?</strong> Only to users browsing the target zipcode (or any zip in the state if you set state-wide). Advertisers don\'t spill into other areas.
+    </div>
     <div class="field"><label>Ad Tier</label>
       <select id="maTier">
         <option value="basic">Basic — Sponsor Bar only ($25/mo equivalent)</option>
@@ -1890,10 +1903,13 @@ function openManualAdvertiser(){
 }
 async function doManualAdvertiser(){
   const business_name = document.getElementById('maBn').value.trim();
+  const zipcode = document.getElementById('maZip').value.trim();
+  const statewide_state = document.getElementById('maState').value.trim().toUpperCase();
   if (!business_name) { document.getElementById('maErr').textContent = 'Business name is required.'; return; }
+  if (!zipcode && !statewide_state) { document.getElementById('maErr').textContent = 'Target zipcode OR state-wide code is required.'; return; }
   try {
     await api('/api/admin/advertisers/manual', { method: 'POST', body: JSON.stringify({
-      business_name,
+      business_name, zipcode, statewide_state,
       tagline: document.getElementById('maTag').value.trim(),
       url: document.getElementById('maUrl').value.trim(),
       phone: document.getElementById('maPh').value.trim(),
@@ -2337,7 +2353,12 @@ function openEventModal(ev){
       ${buildTimePickerHTML('f', ev?ev.start_time||'':'', ev?ev.end_time||'':'', ev?ev.all_day||0:0)}
     </div>
     <div class="field frow">
-      <div><label>Price</label><input type="text" id="fPr" value="${ev?esc(ev.price):''}" placeholder="Free or $5"></div>
+      <div><label>Price</label>
+        <div style="display:flex;gap:6px;align-items:stretch">
+          <input type="text" id="fPr" value="${ev?esc(ev.price):''}" placeholder="$" style="flex:1">
+          <button type="button" onclick="document.getElementById('fPr').value='Free'" style="background:var(--surface2);border:1.5px solid var(--border-md);color:var(--text);font-size:13px;font-weight:700;padding:0 14px;border-radius:var(--r);cursor:pointer;font-family:var(--font-body);white-space:nowrap" onmouseover="this.style.background='var(--amber-lt)';this.style.borderColor='var(--amber)';this.style.color='var(--amber-dk)'" onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border-md)';this.style.color='var(--text)'">Free</button>
+        </div>
+      </div>
       <div><label>Contact</label><input type="text" id="fCo" value="${ev&&ev.contact!=='-'?esc(ev.contact):''}" placeholder="Phone or email"></div>
     </div>
     <div class="field"><label>Category</label>
