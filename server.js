@@ -279,6 +279,44 @@ async function logRemovedItem(db, params) {
   } catch(e) { console.error('Audit log failed:', e.message); }
 }
 
+
+// ── Time + display helpers for events ──
+function computeEffectiveEndAt(date, start_time, end_time, all_day) {
+  // Returns ISO datetime string for "when this event is no longer visible" (end + 4hr grace)
+  if (!date) return '';
+  let endStr;
+  if (all_day) {
+    endStr = `${date}T23:59:00`;
+  } else if (end_time) {
+    endStr = `${date}T${end_time}:00`;
+  } else if (start_time) {
+    // No end time given; assume 2-hour duration
+    const [h, m] = start_time.split(':').map(n => parseInt(n, 10));
+    const dt = new Date(`${date}T${start_time}:00`);
+    dt.setHours(dt.getHours() + 2);
+    endStr = dt.toISOString().slice(0, 19);
+  } else {
+    // No times at all; treat as end-of-day
+    endStr = `${date}T23:59:00`;
+  }
+  const dt = new Date(endStr);
+  dt.setHours(dt.getHours() + 4); // 4-hour grace period
+  return dt.toISOString().slice(0, 19).replace('T', ' ');
+}
+function formatTime12(t24) {
+  if (!t24 || !/^\d{1,2}:\d{2}$/.test(t24)) return '';
+  const [h, m] = t24.split(':').map(n => parseInt(n, 10));
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+function buildTimeDisplay(start_time, end_time, all_day) {
+  if (all_day) return 'All Day';
+  if (start_time && end_time) return `${formatTime12(start_time)} – ${formatTime12(end_time)}`;
+  if (start_time) return formatTime12(start_time);
+  return 'TBD';
+}
+
 // Sanitize event description: strip HTML tags, normalize newlines, cap length
 function cleanDescription(s) {
   if (!s) return '';
@@ -578,13 +616,13 @@ app.get('/api/events', async (req, res) => {
     let sql;
     let params;
     if (isAdmin) {
-      sql = 'SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE 1=1' + zipFilter + ' ORDER BY e.date ASC,e.time ASC';
+      sql = 'SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE 1=1' + zipFilter + ' ORDER BY e.date ASC,e.start_time ASC,e.time ASC';
       params = zipParam;
     } else if (userId) {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?))" + zipFilter + " ORDER BY e.date ASC,e.time ASC";
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?)) AND (e.effective_end_at = '' OR e.effective_end_at > datetime('now'))" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
       params = [userId, ...zipParam];
     } else {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved'" + zipFilter + " ORDER BY e.date ASC,e.time ASC";
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved' AND (e.effective_end_at = '' OR e.effective_end_at > datetime('now'))" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
       params = zipParam;
     }
     const rows = await db.all(sql, params);
@@ -603,7 +641,7 @@ app.get('/api/events', async (req, res) => {
 
 app.post('/api/events', requireAuth, async (req, res) => {
   try {
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description } = req.body || {};
+    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
     // Validate zipcode is in an enabled state (skip for admin)
@@ -622,9 +660,14 @@ app.post('/api/events', requireAuth, async (req, res) => {
     const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
     const status = (userRow && (userRow.is_admin || userRow.is_town_crier)) ? 'approved' : 'pending';
     const zip = (zipcode || '').toString().trim() || '43764';
+    const st = (start_time||'').toString().trim();
+    const et = (end_time||'').toString().trim();
+    const ad = all_day ? 1 : 0;
+    const eff = computeEffectiveEndAt(date, st, et, ad);
+    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
     const r = await db.run(
-      'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', req.user.id, status, zip, (affiliate_url||'').trim(), cleanDescription(description)]
+      'INSERT INTO events (cat,name,location,date,time,start_time,end_time,all_day,effective_end_at,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [cat||'other', name.trim(), location.trim(), date, timeDisplay, st, et, ad, eff, price?.trim()||'Free', contact?.trim()||'-', req.user.id, status, zip, (affiliate_url||'').trim(), cleanDescription(description)]
     );
     const ev = await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]);
     res.status(201).json({ ...ev, pending_approval: status === 'pending' });
@@ -639,7 +682,7 @@ app.post('/api/events', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────────────────────
 app.post('/api/events/guest', async (req, res) => {
   try {
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description, submitter_name, submitter_email, submitter_phone } = req.body || {};
+    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description, submitter_name, submitter_email, submitter_phone } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Event name, location, and date are required.' });
     if (!submitter_name?.trim()) return res.status(400).json({ error: 'Please tell us your name so we can contact you about this event.' });
     if (!submitter_email?.trim()) return res.status(400).json({ error: 'Email is required so we can verify your submission and send you the edit link.' });
@@ -673,15 +716,21 @@ app.post('/api/events/guest', async (req, res) => {
     const expires = new Date(Date.now() + 7*24*60*60*1000).toISOString(); // 7 days to verify
     const zip = (zipcode || '').toString().trim() || '43764';
 
-    const r = await db.run(
+    const st = (start_time||'').toString().trim();
+    const et = (end_time||'').toString().trim();
+    const ad = all_day ? 1 : 0;
+    const eff = computeEffectiveEndAt(date, st, et, ad);
+    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
+    await db.run(
       `INSERT INTO events
-        (cat, name, location, date, time, price, contact, added_by, status, zipcode, affiliate_url, description,
+        (cat, name, location, date, time, start_time, end_time, all_day, effective_end_at, price, contact, added_by, status, zipcode, affiliate_url, description,
          is_anonymous, submitter_name, submitter_email, submitter_phone,
          submitter_verify_token_hash, submitter_manage_token_hash, submitter_verify_expires)
-       VALUES (?,?,?,?,?,?,?,?,'pending_verify',?,?,?, 1, ?,?,?, ?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'pending_verify',?,?,?, 1, ?,?,?, ?,?,?)`,
       [
         cat||'other', name.trim(), location.trim(), date,
-        time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-',
+        timeDisplay, st, et, ad, eff,
+        price?.trim()||'Free', contact?.trim()||'-',
         guestUser.id, zip, (affiliate_url||'').trim(), cleanDescription(description),
         submitter_name.trim(), emailClean, phoneClean || '',
         verifyHash, manageHash, expires
@@ -745,7 +794,8 @@ app.get('/api/events/manage/:token', async (req, res) => {
     if (!ev) return res.status(400).json({ error: 'This manage link is invalid. If your event was deleted, this link no longer works.' });
     res.json({
       id: ev.id, cat: ev.cat, name: ev.name, location: ev.location, date: ev.date,
-      time: ev.time, price: ev.price, contact: ev.contact, zipcode: ev.zipcode,
+      time: ev.time, start_time: ev.start_time || '', end_time: ev.end_time || '', all_day: ev.all_day || 0,
+      price: ev.price, contact: ev.contact, zipcode: ev.zipcode,
       affiliate_url: ev.affiliate_url, description: ev.description || '', status: ev.status,
       submitter_name: ev.submitter_name, submitter_email: ev.submitter_email, submitter_phone: ev.submitter_phone
     });
@@ -756,17 +806,22 @@ app.get('/api/events/manage/:token', async (req, res) => {
 app.put('/api/events/manage/:token', async (req, res) => {
   try {
     const { token } = req.params;
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description } = req.body || {};
+    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
     const manageHash = hashToken(token);
     const ev = await db.get("SELECT id, status FROM events WHERE submitter_manage_token_hash=?", [manageHash]);
     if (!ev) return res.status(400).json({ error: 'Manage link is invalid.' });
+    const st = (start_time||'').toString().trim();
+    const et = (end_time||'').toString().trim();
+    const ad = all_day ? 1 : 0;
+    const eff = computeEffectiveEndAt(date, st, et, ad);
+    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
     // After editing, send back through moderation for safety
     const newStatus = ev.status === 'approved' ? 'pending' : ev.status;
     await db.run(
-      `UPDATE events SET cat=?, name=?, location=?, date=?, time=?, price=?, contact=?, zipcode=?, affiliate_url=?, description=?, status=? WHERE id=?`,
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||'').toString().trim()||'43764', (affiliate_url||'').trim(), cleanDescription(description), newStatus, ev.id]
+      `UPDATE events SET cat=?, name=?, location=?, date=?, time=?, start_time=?, end_time=?, all_day=?, effective_end_at=?, price=?, contact=?, zipcode=?, affiliate_url=?, description=?, status=? WHERE id=?`,
+      [cat||'other', name.trim(), location.trim(), date, timeDisplay, st, et, ad, eff, price?.trim()||'Free', contact?.trim()||'-', (zipcode||'').toString().trim()||'43764', (affiliate_url||'').trim(), cleanDescription(description), newStatus, ev.id]
     );
     res.json({ success: true, requeued: newStatus === 'pending' });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -806,9 +861,10 @@ app.post('/api/events/bulk', requireAuth, async (req, res) => {
         [ev.name.trim(), ev.date]);
       if (dup) { skipped++; continue; }
       const zip = (ev.zipcode || '').toString().trim() || '43764';
+      const _eff = computeEffectiveEndAt(ev.date, '', '', 0); // CSV bulk uses display-only time, default 4hr after end of day
       await db.run(
-        'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-        [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time?.trim()||'TBD', ev.price?.trim()||'Free', ev.contact?.trim()||'-', req.user.id, status, zip, (ev.affiliate_url||'').trim(), cleanDescription(ev.description)]
+        'INSERT INTO events (cat,name,location,date,time,effective_end_at,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time?.trim()||'TBD', _eff, ev.price?.trim()||'Free', ev.contact?.trim()||'-', req.user.id, status, zip, (ev.affiliate_url||'').trim(), cleanDescription(ev.description)]
       );
       inserted++;
     }
@@ -822,11 +878,16 @@ app.put('/api/events/:id', requireAuth, async (req, res) => {
     const ev = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
     if (!ev) return res.status(404).json({ error: 'Event not found.' });
     if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only edit events you posted.' });
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description } = req.body || {};
+    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
+    const st = (start_time||'').toString().trim();
+    const et = (end_time||'').toString().trim();
+    const ad = all_day ? 1 : 0;
+    const eff = computeEffectiveEndAt(date, st, et, ad);
+    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
     await db.run(
-      'UPDATE events SET cat=?,name=?,location=?,date=?,time=?,price=?,contact=?,zipcode=?,affiliate_url=?,description=? WHERE id=?',
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||ev.zipcode||'43764').toString().trim(), (affiliate_url||'').trim(), cleanDescription(description), req.params.id]
+      'UPDATE events SET cat=?,name=?,location=?,date=?,time=?,start_time=?,end_time=?,all_day=?,effective_end_at=?,price=?,contact=?,zipcode=?,affiliate_url=?,description=? WHERE id=?',
+      [cat||'other', name.trim(), location.trim(), date, timeDisplay, st, et, ad, eff, price?.trim()||'Free', contact?.trim()||'-', (zipcode||ev.zipcode||'43764').toString().trim(), (affiliate_url||'').trim(), cleanDescription(description), req.params.id]
     );
     res.json(await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [req.params.id]));
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -852,6 +913,27 @@ app.delete('/api/events/:id', requireAuth, async (req, res) => {
     }
     await db.run('DELETE FROM events WHERE id=?', [req.params.id]);
     res.json({ success: true, id: Number(req.params.id) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ── ADMIN: Manually add an advertisement (no Stripe required) ──
+app.post('/api/admin/advertisers/manual', requireAdmin, async (req, res) => {
+  try {
+    const { business_name, tagline, url, phone, tier, statewide_state } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const validTier = (tier === 'premium') ? 'premium' : 'basic';
+    const db = await getDb();
+    // Create a placeholder email + unusable password so the advertisers row is valid
+    const fakeEmail = `manual-${Date.now()}-${Math.random().toString(36).slice(2,8)}@nearandfarevents.local`;
+    const unusableHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
+    const r = await db.run(
+      `INSERT INTO advertisers (name, email, password_hash, business_name, tagline, url, status, tier, phone, email_verified)
+       VALUES (?,?,?,?,?,?,'approved',?,?,1)`,
+      [(business_name||'').trim() + ' (manual)', fakeEmail, unusableHash, business_name.trim(),
+       (tagline||'').trim(), (url||'').trim(), validTier, (phone||'').trim()]
+    );
+    res.status(201).json({ success: true, id: r.lastID });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -912,6 +994,19 @@ app.get('/api/admin/users/search', requireAdmin, async (req, res) => {
       [like, like, like]
     );
     res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ── ADMIN: Set/clear statewide visibility for a listing ──
+app.put('/api/admin/listings/:id/statewide', requireAdmin, async (req, res) => {
+  try {
+    const { state } = req.body || {};
+    const stateCode = (state || '').toString().trim().toUpperCase();
+    if (stateCode && stateCode.length !== 2) return res.status(400).json({ error: 'State must be a 2-letter US state code, or empty to clear.' });
+    const db = await getDb();
+    await db.run('UPDATE listings SET statewide_state=? WHERE id=?', [stateCode, req.params.id]);
+    res.json({ success: true, statewide_state: stateCode });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1186,6 +1281,8 @@ function requireListing(req, res, next) {
 
 // GET /api/listings (public)
 app.get('/api/listings', async (req, res) => {
+  const _zipcodeParam = (req.query.zipcode || '').toString().trim();
+  const _zipState = zipToState(_zipcodeParam);
   try {
     const db = await getDb();
     let isAdmin = false;
@@ -1204,6 +1301,13 @@ app.get('/api/listings', async (req, res) => {
         return st && enabled.includes(st);
       });
       return res.json(filtered);
+    }
+    // Merge in statewide listings for this zip's state (if any)
+    if (_zipState) {
+      try {
+        const stateRows = await db.all("SELECT * FROM listings WHERE statewide_state=? AND status='approved' AND id NOT IN (SELECT id FROM listings WHERE zipcode=?)", [_zipState, _zipcodeParam]);
+        if (stateRows && stateRows.length) rows = rows.concat(stateRows);
+      } catch(_) {}
     }
     res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1228,6 +1332,7 @@ app.post('/api/listings/create-paid', requireAuth, async (req, res) => {
 });
 
 // NEW: free listing creation (all listings are now free)
+// (statewide_state is admin-only; ignored on public submission)
 app.post('/api/listings/create-free', requireAuth, async (req, res) => {
   try {
     const { business_name, category, phone, website, address, description, zipcode } = req.body || {};
