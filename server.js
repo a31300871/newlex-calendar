@@ -917,6 +917,41 @@ app.delete('/api/events/:id', requireAuth, async (req, res) => {
 });
 
 
+
+// ── ADMIN: Delete an advertiser (cancels their Stripe subscription if they have one) ──
+app.delete('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.params.id]);
+    if (!adv) return res.status(404).json({ error: 'Advertiser not found.' });
+    let stripeStatus = 'no_subscription';
+    if (adv.stripe_subscription_id && stripe) {
+      try {
+        await stripe.subscriptions.cancel(adv.stripe_subscription_id);
+        stripeStatus = 'cancelled';
+      } catch (e) {
+        // Subscription may already be cancelled or invalid; log + continue
+        console.error('Stripe cancel failed for adv ' + adv.id + ':', e.message);
+        stripeStatus = 'stripe_error_but_continued';
+      }
+    }
+    // Audit log
+    await logRemovedItem(db, {
+      item_type: 'advertiser', original_id: adv.id, item_name: adv.business_name || adv.name || '',
+      owner_user_id: null, owner_name: adv.name || '', owner_email: adv.email || '',
+      removed_by: req.user.id, removed_by_name: req.user.name,
+      reason: (req.body?.reason || '') + ' [stripe: ' + stripeStatus + ']',
+      snapshot: {
+        business_name: adv.business_name, tagline: adv.tagline, url: adv.url, phone: adv.phone,
+        tier: adv.tier, status: adv.status, stripe_subscription_id: adv.stripe_subscription_id,
+        stripe_customer_id: adv.stripe_customer_id
+      }
+    });
+    await db.run('DELETE FROM advertisers WHERE id=?', [adv.id]);
+    res.json({ success: true, stripeStatus });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── ADMIN: Manually add an advertisement (no Stripe required) ──
 app.post('/api/admin/advertisers/manual', requireAdmin, async (req, res) => {
   try {
@@ -1062,12 +1097,22 @@ app.delete('/api/sponsors/:id', requireAdmin, async (req, res) => {
 });
 
 // ── COMBINED DISPLAY SPONSORS (manual + active advertisers) ──
+// ── BANNER ADS (sponsor bar): basic-tier advertisers + manual sponsors. Premium tier does NOT appear here. ──
 app.get('/api/display/sponsors', async (req, res) => {
   try {
     const db = await getDb();
     const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
-    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') ORDER BY id");
-    res.json([...manual, ...paid]);
+    const banner = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' ORDER BY id");
+    res.json([...manual, ...banner]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── POPUP ADS (in-event sponsored card): premium-tier advertisers only. ──
+app.get('/api/display/popup-ads', async (req, res) => {
+  try {
+    const db = await getDb();
+    const popup = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='premium' ORDER BY id");
+    res.json(popup);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1209,10 +1254,11 @@ app.post('/api/advertiser/refresh-status', requireAdvertiser, async (req, res) =
 });
 
 // ── ADMIN: ADVERTISER MANAGEMENT ──
+// Returns all advertisers (with stripe info so admin UI can show sub status)
 app.get('/api/admin/advertisers', requireAdmin, async (req, res) => {
   try {
     const db = await getDb();
-    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,status,stripe_customer_id,created_at FROM advertisers ORDER BY created_at DESC');
+    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,phone,tier,status,stripe_customer_id,stripe_subscription_id,created_at FROM advertisers ORDER BY created_at DESC');
     res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
