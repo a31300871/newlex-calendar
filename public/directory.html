@@ -851,7 +851,7 @@ async function saveDirZip(){
       }
     } catch(_) {}
   }
-  localStorage.setItem('nlcc_zipcode', z);
+  localStorage.setItem('nlcc_zipcode', z); if(typeof loadAll==='function') loadAll(); if(typeof loadSharedSponsorBar==='function') loadSharedSponsorBar();;
   localStorage.setItem('nlcc_dir_all', '0');
   if (calToken) {
     try { await api('/api/auth/zipcode', { method:'PUT', body: JSON.stringify({ zipcode: z })}); } catch(_) {}
@@ -871,9 +871,10 @@ function clientZipToState(zip){
 
 async function loadAll() {
   try {
+    const z = (typeof currentZipcode !== 'undefined' && currentZipcode) || (localStorage.getItem('nlcc_zipcode') || '');
     const [listings, featured] = await Promise.all([
-      fetch('/api/listings').then(r=>r.json()),
-      fetch('/api/display/featured').then(r=>r.json()),  // Featured-tier advertisers ONLY
+      fetch('/api/listings?zipcode=' + encodeURIComponent(z)).then(r=>r.json()),
+      fetch('/api/display/featured?zipcode=' + encodeURIComponent(z)).then(r=>r.json()),  // Featured-tier, zip-filtered
     ]);
     allListings = listings;
     allAdvs     = featured || [];  // each item has {id, name, tagline, url, phone, tier:'featured'}
@@ -1560,14 +1561,7 @@ updateDirZipDisplay();
   resetInactivityTimer();
 })();
 </script>
-<!-- FLOATING STICKY CTA -->
-<a href="#" onclick="openModal('listingModal');return false" id="floatCTA" style="position:fixed;bottom:20px;right:20px;background:var(--gradient);color:#fff;font-size:14px;font-weight:700;padding:14px 22px;border-radius:100px;text-decoration:none;box-shadow:0 6px 20px rgba(99,102,241,.40),0 0 0 4px rgba(236,72,153,.10);z-index:500;display:flex;align-items:center;gap:6px;transition:all .2s cubic-bezier(.4,0,.2,1)">
-  <span style="font-size:18px;line-height:1">+</span> List My Business — FREE
-</a>
-<style>
-#floatCTA:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(99,102,241,.50),0 0 0 5px rgba(236,72,153,.18);filter:brightness(1.08)}
-@media(max-width:480px){#floatCTA{font-size:13px;padding:12px 18px;bottom:14px;right:14px}}
-</style>
+<!-- FLOATING STICKY CTA REMOVED — inline button in search row handles this -->
 
 <!-- ── SITE FOOTER ── -->
 <footer id="site-footer" style="margin-top:60px;padding:32px 20px;border-top:1px solid var(--border);background:rgba(255,255,255,0.5);backdrop-filter:blur(8px);font-size:13px;color:var(--text3);text-align:center;line-height:1.65">
@@ -1636,7 +1630,8 @@ function cookieConsent(action){
 // ── Shared sponsor bar loader ──
 async function loadSharedSponsorBar(){
   try {
-    const sponsors = await fetch('/api/display/sponsors').then(r=>r.json()).catch(()=>[]);
+    const z = (typeof currentZipcode !== 'undefined' && currentZipcode) || (localStorage.getItem('nlcc_zipcode')||'');
+    const sponsors = await fetch('/api/display/sponsors?zipcode=' + encodeURIComponent(z)).then(r=>r.json()).catch(()=>[]);
     const wrap = document.getElementById('sponCards');
     if (!wrap) return;
     let html = '';
