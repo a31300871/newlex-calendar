@@ -1,2094 +1,1367 @@
-require('dotenv').config();
-const express  = require('express');
-const cors     = require('cors');
-const bcrypt   = require('bcryptjs');
-const jwt      = require('jsonwebtoken');
-const path     = require('path');
-const crypto   = require('crypto');
-const { getDb } = require('./db');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advertise – Near and Far Events</title>
+<meta name="description" content="Advertise your business on Near and Far Events and reach your local community for just $25/month.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236366F1'/><stop offset='.5' stop-color='%23EC4899'/><stop offset='1' stop-color='%23F59E0B'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><path d='M16 7c-3.3 0-6 2.7-6 6 0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6zm0 8a2 2 0 110-4 2 2 0 010 4z' fill='white'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Brand gradient (used on logo, accents) */
+  --grad-1:#6366F1;  /* indigo */
+  --grad-2:#EC4899;  /* pink */
+  --grad-3:#F59E0B;  /* amber */
+  --gradient:linear-gradient(135deg,#6366F1 0%,#EC4899 50%,#F59E0B 100%);
 
-const app    = express();
-const PORT   = process.env.PORT || 3000;
-const SECRET = process.env.JWT_SECRET || 'newlex-secret-change-me';
-const STRIPE_SECRET        = process.env.STRIPE_SECRET_KEY     || '';
-const STRIPE_PRICE_BASIC   = process.env.STRIPE_PRICE_ID      || '';
-const STRIPE_PRICE_PREMIUM = process.env.STRIPE_PRICE_PREMIUM || '';
-const STRIPE_PRICE_LISTING = process.env.STRIPE_PRICE_LISTING || '';
-const STRIPE_WEBHOOK       = process.env.STRIPE_WEBHOOK_SECRET || '';
-const SITE_URL = process.env.SITE_URL || 'https://www.nearandfarevents.com';
+  /* Primary action: indigo with vibrant glow */
+  --amber:#6366F1;       /* primary brand action (kept var name for compat) */
+  --amber-dk:#4F46E5;
+  --amber-lt:#EEF0FF;
+  --amber-mid:#A5B4FC;
+  --primary-glow:rgba(99,102,241,.40);
 
-const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
+  /* Secondary action: pink */
+  --blue:#EC4899;        /* secondary action (kept var name for compat) */
+  --blue-lt:#FDF2F8;
+  --pink-glow:rgba(236,72,153,.40);
+
+  /* Accent: amber/gold for highlights */
+  --accent:#F59E0B;
+  --accent-lt:#FEF3C7;
+  --accent-glow:rgba(245,158,11,.40);
+
+  /* Success: emerald */
+  --teal:#10B981;        /* kept var name */
+  --teal-lt:#D1FAE5;
+  --success-glow:rgba(16,185,129,.40);
+
+  /* Surfaces and text */
+  --cream:#FFFFFF;       /* page background — now pure white */
+  --surface:#FFFFFF;
+  --surface2:#F8FAFC;
+  --surface3:#F1F5F9;
+  --navy:#0F172A;        /* dark slate — used for sponsor bar / dark elements */
+  --navy2:#1E293B;
+  --text:#0F172A;
+  --text2:#475569;
+  --text3:#94A3B8;
+  --border:rgba(15,23,42,.08);
+  --border-md:rgba(15,23,42,.14);
+
+  /* Semantic */
+  --danger:#EF4444;
+  --danger-bg:#FEF2F2;
+
+  /* Glow shadow tokens (edge lighting extended beyond edges) */
+  --glow-sm:0 0 0 3px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.18);
+  --glow-md:0 0 0 4px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.28);
+  --glow-pink:0 0 0 4px rgba(236,72,153,.15),0 6px 20px rgba(236,72,153,.28);
+  --glow-amber:0 0 0 4px rgba(245,158,11,.15),0 6px 20px rgba(245,158,11,.30);
+  --shadow-soft:0 1px 3px rgba(15,23,42,.05),0 4px 16px rgba(15,23,42,.06);
+  --shadow-md:0 2px 6px rgba(15,23,42,.06),0 8px 28px rgba(15,23,42,.10);
+
+  /* Fonts and layout */
+  --font-head:'Playfair Display',Georgia,serif;
+  --font-body:'Source Sans 3',system-ui,sans-serif;
+  --hdr-h:130px;--about-h:0px;--spon-h:90px;--r:10px;--r-lg:16px;
+}
+html{font-size:16px}
+body{font-family:var(--font-body);background:var(--cream);
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.06), transparent 50%),
+    radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.05), transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.04), transparent 50%);
+  background-attachment:fixed;color:var(--text);line-height:1.5}
+input,select,button{font-family:var(--font-body);font-size:15px}
+input,select{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 14px rgba(99,102,241,.10)}
+input::placeholder{color:var(--text3)}
+button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s;font-size:15px;font-weight:500}
+button:hover{background:var(--surface2)}
+button:active{opacity:.8}
+.btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700;box-shadow:var(--glow-sm);transition:all .18s}
+.btn-amber:hover{background:var(--amber-dk)}
+.btn-navy{background:var(--gradient);color:#fff;border-color:transparent;font-weight:700;box-shadow:0 2px 6px rgba(99,102,241,.20)}
+.btn-navy:hover{filter:brightness(1.08);box-shadow:0 4px 12px rgba(99,102,241,.30);transform:translateY(-1px)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#F09595;font-weight:600}
+.btn-danger:hover{background:#FCDBDB}
+
+/* ── HEADER (matches calendar page) ── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
+  box-shadow:0 1px 0 rgba(15,23,42,0.04),0 8px 24px -16px rgba(99,102,241,0.25);
+}
+nav::after{
+  content:'';position:absolute;left:0;right:0;bottom:-3px;height:3px;
+  background:var(--gradient);
+  filter:blur(0.5px);
+  box-shadow:0 0 18px rgba(99,102,241,0.45),0 0 30px rgba(236,72,153,0.3);
+}
+.hdr-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:38px}
+.brand-grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:800;letter-spacing:-.01em}
+.nav-brand{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text);text-decoration:none;line-height:1.15;text-align:center}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hdr-row2{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.nav-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 16px;border-radius:100px;
+  font-size:15px;font-weight:700;color:var(--text2);
+  background:var(--surface);border:1.5px solid var(--border-md);
+  text-decoration:none;transition:all .2s cubic-bezier(.4,0,.2,1);cursor:pointer;
+  font-family:var(--font-body);white-space:nowrap;
+}
+.nav-btn:hover{color:var(--amber);background:var(--amber-lt);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10),0 4px 12px rgba(99,102,241,.15);transform:translateY(-1px)}
+.nav-btn.active{color:#fff;background:var(--gradient);border-color:transparent;box-shadow:0 0 0 3px rgba(99,102,241,.15),0 6px 20px rgba(99,102,241,.35),0 3px 10px rgba(236,72,153,.20)}
+.nav-btn.active:hover{color:#fff;background:var(--gradient);box-shadow:0 0 0 4px rgba(99,102,241,.18),0 8px 24px rgba(99,102,241,.40),0 4px 12px rgba(236,72,153,.25);transform:translateY(-2px);filter:brightness(1.08)}
+.nav-btn svg{width:22px;height:22px;flex-shrink:0}
+.nav-user{font-size:14px;color:var(--text);font-weight:600}
+@media(max-width:600px){
+  .nav-btn{font-size:13px;padding:7px 12px;gap:6px}
+  .nav-btn svg{width:18px;height:18px}
+  .nav-brand{font-size:17px}
+}
+
+/* ── HERO ── */
+.hero{
+  position:relative;
+  background:linear-gradient(135deg,rgba(99,102,241,.08) 0%,rgba(236,72,153,.06) 50%,rgba(245,158,11,.05) 100%);
+  padding:64px 24px 56px;text-align:center;
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 20%, rgba(99,102,241,.12), transparent 60%),
+    radial-gradient(ellipse 500px 400px at 80% 30%, rgba(236,72,153,.10), transparent 60%),
+    radial-gradient(ellipse 600px 350px at 50% 100%, rgba(245,158,11,.08), transparent 60%);
+}
+.hero::after{
+  content:'';position:absolute;left:0;right:0;bottom:-2px;height:3px;
+  background:var(--gradient);
+  filter:blur(0.5px);
+  box-shadow:0 0 18px rgba(99,102,241,.45),0 0 30px rgba(236,72,153,.3);
+}
+.hero > *{position:relative;z-index:1}
+.hero-tag{
+  display:inline-block;
+  background:var(--surface);
+  border:1.5px solid var(--border-md);
+  color:var(--text2);
+  font-size:12px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  padding:6px 16px;border-radius:100px;margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(99,102,241,.10),0 0 0 3px rgba(99,102,241,.05);
+}
+.hero-tag span{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.hero h1{
+  font-family:var(--font-head);font-size:clamp(30px,5.2vw,48px);font-weight:700;
+  color:var(--text);line-height:1.1;margin-bottom:16px;letter-spacing:-.02em;
+}
+.hero h1 .grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.hero p{font-size:18px;color:var(--text2);max-width:560px;margin:0 auto 32px;line-height:1.55}
+.hero-cta{display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.hero-cta .btn-amber{
+  font-size:17px;padding:13px 32px;
+  background:var(--gradient);
+  border:1.5px solid transparent;color:#fff;
+  border-radius:100px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 14px rgba(99,102,241,.30),0 0 0 4px rgba(236,72,153,.10);
+  transition:all .2s cubic-bezier(.4,0,.2,1);font-family:var(--font-body);
+}
+.hero-cta .btn-amber:hover{box-shadow:0 6px 20px rgba(99,102,241,.45),0 0 0 5px rgba(236,72,153,.18);transform:translateY(-2px);filter:brightness(1.08)}
+.hero-cta .btn-outline{
+  font-size:15px;padding:12px 24px;
+  background:var(--surface);
+  border:1.5px solid var(--amber);color:var(--amber-dk);
+  border-radius:100px;font-weight:700;cursor:pointer;
+  box-shadow:0 0 0 3px rgba(99,102,241,.06);
+  transition:all .2s cubic-bezier(.4,0,.2,1);font-family:var(--font-body);
+}
+.hero-cta .btn-outline:hover{background:var(--amber-lt);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.20);transform:translateY(-1px)}
+
+/* ── SECTIONS ── */
+.section{max-width:860px;margin:0 auto;padding:50px 24px}
+.section-title{font-family:var(--font-head);font-size:28px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.section-sub{font-size:16px;color:var(--text2);margin-bottom:32px}
+
+/* Benefits */
+.benefits{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:0}
+.benefit-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:22px 20px}
+.benefit-icon{font-size:28px;margin-bottom:10px}
+.benefit-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.benefit-text{font-size:14px;color:var(--text2);line-height:1.5}
+
+/* Sponsor preview */
+.preview-bar{
+  position:relative;
+  background:rgba(255,255,255,0.94);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;margin:20px 0;
+  overflow:hidden;
+  box-shadow:0 4px 16px rgba(99,102,241,.10),0 1px 3px rgba(15,23,42,.04);
+}
+.preview-bar::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3)}
+.preview-label{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;white-space:nowrap;position:relative;z-index:1}
+.preview-card{background:var(--surface);border:1.5px solid var(--border-md);border-radius:10px;padding:10px 16px;min-width:180px;position:relative;overflow:hidden;z-index:1}
+.preview-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gradient);border-radius:10px 0 0 10px}
+.preview-card .p-name{font-size:14px;font-weight:800;color:var(--text)}
+.preview-card .p-tag{font-size:11px;color:var(--text2);margin-top:2px;font-weight:500}
+.preview-card .p-url{font-size:11px;color:var(--amber-dk);font-weight:700;margin-top:3px;display:block}
+
+/* Pricing */
+.pricing-card{background:var(--surface);border:1.5px solid var(--amber);border-radius:var(--r-lg);padding:36px 32px;max-width:400px;margin:0 auto;text-align:center;box-shadow:0 0 0 4px rgba(99,102,241,.08),0 8px 32px rgba(99,102,241,.18),0 4px 12px rgba(236,72,153,.10);position:relative}
+.pricing-card::before{content:'';position:absolute;left:-1.5px;right:-1.5px;top:-1.5px;height:4px;background:var(--gradient);border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:0 0 14px rgba(99,102,241,.4)}
+.price-amount{font-family:var(--font-head);font-size:56px;font-weight:700;color:var(--amber);line-height:1}
+.price-period{font-size:18px;color:var(--text2)}
+.price-features{list-style:none;margin:24px 0;text-align:left}
+.price-features li{font-size:15px;padding:7px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px}
+.price-features li:last-child{border-bottom:none}
+.price-features .check{color:var(--teal);font-weight:700;font-size:16px}
+
+/* ── PORTAL (auth + dashboard) ── */
+.portal-wrap{max-width:500px;margin:0 auto;padding:0 24px 60px}
+.portal-card{
+  position:relative;
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:28px 28px 24px;
+  box-shadow:0 0 0 4px rgba(99,102,241,.05),0 8px 32px rgba(99,102,241,.10),0 1px 3px rgba(15,23,42,.04);
+  overflow:hidden;
+}
+.portal-card::before{
+  content:'';position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--gradient);
+  box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3);
+}
+
+/* Directory Featured Preview */
+.dir-preview-wrap{max-width:480px;margin:0 auto}
+.dir-preview-inner{
+  background:linear-gradient(135deg,rgba(99,102,241,.06) 0%,rgba(236,72,153,.04) 50%,rgba(245,158,11,.04) 100%);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  position:relative;
+  box-shadow:0 4px 16px rgba(99,102,241,.08),0 1px 3px rgba(15,23,42,.04);
+}
+.dir-preview-inner .featured-strip{position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3);border-radius:var(--r-lg) var(--r-lg) 0 0}
+
+/* Event Popup Ad Preview */
+.popup-preview-wrap{max-width:480px;margin:0 auto}
+.popup-preview-shell{
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  box-shadow:0 8px 28px rgba(99,102,241,.12),0 2px 8px rgba(15,23,42,.05);
+  position:relative;
+}
+.popup-preview-header{
+  display:flex;align-items:flex-start;gap:10px;
+  padding-bottom:14px;margin-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+.ad-card-preview{
+  background:linear-gradient(135deg,rgba(99,102,241,.04),rgba(236,72,153,.03),rgba(245,158,11,.03));
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:14px 14px 12px 18px;
+  position:relative;
+  overflow:hidden;
+}
+.ad-card-preview-strip{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gradient);border-radius:var(--r) 0 0 var(--r)}
+.ad-sponsored-preview{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;margin-bottom:4px}
+.ad-name-preview{font-size:17px;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:4px}
+.ad-tagline-preview{font-size:13px;color:var(--text2);line-height:1.45;margin-bottom:8px}
+.ad-btn-preview{
+  flex:1;display:inline-block;text-align:center;text-decoration:none;
+  font-size:12px;font-weight:700;padding:7px 10px;border-radius:6px;
+  transition:all .15s;cursor:default;
+}
+.ad-btn-preview.phone{background:var(--surface);color:var(--text);border:1.5px solid var(--border-md)}
+.ad-btn-preview.site{background:var(--gradient);color:#fff;box-shadow:0 2px 6px rgba(99,102,241,.25)}
+.portal-title{font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:20px}
+.auth-tabs{display:flex;gap:6px;margin-bottom:20px}
+.auth-tab{flex:1;font-size:14px;padding:8px 0;border-radius:var(--r)}
+.auth-tab.on{background:var(--amber-lt);border-color:var(--amber);color:var(--amber-dk);font-weight:700}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.field label .req{color:var(--danger)}
+.form-actions{display:flex;gap:10px;margin-top:18px}
+.form-actions button{flex:1;padding:11px 0}
+.err-msg{font-size:13px;color:var(--danger);margin-top:8px}
+.ok-msg{font-size:13px;color:var(--teal);margin-top:8px}
+
+/* Dashboard */
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:100px;margin-bottom:20px}
+.status-pill.active{background:#D1FAE5;color:#065F46}
+.status-pill.pending{background:#FEF3C7;color:#92400E}
+.status-pill.paused{background:#FEE2E2;color:#991B1B}
+.status-pill.cancelled{background:var(--surface2);color:var(--text3)}
+.dash-section{margin-bottom:24px}
+.dash-label{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.live-preview{
+  position:relative;
+  background:rgba(255,255,255,0.94);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:14px 18px;display:flex;align-items:center;gap:10px;margin-bottom:10px;
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(99,102,241,.06);
+}
+.live-preview::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3)}
+.lp-label{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;flex-shrink:0;position:relative;z-index:1}
+.lp-card{background:var(--surface);border:1.5px solid var(--border-md);border-radius:8px;padding:8px 14px;flex:1;position:relative;overflow:hidden;z-index:1}
+.lp-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gradient);border-radius:8px 0 0 8px}
+.lp-name{font-size:14px;font-weight:800;color:var(--text)}
+.lp-tag{font-size:11px;color:var(--text2);margin-top:2px;font-weight:500}
+.lp-url{font-size:11px;color:#EF9F27;font-weight:600;margin-top:2px}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* Alerts */
+.alert{border-radius:var(--r);padding:14px 16px;font-size:14px;margin-bottom:20px;line-height:1.5}
+.alert-success{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
+.alert-warning{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+
+@media(max-width:600px){
+  .hero{padding:40px 16px 36px}
+  .section{padding:36px 16px}
+  .portal-wrap{padding:0 14px 48px}
+  .portal-card{padding:20px 16px 18px}
+  .pricing-card{padding:28px 20px}
+  .benefits{grid-template-columns:1fr}
+}
+
+/* Unified Sign In / Register buttons (match other pages) */
+.signin-btn,.register-btn{font-size:13px;padding:7px 14px;white-space:nowrap;flex-shrink:0;border-radius:100px;font-weight:700;cursor:pointer;transition:all .18s;font-family:var(--font-body);border:1.5px solid;line-height:1}
+.signin-btn{color:var(--amber);background:var(--surface);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.06)}
+.signin-btn:hover{background:var(--amber-lt);color:var(--amber-dk);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.20);transform:translateY(-1px)}
+.register-btn{color:#fff;background:var(--gradient);border-color:transparent;box-shadow:0 2px 6px rgba(99,102,241,.20),0 0 0 3px rgba(236,72,153,.08)}
+.register-btn:hover{background:var(--gradient);box-shadow:0 4px 14px rgba(99,102,241,.35),0 0 0 4px rgba(236,72,153,.15);transform:translateY(-1px);filter:brightness(1.08)}
+@media(max-width:480px){
+  .signin-btn,.register-btn{font-size:11px;padding:5px 9px}
+}
+@media(max-width:380px){
+  .signin-btn,.register-btn{font-size:10px;padding:4px 7px}
+}
+.hdr-right{gap:6px !important}
 
 
-// Capture raw body for ALL requests before any other middleware
-app.use((req, res, next) => {
-  const chunks = [];
-  req.on('data', chunk => chunks.push(chunk));
-  req.on('end', () => {
-    req.rawBody = Buffer.concat(chunks);
-    next();
+/* ── DARK MODE — COMPREHENSIVE COVERAGE ── */
+[data-theme="dark"]{
+  --cream:#0F172A;
+  --surface:#1E293B;
+  --surface2:#334155;
+  --text:#F1F5F9;
+  --text2:#CBD5E1;
+  --text3:#94A3B8;
+  --border:#334155;
+  --border-md:#475569;
+  --amber-lt:rgba(99,102,241,.20);
+  --danger-bg:rgba(220,38,38,.18);
+}
+[data-theme="dark"] body{
+  background-color:var(--cream) !important;
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.18), transparent 50%),
+    radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.14), transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.10), transparent 50%) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] nav,
+[data-theme="dark"] .nav,
+[data-theme="dark"] .topbar{
+  background:rgba(15,23,42,0.88) !important;
+  border-bottom-color:var(--border) !important;
+  backdrop-filter:blur(20px) !important;
+}
+[data-theme="dark"] .nav-brand,
+[data-theme="dark"] .user-name,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
+[data-theme="dark"] h4, [data-theme="dark"] h5,
+[data-theme="dark"] .modal-title,
+[data-theme="dark"] .ev-detail-grid,
+[data-theme="dark"] label{color:var(--text) !important}
+[data-theme="dark"] p, [data-theme="dark"] li, [data-theme="dark"] td{color:var(--text2) !important}
+[data-theme="dark"] .ev-row,
+[data-theme="dark"] .event-card,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .spon-card,
+[data-theme="dark"] .preview-card,
+[data-theme="dark"] .ad-card,
+[data-theme="dark"] .listing-row,
+[data-theme="dark"] .featured-wrap,
+[data-theme="dark"] .adv-card,
+[data-theme="dark"] .preview-bar,
+[data-theme="dark"] .live-preview,
+[data-theme="dark"] .lp-card,
+[data-theme="dark"] .portal-card,
+[data-theme="dark"] .pricing-card,
+[data-theme="dark"] .popup-preview-shell,
+[data-theme="dark"] .dir-preview-inner{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .ev-row:hover,
+[data-theme="dark"] .event-card:hover{background:var(--surface2) !important}
+[data-theme="dark"] input[type=text],
+[data-theme="dark"] input[type=email],
+[data-theme="dark"] input[type=password],
+[data-theme="dark"] input[type=tel],
+[data-theme="dark"] input[type=url],
+[data-theme="dark"] input[type=number],
+[data-theme="dark"] input[type=date],
+[data-theme="dark"] input[type=time],
+[data-theme="dark"] input[type=search],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder{color:var(--text3) !important;opacity:0.7}
+[data-theme="dark"] .fp,
+[data-theme="dark"] .search-wrap,
+[data-theme="dark"] .ft-mark,
+[data-theme="dark"] footer,
+[data-theme="dark"] .filter-pill,
+[data-theme="dark"] .zip-btn,
+[data-theme="dark"] .all-areas-btn,
+[data-theme="dark"] .add-event-btn,
+[data-theme="dark"] .acct-btn,
+[data-theme="dark"] .signin-btn,
+[data-theme="dark"] .register-btn{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .filter-pill.active,
+[data-theme="dark"] .filter-pill:hover,
+[data-theme="dark"] .zip-btn:hover,
+[data-theme="dark"] .all-areas-btn:hover{
+  background:var(--amber-lt) !important;
+  border-color:var(--amber) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] footer{
+  background:rgba(15,23,42,0.95) !important;
+  border-top-color:var(--border) !important;
+}
+[data-theme="dark"] footer a{color:var(--text2) !important}
+[data-theme="dark"] footer a:hover{color:var(--text) !important}
+[data-theme="dark"] .btn-ghost{
+  background:var(--surface2) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .btn-ghost:hover{background:var(--surface) !important}
+[data-theme="dark"] #sponsorBar{
+  background:rgba(15,23,42,0.95) !important;
+  border-top-color:var(--border) !important;
+}
+[data-theme="dark"] .spon-card{
+  background:var(--surface) !important;
+  border-color:var(--border-md) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] .spon-name{color:var(--text) !important}
+[data-theme="dark"] .spon-tag{color:var(--text2) !important}
+[data-theme="dark"] .spon-link{color:#A5B4FC !important}
+[data-theme="dark"] #cookieBanner{
+  background:rgba(30,41,59,0.98) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .draft-banner{
+  background:linear-gradient(135deg,#78350F,#92400E) !important;
+  color:#FDE68A !important;
+}
+[data-theme="dark"] .ev-detail-cat{filter:brightness(1.4)}
+/* Account dropdown — use variables instead of hardcoded white */
+[data-theme="dark"] #acctMenu{
+  background:var(--surface) !important;
+  border-color:var(--border-md) !important;
+  color:var(--text) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.50) !important;
+}
+[data-theme="dark"] #acctMenu button{color:var(--text) !important}
+[data-theme="dark"] #acctMenu button:hover{background:var(--surface2) !important}
+/* Modal close button visibility */
+[data-theme="dark"] .modal-close{color:var(--text2) !important}
+[data-theme="dark"] .modal-close:hover{color:var(--text) !important}
+/* Theme toggle button itself */
+.theme-toggle{
+  background:var(--surface);
+  border:1.5px solid var(--border-md);
+  border-radius:100px;padding:6px 12px;cursor:pointer;
+  font-size:13px;font-weight:700;color:var(--text2);
+  font-family:var(--font-body);transition:all .2s;
+  margin-right:6px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.theme-toggle:hover{
+  background:var(--amber-lt);color:var(--amber-dk);
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(99,102,241,.10);
+}
+[data-theme="dark"] .theme-toggle:hover{color:var(--text) !important}
+/* Featured business admin delete button */
+.feat-admin-del{
+  position:absolute;top:8px;right:8px;
+  background:rgba(220,38,38,0.10);color:#DC2626;
+  border:1.5px solid #DC2626;
+  padding:5px 9px;border-radius:8px;
+  font-size:11px;font-weight:700;cursor:pointer;
+  font-family:var(--font-body);z-index:5;
+}
+.feat-admin-del:hover{background:#DC2626;color:#fff}
+
+
+
+
+/* ── SHARED SPONSOR BAR (same look as calendar page) ── */
+#sponsorBar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px);
+  border-top:1.5px solid var(--border-md);
+  padding:10px 18px;z-index:100;
+  display:flex;gap:10px;align-items:center;
+  overflow-x:auto;
+  box-shadow:0 -2px 8px rgba(15,23,42,.04);
+}
+#sponsorBar::before{
+  content:'';position:absolute;top:-1px;left:0;right:0;height:2px;
+  background:var(--gradient);opacity:.7;
+}
+#sponCards{display:flex;gap:10px;flex:1;min-width:0}
+.spon-card{
+  flex-shrink:0;min-width:180px;max-width:280px;
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:8px;padding:8px 12px;
+  font-size:12px;line-height:1.35;
+  display:flex;flex-direction:column;gap:2px;
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.spon-card:hover{border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+.spon-name{font-weight:700;color:var(--text);font-size:13px;line-height:1.2}
+.spon-tag{color:var(--text2);font-size:11px;line-height:1.35}
+.spon-link{color:#6366F1;font-size:11px;font-weight:700;text-decoration:none;margin-top:auto}
+.advertise-card{cursor:pointer;border-style:dashed;border-color:var(--amber)}
+.advertise-card:hover{background:var(--amber-lt)}
+body{padding-bottom:80px !important}
+[data-theme="dark"] #sponsorBar{background:rgba(15,23,42,0.95) !important;border-top-color:var(--border) !important}
+[data-theme="dark"] .spon-card{background:var(--surface) !important;border-color:var(--border-md) !important}
+[data-theme="dark"] .spon-name{color:var(--text) !important}
+[data-theme="dark"] .spon-tag{color:var(--text2) !important}
+
+</style>
+
+<!-- Google Analytics 4 (GA4) — Replace G-XXXXXXXXXX with your own Measurement ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (label) label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('nf_theme', next);
+  applyTheme(next);
+}
+(function(){
+  try {
+    let saved = localStorage.getItem('nf_theme');
+    if (!saved && localStorage.getItem('nlcc_token')) saved = 'dark';
+    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  } catch(_) {}
+  document.addEventListener('DOMContentLoaded', () => {
+    let saved = localStorage.getItem('nf_theme');
+    if (!saved && localStorage.getItem('nlcc_token')) saved = 'dark';
+    applyTheme(saved || 'light');
   });
-  req.on('error', next);
-});
+})();
 
-app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
 
-// Parse JSON manually from rawBody (since we've already consumed the stream)
-app.use((req, res, next) => {
-  if (req.path === '/api/stripe/webhook') return next();
-  if (req.rawBody && req.rawBody.length > 0) {
-    try {
-      const ct = req.headers['content-type'] || '';
-      if (ct.includes('application/json')) {
-        req.body = JSON.parse(req.rawBody.toString('utf8'));
-      }
-    } catch (e) {
-      return res.status(400).json({ error: 'Invalid JSON in request body.' });
-    }
-  }
-  next();
-});
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+</head>
+<body>
 
-app.use(express.static(path.join(__dirname, 'public')));
+<!-- NAV -->
+<nav>
+  <div class="hdr-row1">
+    <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.62em;font-weight:500;opacity:.7;letter-spacing:.02em;color:var(--text2)">Discover what's happening, near and far</span></a>
+    <div class="hdr-right"><button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><span class="nav-user" id="navUser"></span></div>
+  </div>
+  <div class="hdr-row2">
+    <a href="/" class="nav-btn" aria-label="Calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="2"/>
+        <path d="M3 10h18M8 3v4M16 3v4"/>
+      </svg>
+      Calendar
+    </a>
+    <a href="/directory" class="nav-btn" aria-label="Directory">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l1.5-5h15L21 9"/>
+        <path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/>
+        <path d="M9 21v-6h6v6"/>
+        <path d="M3 9c0 1.5 1 2.5 2.5 2.5S8 10.5 8 9M8 9c0 1.5 1 2.5 2.5 2.5S13 10.5 13 9M13 9c0 1.5 1 2.5 2.5 2.5S18 10.5 18 9M18 9c0 1.5 1 2.5 2.5 2.5S21 10.5 21 9"/>
+      </svg>
+      Directory
+    </a>
+    <a href="/advertise" class="nav-btn active" aria-label="Advertise">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11v3l13 5V6L3 11z"/>
+        <path d="M18 9c1 1 1 5 0 6"/>
+        <path d="M20.5 7c2 2 2 8 0 10"/>
+      </svg>
+      Advertise
+    </a>
+  </div>
+</nav>
 
-// ── STRIPE WEBHOOK ──
-app.post('/api/stripe/webhook', async (req, res) => {
-    if (!stripe || !STRIPE_WEBHOOK) return res.status(400).send('Webhook not configured');
-    const sig = req.headers['stripe-signature'];
-    if (!sig) return res.status(400).send('No stripe-signature header');
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK);
-    } catch (e) {
-      console.error('Webhook signature failed:', e.message);
-      return res.status(400).send(`Webhook Error: ${e.message}`);
-    }
-    res.status(200).json({ received: true });
-    try {
-      const db = await getDb();
-      if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        const advId     = session.metadata?.advertiser_id;
-        const listingId = session.metadata?.listing_id;
-        if (advId && session.payment_status === 'paid') {
-          await db.run(
-            "UPDATE advertisers SET status='active', stripe_customer_id=?, stripe_subscription_id=? WHERE id=?",
-            [session.customer, session.subscription, advId]
-          );
-          console.log('Advertiser activated:', advId);
-        }
-        if (listingId && session.payment_status === 'paid') {
-          const expires = new Date();
-          expires.setFullYear(expires.getFullYear() + 1);
-          await db.run(
-            "UPDATE listings SET status='active', stripe_customer_id=?, expires_at=? WHERE id=?",
-            [session.customer, expires.toISOString(), listingId]
-          );
-          console.log('Listing activated:', listingId);
-        }
-      }
-      if (event.type === 'invoice.payment_failed') {
-        const custId = event.data.object.customer;
-        await db.run("UPDATE advertisers SET status='paused' WHERE stripe_customer_id=?", [custId]);
-      }
-      if (event.type === 'customer.subscription.deleted') {
-        const custId = event.data.object.customer;
-        await db.run("UPDATE advertisers SET status='cancelled', stripe_subscription_id='' WHERE stripe_customer_id=?", [custId]);
-      }
-      if (event.type === 'invoice.payment_succeeded') {
-        const custId = event.data.object.customer;
-        await db.run("UPDATE advertisers SET status='active' WHERE stripe_customer_id=? AND status='paused'", [custId]);
-      }
-    } catch (e) {
-      console.error('Webhook handler error:', e.message);
-    }
-  }
-);
+<!-- SUCCESS / CANCEL ALERTS -->
+<div id="alertBanner"></div>
 
-// ── AUTH HELPERS ──
-// Normalize phone to digits only (10 or 11 digit US format).
-// Returns '' if invalid (too short).
-function normalizePhone(raw) {
-  if (!raw) return '';
-  const digits = String(raw).replace(/\D/g, '');
-  if (digits.length === 10) return digits;            // 7405551234
-  if (digits.length === 11 && digits[0] === '1') return digits.slice(1); // 17405551234 -> 7405551234
-  return '';
-}
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag"><span>✦</span> Advertise with Us</div>
+  <h1>Reach Your Community<br><span class="grad">Near &amp; Far</span></h1>
+  <p>Your business in the spotlight — featured on the sponsor bar and inside every event listing where local people are looking.</p>
+  <div class="hero-cta">
+    <button class="btn-amber" onclick="scrollToPortal('premium')">⭐ Event Popup Ad — $50/mo</button>
+    <button class="btn-outline" onclick="scrollToPortal('basic')">Sponsor Bar — $25/mo</button>
+  </div>
+</div>
 
-// ============================================================
-// STATE-BASED ZIPCODE RESTRICTIONS (admin-controlled rollout)
-// ============================================================
-// Approximate ZIP3 → state mapping (USPS sectional center boundaries).
-// Covers ~99% of US zipcodes correctly for state-level filtering.
-const ZIP3_RANGES = [
-  [10,27,'MA'],[28,29,'RI'],[30,38,'NH'],[39,49,'ME'],[50,59,'VT'],
-  [60,69,'CT'],[70,89,'NJ'],[100,119,'NY'],[120,149,'NY'],[150,196,'PA'],
-  [200,205,'DC'],[206,219,'MD'],[220,246,'VA'],[247,268,'WV'],[270,289,'NC'],
-  [290,299,'SC'],[300,319,'GA'],[320,349,'FL'],[350,369,'AL'],[370,385,'TN'],
-  [386,397,'MS'],[400,427,'KY'],[430,459,'OH'],[460,479,'IN'],[480,499,'MI'],
-  [500,528,'IA'],[530,549,'WI'],[550,567,'MN'],[570,577,'SD'],[580,588,'ND'],
-  [590,599,'MT'],[600,629,'IL'],[630,658,'MO'],[660,679,'KS'],[680,693,'NE'],
-  [700,714,'LA'],[716,729,'AR'],[730,749,'OK'],[750,799,'TX'],[800,816,'CO'],
-  [820,831,'WY'],[832,838,'ID'],[840,847,'UT'],[850,865,'AZ'],[870,884,'NM'],
-  [889,898,'NV'],[900,961,'CA'],[967,968,'HI'],[970,979,'OR'],[980,994,'WA'],
-  [995,999,'AK']
-];
-
-function zipToState(zip) {
-  const z = parseInt(String(zip||'').substring(0,3), 10);
-  if (isNaN(z)) return null;
-  for (const [start, end, state] of ZIP3_RANGES) {
-    if (z >= start && z <= end) return state;
-  }
-  return null;
-}
-
-let _enabledStatesCache = null;
-let _enabledStatesCacheAt = 0;
-async function getEnabledStates(db) {
-  // Cache for 30 seconds
-  if (_enabledStatesCache && Date.now() - _enabledStatesCacheAt < 30000) {
-    return _enabledStatesCache;
-  }
-  try {
-    const row = await db.get('SELECT value FROM settings WHERE key=?', ['enabled_states']);
-    const raw = row?.value || 'OH';
-    const list = raw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-    _enabledStatesCache = list;
-    _enabledStatesCacheAt = Date.now();
-    return list;
-  } catch(_) {
-    return ['OH'];
-  }
-}
-
-async function isZipEnabled(db, zipcode) {
-  const state = zipToState(zipcode);
-  if (!state) return false; // Unknown zipcode is treated as disabled
-  const enabled = await getEnabledStates(db);
-  return enabled.includes(state);
-}
-
-function requireAuth(req, res, next) {
-  const h = req.headers.authorization;
-  if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
-  try { req.user = jwt.verify(h.split(' ')[1], SECRET); next(); }
-  catch { res.status(401).json({ error: 'Session expired.' }); }
-}
-function requireAdmin(req, res, next) {
-  requireAuth(req, res, () => {
-    if (!req.user.is_admin) return res.status(403).json({ error: 'Admin access required.' });
-    next();
-  });
-}
-function requireAdvertiser(req, res, next) {
-  const h = req.headers.authorization;
-  if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
-  try {
-    const decoded = jwt.verify(h.split(' ')[1], SECRET);
-    if (decoded.type !== 'advertiser') return res.status(403).json({ error: 'Advertiser access required.' });
-    req.advertiser = decoded;
-    next();
-  } catch { res.status(401).json({ error: 'Session expired.' }); }
-}
-
-// ── USER AUTH ──
-// ──────────────────────────────────────────────────────────
-// EMAIL SERVICE — sends transactional emails via Resend API
-// Falls back to console.log if RESEND_API_KEY isn't set (dev/test)
-// ──────────────────────────────────────────────────────────
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Near and Far Events <hello@nearandfarevents.com>';
-const PUBLIC_URL = process.env.SITE_URL || 'https://www.nearandfarevents.com';
-
-async function sendEmail({ to, subject, html, text }) {
-  if (!to) throw new Error('No recipient');
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.log(`[EMAIL MOCK] To: ${to} | Subject: ${subject}\n${text || html.replace(/<[^>]+>/g,'')}\n---`);
-    return { id: 'mock-' + Date.now(), mock: true };
-  }
-  try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html, text })
-    });
-    const data = await r.json();
-    if (!r.ok) {
-      console.error('Resend error:', data);
-      throw new Error('Email send failed: ' + (data.message || r.status));
-    }
-    return data;
-  } catch (e) {
-    console.error('Email send error:', e.message);
-    throw e;
-  }
-}
-
-// Shared email layout — frosted-glass card with gradient header
-function emailLayout(title, bodyHtml) {
-  return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#FAFBFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0F172A;line-height:1.55">
-  <div style="max-width:560px;margin:0 auto;padding:24px 16px">
-    <div style="text-align:center;padding:18px 0 22px">
-      <div style="display:inline-block;padding:10px 18px;border-radius:100px;background:linear-gradient(135deg,#6366F1,#EC4899,#F59E0B);color:#fff;font-size:18px;font-weight:800;letter-spacing:-.01em">✦ Near and Far Events</div>
+<!-- BENEFITS -->
+<div class="section" id="benefits">
+  <div class="section-title">What You Get</div>
+  <div class="section-sub">Everything included — no setup fees, no contracts, cancel any time.</div>
+  <div class="benefits">
+    <div class="benefit-card">
+      <div class="benefit-icon">📌</div>
+      <div class="benefit-title">Always Visible</div>
+      <div class="benefit-text">Your card sits in the sponsor bar at the bottom of every page — visible without scrolling, every visit.</div>
     </div>
-    <div style="background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:30px 28px;box-shadow:0 4px 20px rgba(99,102,241,.08)">
-      <h1 style="font-size:22px;font-weight:700;margin:0 0 16px;color:#0F172A;letter-spacing:-.01em">${title}</h1>
-      ${bodyHtml}
+    <div class="benefit-card">
+      <div class="benefit-icon">🏘️</div>
+      <div class="benefit-title">Targeted Community</div>
+      <div class="benefit-text">Every visitor is a local resident actively engaging with local events.</div>
     </div>
-    <div style="text-align:center;font-size:12px;color:#94A3B8;padding:18px 12px 12px;line-height:1.7">
-      Near and Far Events · <a href="${PUBLIC_URL}" style="color:#6366F1;text-decoration:none">nearandfarevents.com</a><br>
-      Questions? Reply to this email or write us at <a href="mailto:hello@nearandfarevents.com" style="color:#6366F1;text-decoration:none">hello@nearandfarevents.com</a>
+    <div class="benefit-card">
+      <div class="benefit-icon">🔗</div>
+      <div class="benefit-title">Link to Your Website</div>
+      <div class="benefit-text">Your business name, tagline, and a direct link to your website — all in one clean card.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-icon">✏️</div>
+      <div class="benefit-title">Edit Anytime</div>
+      <div class="benefit-text">Update your business name, tagline, or website link instantly from your dashboard — no waiting.</div>
     </div>
   </div>
-</body></html>`;
+
+  <!-- PREVIEW: How your ads look -->
+  <div style="margin-top:36px">
+    <div class="section-title" style="font-size:20px;margin-bottom:6px">See Your Ads in Action</div>
+    <div class="section-sub" style="margin-bottom:18px">Here's exactly what each ad tier looks like to visitors on the site.</div>
+
+    <!-- Sponsor Bar preview -->
+    <div style="margin-bottom:20px">
+      <div class="dash-label" style="margin-bottom:8px">📢 Sponsor Bar ($25/mo) — appears at bottom of every page</div>
+      <div class="preview-bar">
+        <span class="preview-label">📢 Sponsors</span>
+        <div class="preview-card">
+          <div class="p-name">Your Business Name</div>
+          <div class="p-tag">Your tagline goes right here</div>
+          <span class="p-url">Visit Website →</span>
+        </div>
+        <div class="preview-card" style="opacity:.45;border-style:dashed">
+          <div class="p-name" style="color:var(--text3)">Another Sponsor</div>
+          <div class="p-tag">...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Directory Featured preview (also included with $50/mo Premium) -->
+    <div style="margin-bottom:20px">
+      <div class="dash-label" style="margin-bottom:8px">⭐ Featured in Business Directory (included with $50/mo Premium)</div>
+      <div class="dir-preview-wrap">
+        <div class="dir-preview-inner">
+          <div class="featured-strip"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text)"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">⭐</span> Featured Businesses</div>
+            <span style="font-size:11px;color:var(--text3);font-weight:600">Top of directory listing</span>
+          </div>
+          <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.04)">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gradient);border-radius:var(--r) 0 0 var(--r)"></div>
+            <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;margin-bottom:4px">Featured</div>
+            <div style="font-size:17px;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:3px">Your Business Name</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.4;margin-bottom:10px">Your business description sits here.</div>
+            <a href="#" onclick="return false" style="display:block;text-align:center;font-size:13px;font-weight:700;padding:9px 0;border-radius:var(--r);background:var(--gradient);color:#fff;text-decoration:none;box-shadow:0 2px 6px rgba(99,102,241,.20)">Get Directions →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Popup Ad preview -->
+    <div>
+      <div class="dash-label" style="margin-bottom:8px">⭐ Event Popup Ad ($50/mo) — appears inside every event detail popup</div>
+      <div class="popup-preview-wrap">
+        <div class="popup-preview-shell">
+          <div class="popup-preview-header">
+            <span style="font-size:18px">🎉</span>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--text)">Summer Concert in the Park</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:1px">📍 Main Street Park · Sat, Jun 14 · 7:00 PM</div>
+            </div>
+          </div>
+          <div class="ad-card-preview">
+            <div class="ad-card-preview-strip"></div>
+            <div class="ad-sponsored-preview">📢 Sponsored</div>
+            <div class="ad-name-preview">Your Business Name</div>
+            <div class="ad-tagline-preview">A short, compelling tagline that gets attention.</div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <a href="#" onclick="return false" class="ad-btn-preview phone">📞 (555) 123-4567</a>
+              <a href="#" onclick="return false" class="ad-btn-preview site">Visit Website →</a>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:8px;font-style:italic">↑ Visitors see this every time they click on any event</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div style="background:var(--surface2);padding:50px 24px">
+  <div style="max-width:860px;margin:0 auto;text-align:center">
+    <div class="section-title" style="margin-bottom:8px">Choose Your Plan</div>
+    <div class="section-sub" style="margin-bottom:32px">Both plans are month-to-month. Cancel any time. No contracts.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px;margin:0 auto">
+
+      <!-- BASIC -->
+      <div class="pricing-card" style="border-color:var(--border-md);position:relative">
+        <div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Sponsor Bar</div>
+        <div class="price-amount" style="font-size:44px">$25</div>
+        <div class="price-period">per month</div>
+        <ul class="price-features" style="margin:18px 0">
+          <li><span class="check">✓</span> Your name in the sponsor bar</li>
+          <li><span class="check">✓</span> Visible on every page</li>
+          <li><span class="check">✓</span> Tagline + website link</li>
+          <li><span class="check">✓</span> Edit anytime</li>
+          <li><span class="check">✓</span> Cancel anytime</li>
+        </ul>
+        <button onclick="scrollToPortal('basic')" style="width:100%;font-size:15px;padding:12px 0;background:var(--surface);color:var(--amber-dk);border:1.5px solid var(--amber);border-radius:100px;font-weight:700;cursor:pointer;font-family:var(--font-body);box-shadow:0 0 0 3px rgba(99,102,241,.06);transition:all .2s cubic-bezier(.4,0,.2,1)" onmouseover="this.style.background='var(--amber-lt)';this.style.boxShadow='0 0 0 4px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.20)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='var(--surface)';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.06)';this.style.transform=''">Get Started →</button>
+      </div>
+
+      <!-- PREMIUM -->
+      <div class="pricing-card" style="position:relative">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gradient);color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 16px;border-radius:100px;white-space:nowrap;box-shadow:0 4px 12px rgba(99,102,241,.35),0 0 0 3px rgba(236,72,153,.10)">⭐ Most Popular</div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-dk);margin-bottom:8px">Event Popup Ad</div>
+        <div class="price-amount">$50</div>
+        <div class="price-period">per month</div>
+        <ul class="price-features" style="margin:18px 0">
+          <li><span class="check">✓</span> <strong>Ad popup on every event click</strong></li>
+          <li><span class="check">✓</span> Full business card ad with animation</li>
+          <li><span class="check">✓</span> Tappable phone number</li>
+          <li><span class="check">✓</span> Website button in every popup</li>
+          <li><span class="check">✓</span> <strong>Featured in Business Directory</strong></li>
+          <li><span class="check">✓</span> Sponsor bar included</li>
+          <li><span class="check">✓</span> <strong>Limited to 5 spots only</strong></li>
+          <li><span class="check">✓</span> Cancel anytime</li>
+        </ul>
+        <button onclick="scrollToPortal('premium')" style="width:100%;font-size:15px;padding:12px 0;background:var(--gradient);color:#fff;border:1.5px solid transparent;border-radius:100px;font-weight:700;cursor:pointer;font-family:var(--font-body);box-shadow:0 4px 14px rgba(99,102,241,.30),0 0 0 4px rgba(236,72,153,.10);transition:all .2s cubic-bezier(.4,0,.2,1)" onmouseover="this.style.boxShadow='0 6px 20px rgba(99,102,241,.45),0 0 0 5px rgba(236,72,153,.18)';this.style.transform='translateY(-2px)';this.style.filter='brightness(1.08)'" onmouseout="this.style.boxShadow='0 4px 14px rgba(99,102,241,.30),0 0 0 4px rgba(236,72,153,.10)';this.style.transform='';this.style.filter=''">Claim a Spot →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PORTAL: AUTH OR DASHBOARD -->
+<div class="section" id="portalSection">
+  <div class="section-title" style="text-align:center" id="portalTitle">Create Your Account</div>
+  <div class="section-sub" style="text-align:center;margin-bottom:28px" id="portalSub">Sign up in under a minute, then complete payment to go live.</div>
+  <div class="portal-wrap" style="padding:0 0 0 0">
+    <div class="portal-card" id="portalCard">
+      <div style="text-align:center;color:var(--text3);font-size:14px;padding:20px">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div style="background:var(--surface2);border-top:1px solid var(--border);padding:20px 24px;text-align:center">
+  <p style="font-size:14px;color:var(--text);max-width:520px;margin:0 auto;line-height:1.6;background:linear-gradient(135deg,var(--amber-lt),rgba(236,72,153,.08));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);padding:12px 16px;border-radius:8px;font-weight:500"><strong style="color:var(--amber-dk)">📢 Business portal:</strong> This section is for <strong>businesses purchasing ad space only</strong>. Community members posting events should <a href="/" style="color:var(--amber-dk);text-decoration:underline;font-weight:700">use the calendar</a> instead.</p>
+</div>
+
+
+<script>
+const API = '';
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+let advToken    = localStorage.getItem('nlcc_adv_token') || null;
+let advertiser  = JSON.parse(localStorage.getItem('nlcc_adv') || 'null');
+let selectedTier = new URLSearchParams(window.location.search).get('tier') || 'premium';
+
+async function api(path, opts={}) {
+  const h = {'Content-Type':'application/json', ...(opts.headers||{})};
+  if (advToken) h['Authorization'] = 'Bearer ' + advToken;
+  const r = await fetch(API + path, {...opts, headers: h});
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Request failed');
+  return d;
 }
 
-function emailButton(href, label) {
-  return `<table cellpadding="0" cellspacing="0" border="0" style="margin:18px auto"><tr><td style="border-radius:100px;background:linear-gradient(135deg,#6366F1,#EC4899,#F59E0B)">
-    <a href="${href}" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;border-radius:100px">${label}</a>
-  </td></tr></table>`;
+function setSession(token, adv) {
+  advToken   = token;
+  advertiser = adv;
+  localStorage.setItem('nlcc_adv_token', token);
+  localStorage.setItem('nlcc_adv', JSON.stringify(adv));
+}
+function clearSession() {
+  advToken   = null; advertiser = null;
+  localStorage.removeItem('nlcc_adv_token');
+  localStorage.removeItem('nlcc_adv');
 }
 
-// Cryptographically random token + hash helpers
-function generateToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
-
-// ── Audit log helper: record an admin-removed item (24-month retention per spec §6) ──
-async function logRemovedItem(db, params) {
-  try {
-    await db.run(
-      `INSERT INTO removed_items
-        (item_type, original_id, item_name, item_date, item_zipcode,
-         owner_user_id, owner_name, owner_email,
-         removed_by, removed_by_name, reason, snapshot)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [
-        params.item_type, params.original_id, params.item_name || '',
-        params.item_date || '', params.item_zipcode || '',
-        params.owner_user_id || null, params.owner_name || '', params.owner_email || '',
-        params.removed_by, params.removed_by_name || '',
-        params.reason || '', JSON.stringify(params.snapshot || {})
-      ]
-    );
-  } catch(e) { console.error('Audit log failed:', e.message); }
-}
-
-
-// ── Time + display helpers for events ──
-function computeEffectiveEndAt(date, start_time, end_time, all_day) {
-  // Returns ISO datetime string for "when this event is no longer visible" (end + 4hr grace)
-  if (!date) return '';
-  let endStr;
-  if (all_day) {
-    endStr = `${date}T23:59:00`;
-  } else if (end_time) {
-    endStr = `${date}T${end_time}:00`;
-  } else if (start_time) {
-    // No end time given; assume 2-hour duration
-    const [h, m] = start_time.split(':').map(n => parseInt(n, 10));
-    const dt = new Date(`${date}T${start_time}:00`);
-    dt.setHours(dt.getHours() + 2);
-    endStr = dt.toISOString().slice(0, 19);
-  } else {
-    // No times at all; treat as end-of-day
-    endStr = `${date}T23:59:00`;
+// Check URL params - verify session and activate ad
+function checkURLParams() {
+  const p = new URLSearchParams(window.location.search);
+  const banner = document.getElementById('alertBanner');
+  if (p.get('success') === 'true') {
+    const sessionId = p.get('session_id');
+    if (sessionId && advToken) {
+      verifySession(sessionId);
+    } else {
+      banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Activating your ad…</div>`;
+      if (advToken) refreshAdvertiser();
+    }
+    window.history.replaceState({}, '', '/advertise');
   }
-  const dt = new Date(endStr);
-  dt.setHours(dt.getHours() + 4); // 4-hour grace period
-  return dt.toISOString().slice(0, 19).replace('T', ' ');
-}
-function formatTime12(t24) {
-  if (!t24 || !/^\d{1,2}:\d{2}$/.test(t24)) return '';
-  const [h, m] = t24.split(':').map(n => parseInt(n, 10));
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-}
-function buildTimeDisplay(start_time, end_time, all_day) {
-  if (all_day) return 'All Day';
-  if (start_time && end_time) return `${formatTime12(start_time)} – ${formatTime12(end_time)}`;
-  if (start_time) return formatTime12(start_time);
-  return 'TBD';
-}
-
-// Sanitize event description: strip HTML tags, normalize newlines, cap length
-function cleanDescription(s) {
-  if (!s) return '';
-  let v = String(s).replace(/<[^>]*>/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  return v.slice(0, 2000).trim();
-}
-
-function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { name, email, phone, password, address } = req.body || {};
-    if (!name?.trim() || !password) return res.status(400).json({ error: 'Name and password are required.' });
-    // Stronger password rules (spec §12)
-    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
-    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return res.status(400).json({ error: 'Password must include both letters and numbers.' });
-    if (!address?.trim()) return res.status(400).json({ error: 'Address is required.' });
-    const emailClean = (email || '').toLowerCase().trim();
-    const phoneClean = normalizePhone(phone);
-    if (!emailClean && !phoneClean) return res.status(400).json({ error: 'Please provide either an email or a phone number.' });
-    if (phone && !phoneClean) return res.status(400).json({ error: 'Phone number must be 10 digits (US format).' });
-    if (emailClean && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailClean)) return res.status(400).json({ error: 'Please enter a valid email address.' });
-    const db = await getDb();
-    if (emailClean && await db.get('SELECT id FROM users WHERE email=?', [emailClean])) return res.status(409).json({ error: 'Email already registered.' });
-    if (phoneClean && await db.get('SELECT id FROM users WHERE phone=?', [phoneClean])) return res.status(409).json({ error: 'Phone number already registered.' });
-    const hash = bcrypt.hashSync(password, 10);
-
-    if (emailClean) {
-      // Email registration → must verify
-      const emailForDb = emailClean;
-      const token = generateToken();
-      const tokenHash = hashToken(token);
-      const expires = new Date(Date.now() + 24*60*60*1000).toISOString();
-      const r = await db.run(
-        'INSERT INTO users (name,email,phone,password_hash,address,email_verified,verify_token_hash,verify_expires,last_verify_sent_at) VALUES (?,?,?,?,?,0,?,?,?)',
-        [name.trim(), emailForDb, phoneClean || null, hash, address.trim(), tokenHash, expires, new Date().toISOString()]
-      );
-      // Send verification email (non-fatal if it fails — user can request resend)
-      try {
-        const verifyUrl = `${PUBLIC_URL}/verify?token=${token}&email=${encodeURIComponent(emailClean)}`;
-        await sendEmail({
-          to: emailClean,
-          subject: 'Verify your Near and Far Events account',
-          html: emailLayout('Welcome — verify your email', `
-            <p style="margin:0 0 14px">Hi ${escapeHtml(name.trim())},</p>
-            <p style="margin:0 0 14px">Thanks for joining Near and Far Events! Click the button below to verify your email and activate your account.</p>
-            ${emailButton(verifyUrl, 'Verify My Email')}
-            <p style="margin:18px 0 8px;font-size:13px;color:#475569">Or paste this link in your browser:<br><a href="${verifyUrl}" style="color:#6366F1;word-break:break-all">${verifyUrl}</a></p>
-            <p style="margin:18px 0 0;font-size:13px;color:#94A3B8">This link expires in 24 hours. If you didn't sign up, you can safely ignore this email.</p>`),
-          text: `Welcome to Near and Far Events!\n\nVerify your email by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours. If you didn't sign up, ignore this email.`
-        });
-      } catch (e) { console.error('Verify email failed:', e.message); }
-      return res.status(201).json({ success: true, requiresVerification: true, email: emailClean });
-    } else {
-      // Phone-only registration → auto-verified (no email to verify)
-      const emailForDb = (`phone-${phoneClean}-${Date.now()}@nearandfarevents.local`);
-      const r = await db.run(
-        'INSERT INTO users (name,email,phone,password_hash,address,email_verified) VALUES (?,?,?,?,?,1)',
-        [name.trim(), emailForDb, phoneClean, hash, address.trim()]
-      );
-      const user = { id: r.lastID, name: name.trim(), email: '', phone: phoneClean, is_admin: 0, is_town_crier: 0 };
-      return res.status(201).json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
-    }
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Verify email
-app.get('/api/auth/verify/:token', async (req, res) => {
-  try {
-    const { token } = req.params;
-    if (!token) return res.status(400).json({ error: 'Verification token missing.' });
-    const db = await getDb();
-    const tokenHash = hashToken(token);
-    const row = await db.get('SELECT * FROM users WHERE verify_token_hash=?', [tokenHash]);
-    if (!row) return res.status(400).json({ error: 'Invalid or expired verification link. You can request a new one from the sign-in screen.' });
-    if (row.verify_expires && new Date(row.verify_expires) < new Date()) {
-      return res.status(400).json({ error: 'This verification link has expired. Sign in to request a new one.' });
-    }
-    await db.run("UPDATE users SET email_verified=1, verify_token_hash='', verify_expires='' WHERE id=?", [row.id]);
-    const emailForUser = (row.email && row.email.endsWith('@nearandfarevents.local')) ? '' : row.email;
-    const user = { id: row.id, name: row.name, email: emailForUser, phone: row.phone || '', is_admin: row.is_admin, is_town_crier: row.is_town_crier };
-    res.json({ success: true, token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Resend verification email (rate-limited to 1 per minute)
-app.post('/api/auth/resend-verify', async (req, res) => {
-  try {
-    const { email } = req.body || {};
-    if (!email) return res.status(400).json({ error: 'Email is required.' });
-    const emailClean = String(email).toLowerCase().trim();
-    const db = await getDb();
-    const row = await db.get('SELECT * FROM users WHERE email=?', [emailClean]);
-    // Always return success to avoid leaking which emails are registered
-    if (!row || row.email_verified) return res.json({ success: true });
-    // Rate-limit: don't resend if one was sent in the last 60 seconds
-    if (row.last_verify_sent_at) {
-      const since = Date.now() - new Date(row.last_verify_sent_at).getTime();
-      if (since < 60_000) return res.json({ success: true, wait: Math.ceil((60000 - since)/1000) });
-    }
-    const token = generateToken();
-    const tokenHash = hashToken(token);
-    const expires = new Date(Date.now() + 24*60*60*1000).toISOString();
-    await db.run('UPDATE users SET verify_token_hash=?, verify_expires=?, last_verify_sent_at=? WHERE id=?', [tokenHash, expires, new Date().toISOString(), row.id]);
-    try {
-      const verifyUrl = `${PUBLIC_URL}/verify?token=${token}&email=${encodeURIComponent(emailClean)}`;
-      await sendEmail({
-        to: emailClean, subject: 'Verify your Near and Far Events account',
-        html: emailLayout('Verify your email', `
-          <p style="margin:0 0 14px">Here's a fresh verification link for your account:</p>
-          ${emailButton(verifyUrl, 'Verify My Email')}
-          <p style="margin:18px 0 0;font-size:13px;color:#94A3B8">This link expires in 24 hours. If you didn't request this, ignore this email.</p>`),
-        text: `Verify your Near and Far Events account:\n${verifyUrl}\n\nExpires in 24 hours.`
-      });
-    } catch(e) { console.error('Resend verify email failed:', e.message); }
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, identifier, password } = req.body || {};
-    const raw = (identifier || email || '').toString().trim();
-    if (!raw || !password) return res.status(401).json({ error: 'Email/phone and password are required.' });
-    const db = await getDb();
-    let row = null;
-    const phoneTry = normalizePhone(raw);
-    if (phoneTry) {
-      row = await db.get('SELECT * FROM users WHERE phone=?', [phoneTry]);
-    }
-    if (!row) {
-      row = await db.get('SELECT * FROM users WHERE email=?', [raw.toLowerCase()]);
-    }
-    if (!row || !bcrypt.compareSync(password || '', row.password_hash)) return res.status(401).json({ error: 'Incorrect email/phone or password.' });
-    // Enforce email verification
-    if (!row.email_verified) {
-      return res.status(403).json({ error: 'Please verify your email before signing in. Check your inbox for the verification link.', needsVerification: true, email: row.email && !row.email.endsWith('@nearandfarevents.local') ? row.email : null });
-    }
-    const emailForUser = (row.email && row.email.endsWith('@nearandfarevents.local')) ? '' : row.email;
-    const user = { id: row.id, name: row.name, email: emailForUser, phone: row.phone || '', is_admin: row.is_admin, is_town_crier: row.is_town_crier };
-    res.json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Forgot password — request reset link
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body || {};
-    if (!email) return res.status(400).json({ error: 'Email is required.' });
-    const emailClean = String(email).toLowerCase().trim();
-    const db = await getDb();
-    const row = await db.get('SELECT * FROM users WHERE email=?', [emailClean]);
-    // Always return success even if the email isn't found (don't leak which emails are registered)
-    if (row) {
-      const token = generateToken();
-      const tokenHash = hashToken(token);
-      const expires = new Date(Date.now() + 60*60*1000).toISOString(); // 1 hour
-      await db.run('UPDATE users SET reset_token_hash=?, reset_expires=? WHERE id=?', [tokenHash, expires, row.id]);
-      try {
-        const resetUrl = `${PUBLIC_URL}/reset-password?token=${token}&email=${encodeURIComponent(emailClean)}`;
-        await sendEmail({
-          to: emailClean, subject: 'Reset your Near and Far Events password',
-          html: emailLayout('Reset your password', `
-            <p style="margin:0 0 14px">We received a request to reset your password. Click below to set a new one.</p>
-            ${emailButton(resetUrl, 'Reset My Password')}
-            <p style="margin:18px 0 8px;font-size:13px;color:#475569">Or paste this link in your browser:<br><a href="${resetUrl}" style="color:#6366F1;word-break:break-all">${resetUrl}</a></p>
-            <p style="margin:18px 0 0;font-size:13px;color:#94A3B8"><strong style="color:#475569">This link expires in 1 hour.</strong> If you didn't request a password reset, you can safely ignore this email — your password won't change.</p>`),
-          text: `Reset your Near and Far Events password:\n${resetUrl}\n\nExpires in 1 hour. If you didn't request this, ignore this email.`
-        });
-      } catch(e) { console.error('Reset email failed:', e.message); }
-    }
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Reset password — submit new password with token
-app.post('/api/auth/reset-password', async (req, res) => {
-  try {
-    const { token, new_password } = req.body || {};
-    if (!token || !new_password) return res.status(400).json({ error: 'Token and new password are required.' });
-    if (new_password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
-    if (!/[A-Za-z]/.test(new_password) || !/[0-9]/.test(new_password)) return res.status(400).json({ error: 'Password must include both letters and numbers.' });
-    const db = await getDb();
-    const tokenHash = hashToken(token);
-    const row = await db.get('SELECT * FROM users WHERE reset_token_hash=?', [tokenHash]);
-    if (!row) return res.status(400).json({ error: 'This reset link is invalid or has been used. Request a new one if needed.' });
-    if (row.reset_expires && new Date(row.reset_expires) < new Date()) {
-      return res.status(400).json({ error: 'This reset link has expired. Request a new one.' });
-    }
-    const newHash = bcrypt.hashSync(new_password, 10);
-    // Clear reset tokens AND mark email_verified (since they could click the email link, they own the inbox)
-    await db.run("UPDATE users SET password_hash=?, reset_token_hash='', reset_expires='', email_verified=1 WHERE id=?", [newHash, row.id]);
-    // Notify the user that their password was changed
-    if (row.email && !row.email.endsWith('@nearandfarevents.local')) {
-      try {
-        await sendEmail({
-          to: row.email, subject: 'Your Near and Far Events password was changed',
-          html: emailLayout('Password updated', `
-            <p style="margin:0 0 14px">Your password was just changed.</p>
-            <p style="margin:0 0 14px;font-size:14px;color:#475569">If this was you — great, no further action needed. <a href="${PUBLIC_URL}" style="color:#6366F1">Sign in here</a>.</p>
-            <p style="margin:0;font-size:13px;color:#94A3B8"><strong style="color:#DC2626">If this wasn't you</strong>, contact us immediately at <a href="mailto:hello@nearandfarevents.com" style="color:#6366F1">hello@nearandfarevents.com</a>.</p>`),
-          text: `Your Near and Far Events password was just changed. If this wasn't you, contact hello@nearandfarevents.com immediately.`
-        });
-      } catch(_) {}
-    }
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// CCPA: Data export — download all personal data we have
-app.get('/api/auth/export', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const user = await db.get('SELECT id,name,email,phone,address,home_zipcode,is_admin,is_town_crier,email_verified,notify_zipcodes,created_at FROM users WHERE id=?', [req.user.id]);
-    if (!user) return res.status(404).json({ error: 'Account not found.' });
-    const events = await db.all('SELECT * FROM events WHERE added_by=?', [req.user.id]);
-    const listings = await db.all('SELECT * FROM listings WHERE user_id=?', [req.user.id]);
-    const exported = {
-      exported_at: new Date().toISOString(),
-      user: user,
-      events_submitted: events,
-      listings_submitted: listings,
-      note: 'This is all personal data we hold about your account. Payment data is stored by Stripe (not us). For Stripe data, contact Stripe directly.'
-    };
-    res.setHeader('Content-Disposition', `attachment; filename="nearandfar-data-${user.id}-${Date.now()}.json"`);
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(exported, null, 2));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// HTML escape helper for email templates (defensive)
-function escapeHtml(s) {
-  return String(s || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-}
-
-// Update home zipcode
-app.put('/api/auth/zipcode', requireAuth, async (req, res) => {
-  try {
-    const { zipcode } = req.body || {};
-    if (!zipcode || !/^\d{5}$/.test(zipcode.toString().trim())) {
-      return res.status(400).json({ error: 'Please enter a valid 5-digit US zipcode.' });
-    }
-    const db = await getDb();
-    await db.run('UPDATE users SET home_zipcode=? WHERE id=?', [zipcode.toString().trim(), req.user.id]);
-    res.json({ success: true, home_zipcode: zipcode.toString().trim() });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Change password
-app.put('/api/auth/password', requireAuth, async (req, res) => {
-  try {
-    const { current_password, new_password } = req.body || {};
-    if (!current_password || !new_password) return res.status(400).json({ error: 'Current and new password are required.' });
-    if (new_password.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters.' });
-    const db = await getDb();
-    const row = await db.get('SELECT password_hash FROM users WHERE id=?', [req.user.id]);
-    if (!row || !bcrypt.compareSync(current_password, row.password_hash)) return res.status(401).json({ error: 'Current password is incorrect.' });
-    const newHash = bcrypt.hashSync(new_password, 10);
-    await db.run('UPDATE users SET password_hash=? WHERE id=?', [newHash, req.user.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Delete account (and all owned events + listings)
-app.delete('/api/auth/me', requireAuth, async (req, res) => {
-  try {
-    const { password } = req.body || {};
-    if (!password) return res.status(400).json({ error: 'Password required to confirm deletion.' });
-    const db = await getDb();
-    const row = await db.get('SELECT password_hash, is_admin FROM users WHERE id=?', [req.user.id]);
-    if (!row) return res.status(404).json({ error: 'Account not found.' });
-    if (row.is_admin) return res.status(403).json({ error: 'Admin accounts cannot be deleted via this endpoint.' });
-    if (!bcrypt.compareSync(password, row.password_hash)) return res.status(401).json({ error: 'Incorrect password.' });
-    // Cascade delete: events posted by user, listings owned by user, then user
-    await db.run('DELETE FROM events WHERE added_by=?', [req.user.id]);
-    await db.run('DELETE FROM listings WHERE user_id=?', [req.user.id]);
-    await db.run('DELETE FROM users WHERE id=?', [req.user.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── EVENTS ──
-app.get('/api/events', async (req, res) => {
-  try {
-    const db = await getDb();
-    let isAdmin = false;
-    let userId = null;
-    const auth = req.headers.authorization;
-    if (auth && auth.startsWith('Bearer ')) {
-      try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; userId = payload.id; } catch(_) {}
-    }
-    const zipcode = (req.query.zipcode||'').toString().trim();
-    const zipFilter = zipcode ? ' AND e.zipcode=?' : '';
-    const zipParam = zipcode ? [zipcode] : [];
-    let sql;
-    let params;
-    if (isAdmin) {
-      sql = 'SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE 1=1' + zipFilter + ' ORDER BY e.date ASC,e.start_time ASC,e.time ASC';
-      params = zipParam;
-    } else if (userId) {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?)) AND COALESCE(NULLIF(e.effective_end_at,''), datetime(e.date || ' 23:59:00', '+4 hours')) > datetime('now')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
-      params = [userId, ...zipParam];
-    } else {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved' AND COALESCE(NULLIF(e.effective_end_at,''), datetime(e.date || ' 23:59:00', '+4 hours')) > datetime('now')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
-      params = zipParam;
-    }
-    const rows = await db.all(sql, params);
-    // Filter out events in non-enabled states for non-admin users
-    if (!isAdmin) {
-      const enabled = await getEnabledStates(db);
-      const filtered = rows.filter(r => {
-        const st = zipToState(r.zipcode);
-        return st && enabled.includes(st);
-      });
-      return res.json(filtered);
-    }
-    res.json(rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/events', requireAuth, async (req, res) => {
-  try {
-    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
-    if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
-    const db = await getDb();
-    // Validate zipcode is in an enabled state (skip for admin)
-    if (!req.user.is_admin) {
-      const zipState = zipToState(zipcode);
-      const enabled = await getEnabledStates(db);
-      if (!zipState || !enabled.includes(zipState)) {
-        return res.status(403).json({ error: `Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: ${enabled.join(', ')}.` });
-      }
-    }
-    const dup = await db.get(
-      "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status!='pending'",
-      [name.trim(), date]
-    );
-    if (dup) return res.status(409).json({ error: "An event with that name already exists on that date. Check the calendar to avoid duplicates." });
-    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
-    const status = (userRow && (userRow.is_admin || userRow.is_town_crier)) ? 'approved' : 'pending';
-    const zip = (zipcode || '').toString().trim() || '43764';
-    const st = (start_time||'').toString().trim();
-    const et = (end_time||'').toString().trim();
-    const ad = all_day ? 1 : 0;
-    const eff = computeEffectiveEndAt(date, st, et, ad);
-    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
-    const r = await db.run(
-      'INSERT INTO events (cat,name,location,date,time,start_time,end_time,all_day,effective_end_at,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [cat||'other', name.trim(), location.trim(), date, timeDisplay, st, et, ad, eff, price?.trim()||'Free', contact?.trim()||'-', req.user.id, status, zip, (affiliate_url||'').trim(), cleanDescription(description)]
-    );
-    const ev = await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]);
-    res.status(201).json({ ...ev, pending_approval: status === 'pending' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ──────────────────────────────────────────────────────────
-// GUEST (anonymous) EVENT SUBMISSION — no account required
-// User submits with name + email; receives verification email;
-// clicking the link activates the event into the moderation queue.
-// Also receives a magic edit/delete link for that event.
-// ──────────────────────────────────────────────────────────
-app.post('/api/events/guest', async (req, res) => {
-  try {
-    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description, submitter_name, submitter_email, submitter_phone } = req.body || {};
-    if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Event name, location, and date are required.' });
-    if (!submitter_name?.trim()) return res.status(400).json({ error: 'Please tell us your name so we can contact you about this event.' });
-    if (!submitter_email?.trim()) return res.status(400).json({ error: 'Email is required so we can verify your submission and send you the edit link.' });
-    const emailClean = String(submitter_email).toLowerCase().trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailClean)) return res.status(400).json({ error: 'Please enter a valid email address.' });
-    const phoneClean = normalizePhone(submitter_phone);
-    if (submitter_phone && !phoneClean) return res.status(400).json({ error: 'Phone number must be 10 digits (US format).' });
-
-    const db = await getDb();
-    // Validate zipcode is in an enabled state
-    const zipState = zipToState(zipcode);
-    const enabled = await getEnabledStates(db);
-    if (!zipState || !enabled.includes(zipState)) {
-      return res.status(403).json({ error: `Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: ${enabled.join(', ')}.` });
-    }
-    // Duplicate check (same name + date already approved)
-    const dup = await db.get(
-      "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status='approved'",
-      [name.trim(), date]
-    );
-    if (dup) return res.status(409).json({ error: "An event with that name already exists on that date. Check the calendar to avoid duplicates." });
-
-    // Find the sentinel guest user for foreign key
-    const guestUser = await db.get("SELECT id FROM users WHERE email='guest@nearandfarevents.system'");
-    if (!guestUser) return res.status(500).json({ error: 'Guest submission temporarily unavailable. Please try again or create an account.' });
-
-    const verifyToken = generateToken();
-    const manageToken = generateToken();
-    const verifyHash = hashToken(verifyToken);
-    const manageHash = hashToken(manageToken);
-    const expires = new Date(Date.now() + 7*24*60*60*1000).toISOString(); // 7 days to verify
-    const zip = (zipcode || '').toString().trim() || '43764';
-
-    const st = (start_time||'').toString().trim();
-    const et = (end_time||'').toString().trim();
-    const ad = all_day ? 1 : 0;
-    const eff = computeEffectiveEndAt(date, st, et, ad);
-    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
-    await db.run(
-      `INSERT INTO events
-        (cat, name, location, date, time, start_time, end_time, all_day, effective_end_at, price, contact, added_by, status, zipcode, affiliate_url, description,
-         is_anonymous, submitter_name, submitter_email, submitter_phone,
-         submitter_verify_token_hash, submitter_manage_token_hash, submitter_verify_expires)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'pending_verify',?,?,?, 1, ?,?,?, ?,?,?)`,
-      [
-        cat||'other', name.trim(), location.trim(), date,
-        timeDisplay, st, et, ad, eff,
-        price?.trim()||'Free', contact?.trim()||'-',
-        guestUser.id, zip, (affiliate_url||'').trim(), cleanDescription(description),
-        submitter_name.trim(), emailClean, phoneClean || '',
-        verifyHash, manageHash, expires
-      ]
-    );
-
-    // Send verification email with BOTH links: verify + manage
-    const verifyUrl = `${PUBLIC_URL}/verify-event?token=${verifyToken}`;
-    const manageUrl = `${PUBLIC_URL}/manage-event?token=${manageToken}`;
-    try {
-      await sendEmail({
-        to: emailClean,
-        subject: 'Confirm your event on Near and Far Events',
-        html: emailLayout('Confirm your event submission', `
-          <p style="margin:0 0 14px">Hi ${escapeHtml(submitter_name.trim())},</p>
-          <p style="margin:0 0 14px">Thanks for submitting your event! Click the button below to confirm your email and send it to our review team:</p>
-          <table cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 6px"><tr><td style="font-size:13px;font-weight:700;color:#0F172A;padding:2px 0">Your event:</td></tr><tr><td style="font-size:15px;color:#0F172A;padding:2px 0">${escapeHtml(name.trim())}</td></tr><tr><td style="font-size:13px;color:#475569;padding:1px 0">📍 ${escapeHtml(location.trim())}</td></tr><tr><td style="font-size:13px;color:#475569;padding:1px 0 8px">📅 ${escapeHtml(date)}${time?.trim() ? ' at ' + escapeHtml(time.trim()) : ''}</td></tr></table>
-          ${emailButton(verifyUrl, '✓ Confirm This Event')}
-          <p style="margin:24px 0 6px;font-size:13px;color:#475569"><strong>Need to edit or delete this event later?</strong> Bookmark this link — it's how you'll manage your event without an account:</p>
-          <p style="margin:0 0 4px;font-size:12px"><a href="${manageUrl}" style="color:#6366F1;word-break:break-all">${manageUrl}</a></p>
-          <p style="margin:18px 0 0;font-size:12px;color:#94A3B8">Confirmation link expires in 7 days. The manage link works as long as your event is published.<br>If you didn't submit this, you can safely ignore this email.</p>`),
-        text: `Thanks for submitting "${name.trim()}" on Near and Far Events!\n\nConfirm your event:\n${verifyUrl}\n\nManage your event (edit/delete) — save this link:\n${manageUrl}\n\nThe confirmation link expires in 7 days.`
-      });
-    } catch (e) { console.error('Guest verify email failed:', e.message); }
-
-    res.status(201).json({ success: true, email: emailClean });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Verify a guest-submitted event (clicked email link) — moves it from pending_verify → pending (moderation)
-app.get('/api/events/guest-verify/:token', async (req, res) => {
-  try {
-    const { token } = req.params;
-    if (!token) return res.status(400).json({ error: 'Verification token missing.' });
-    const db = await getDb();
-    const verifyHash = hashToken(token);
-    const ev = await db.get("SELECT * FROM events WHERE submitter_verify_token_hash=? AND status='pending_verify'", [verifyHash]);
-    if (!ev) {
-      // Idempotent: maybe already verified — check if a token-match exists for an already-pending or approved event
-      const already = await db.get("SELECT id, status FROM events WHERE submitter_verify_token_hash=?", [verifyHash]);
-      if (already) return res.json({ success: true, alreadyVerified: true, eventId: already.id });
-      return res.status(400).json({ error: 'This verification link is invalid or has already been used. Check your email for a newer link or contact hello@nearandfarevents.com.' });
-    }
-    if (ev.submitter_verify_expires && new Date(ev.submitter_verify_expires) < new Date()) {
-      return res.status(400).json({ error: 'This verification link has expired. Please re-submit your event.' });
-    }
-    // Move to moderation queue + record verification time
-    await db.run("UPDATE events SET status='pending', submitter_verified_at=?, submitter_verify_token_hash='', submitter_verify_expires='' WHERE id=?", [new Date().toISOString(), ev.id]);
-    res.json({ success: true, eventName: ev.name });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Fetch event details for editing via magic manage link (guest)
-app.get('/api/events/manage/:token', async (req, res) => {
-  try {
-    const { token } = req.params;
-    if (!token) return res.status(400).json({ error: 'Manage token missing.' });
-    const db = await getDb();
-    const manageHash = hashToken(token);
-    const ev = await db.get("SELECT * FROM events WHERE submitter_manage_token_hash=?", [manageHash]);
-    if (!ev) return res.status(400).json({ error: 'This manage link is invalid. If your event was deleted, this link no longer works.' });
-    res.json({
-      id: ev.id, cat: ev.cat, name: ev.name, location: ev.location, date: ev.date,
-      time: ev.time, start_time: ev.start_time || '', end_time: ev.end_time || '', all_day: ev.all_day || 0,
-      price: ev.price, contact: ev.contact, zipcode: ev.zipcode,
-      affiliate_url: ev.affiliate_url, description: ev.description || '', status: ev.status,
-      submitter_name: ev.submitter_name, submitter_email: ev.submitter_email, submitter_phone: ev.submitter_phone
-    });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Update event via magic manage link
-app.put('/api/events/manage/:token', async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
-    if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
-    const db = await getDb();
-    const manageHash = hashToken(token);
-    const ev = await db.get("SELECT id, status FROM events WHERE submitter_manage_token_hash=?", [manageHash]);
-    if (!ev) return res.status(400).json({ error: 'Manage link is invalid.' });
-    const st = (start_time||'').toString().trim();
-    const et = (end_time||'').toString().trim();
-    const ad = all_day ? 1 : 0;
-    const eff = computeEffectiveEndAt(date, st, et, ad);
-    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
-    // After editing, send back through moderation for safety
-    const newStatus = ev.status === 'approved' ? 'pending' : ev.status;
-    await db.run(
-      `UPDATE events SET cat=?, name=?, location=?, date=?, time=?, start_time=?, end_time=?, all_day=?, effective_end_at=?, price=?, contact=?, zipcode=?, affiliate_url=?, description=?, status=? WHERE id=?`,
-      [cat||'other', name.trim(), location.trim(), date, timeDisplay, st, et, ad, eff, price?.trim()||'Free', contact?.trim()||'-', (zipcode||'').toString().trim()||'43764', (affiliate_url||'').trim(), cleanDescription(description), newStatus, ev.id]
-    );
-    res.json({ success: true, requeued: newStatus === 'pending' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Delete event via magic manage link
-app.delete('/api/events/manage/:token', async (req, res) => {
-  try {
-    const { token } = req.params;
-    const db = await getDb();
-    const manageHash = hashToken(token);
-    const ev = await db.get("SELECT id FROM events WHERE submitter_manage_token_hash=?", [manageHash]);
-    if (!ev) return res.status(400).json({ error: 'Manage link is invalid.' });
-    await db.run('DELETE FROM events WHERE id=?', [ev.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/events/bulk', requireAuth, async (req, res) => {
-  try {
-    const events = Array.isArray(req.body?.events) ? req.body.events : [];
-    if (!events.length) return res.status(400).json({ error: 'No events provided.' });
-    const db = await getDb();
-    const enabled = await getEnabledStates(db);
-    const skipState = !req.user.is_admin;
-    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
-    const status = (userRow && (userRow.is_admin || userRow.is_town_crier)) ? 'approved' : 'pending';
-    let inserted = 0, skipped = 0;
-    for (const ev of events) {
-      if (!ev.name?.trim() || !ev.location?.trim() || !ev.date) { skipped++; continue; }
-      // State restriction (non-admin)
-      if (skipState) {
-        const st = zipToState(ev.zipcode || '');
-        if (!st || !enabled.includes(st)) { skipped++; continue; }
-      }
-      const dup = await db.get("SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status!='pending'",
-        [ev.name.trim(), ev.date]);
-      if (dup) { skipped++; continue; }
-      const zip = (ev.zipcode || '').toString().trim() || '43764';
-      const _eff = computeEffectiveEndAt(ev.date, '', '', 0); // CSV bulk uses display-only time, default 4hr after end of day
-      await db.run(
-        'INSERT INTO events (cat,name,location,date,time,effective_end_at,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-        [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time?.trim()||'TBD', _eff, ev.price?.trim()||'Free', ev.contact?.trim()||'-', req.user.id, status, zip, (ev.affiliate_url||'').trim(), cleanDescription(ev.description)]
-      );
-      inserted++;
-    }
-    res.json({ inserted, skipped, pending: status === 'pending' });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/events/:id', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const ev = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
-    if (!ev) return res.status(404).json({ error: 'Event not found.' });
-    if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only edit events you posted.' });
-    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
-    if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
-    const st = (start_time||'').toString().trim();
-    const et = (end_time||'').toString().trim();
-    const ad = all_day ? 1 : 0;
-    const eff = computeEffectiveEndAt(date, st, et, ad);
-    const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
-    await db.run(
-      'UPDATE events SET cat=?,name=?,location=?,date=?,time=?,start_time=?,end_time=?,all_day=?,effective_end_at=?,price=?,contact=?,zipcode=?,affiliate_url=?,description=? WHERE id=?',
-      [cat||'other', name.trim(), location.trim(), date, timeDisplay, st, et, ad, eff, price?.trim()||'Free', contact?.trim()||'-', (zipcode||ev.zipcode||'43764').toString().trim(), (affiliate_url||'').trim(), cleanDescription(description), req.params.id]
-    );
-    res.json(await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [req.params.id]));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.delete('/api/events/:id', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const ev = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
-    if (!ev) return res.status(404).json({ error: 'Event not found.' });
-    if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only remove your own events.' });
-    // Audit log: only when an admin removes someone else's content (not self-deletions)
-    if (req.user.is_admin && ev.added_by !== req.user.id) {
-      const owner = await db.get('SELECT name, email FROM users WHERE id=?', [ev.added_by]);
-      await logRemovedItem(db, {
-        item_type: 'event', original_id: ev.id, item_name: ev.name,
-        item_date: ev.date, item_zipcode: ev.zipcode,
-        owner_user_id: ev.added_by, owner_name: owner?.name || ev.submitter_name || '', owner_email: owner?.email || ev.submitter_email || '',
-        removed_by: req.user.id, removed_by_name: req.user.name,
-        reason: req.body?.reason || '',
-        snapshot: { cat: ev.cat, name: ev.name, location: ev.location, date: ev.date, time: ev.time, price: ev.price, contact: ev.contact, zipcode: ev.zipcode, description: ev.description }
-      });
-    }
-    await db.run('DELETE FROM events WHERE id=?', [req.params.id]);
-    res.json({ success: true, id: Number(req.params.id) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-
-
-// ── ADMIN: Delete an advertiser (cancels their Stripe subscription if they have one) ──
-app.delete('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.params.id]);
-    if (!adv) return res.status(404).json({ error: 'Advertiser not found.' });
-    let stripeStatus = 'no_subscription';
-    if (adv.stripe_subscription_id && stripe) {
-      try {
-        await stripe.subscriptions.cancel(adv.stripe_subscription_id);
-        stripeStatus = 'cancelled';
-      } catch (e) {
-        // Subscription may already be cancelled or invalid; log + continue
-        console.error('Stripe cancel failed for adv ' + adv.id + ':', e.message);
-        stripeStatus = 'stripe_error_but_continued';
-      }
-    }
-    // Audit log
-    await logRemovedItem(db, {
-      item_type: 'advertiser', original_id: adv.id, item_name: adv.business_name || adv.name || '',
-      owner_user_id: null, owner_name: adv.name || '', owner_email: adv.email || '',
-      removed_by: req.user.id, removed_by_name: req.user.name,
-      reason: (req.body?.reason || '') + ' [stripe: ' + stripeStatus + ']',
-      snapshot: {
-        business_name: adv.business_name, tagline: adv.tagline, url: adv.url, phone: adv.phone,
-        tier: adv.tier, status: adv.status, stripe_subscription_id: adv.stripe_subscription_id,
-        stripe_customer_id: adv.stripe_customer_id
-      }
-    });
-    await db.run('DELETE FROM advertisers WHERE id=?', [adv.id]);
-    res.json({ success: true, stripeStatus });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADMIN: Manually add an advertisement (no Stripe required) ──
-app.post('/api/admin/advertisers/manual', requireAdmin, async (req, res) => {
-  try {
-    const { business_name, tagline, url, phone, tier, statewide_state } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-    const validTier = (tier === 'premium') ? 'premium' : 'basic';
-    const db = await getDb();
-    // Create a placeholder email + unusable password so the advertisers row is valid
-    const fakeEmail = `manual-${Date.now()}-${Math.random().toString(36).slice(2,8)}@nearandfarevents.local`;
-    const unusableHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
-    const r = await db.run(
-      `INSERT INTO advertisers (name, email, password_hash, business_name, tagline, url, status, tier, phone, email_verified)
-       VALUES (?,?,?,?,?,?,'active',?,?,1)`,
-      [(business_name||'').trim() + ' (manual)', fakeEmail, unusableHash, business_name.trim(),
-       (tagline||'').trim(), (url||'').trim(), validTier, (phone||'').trim()]
-    );
-    res.status(201).json({ success: true, id: r.lastID });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADMIN: Bulk remove all content by a specific user ──
-app.delete('/api/admin/users/:userId/all-content', requireAdmin, async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId, 10);
-    if (!userId) return res.status(400).json({ error: 'Invalid user ID.' });
-    const reason = (req.body?.reason || '').toString().slice(0, 500);
-    const db = await getDb();
-    const owner = await db.get('SELECT name, email FROM users WHERE id=?', [userId]);
-    if (!owner) return res.status(404).json({ error: 'User not found.' });
-
-    // Fetch + log all their events
-    const events = await db.all('SELECT * FROM events WHERE added_by=?', [userId]);
-    for (const ev of events) {
-      await logRemovedItem(db, {
-        item_type: 'event', original_id: ev.id, item_name: ev.name,
-        item_date: ev.date, item_zipcode: ev.zipcode,
-        owner_user_id: userId, owner_name: owner.name, owner_email: owner.email,
-        removed_by: req.user.id, removed_by_name: req.user.name,
-        reason: 'Bulk removal: ' + reason,
-        snapshot: { cat: ev.cat, name: ev.name, location: ev.location, date: ev.date, time: ev.time, price: ev.price, contact: ev.contact, zipcode: ev.zipcode, description: ev.description }
-      });
-    }
-
-    // Fetch + log all their listings (if listings table exists)
-    let listings = [];
-    try { listings = await db.all('SELECT * FROM listings WHERE user_id=?', [userId]); } catch(_) {}
-    for (const ls of listings) {
-      await logRemovedItem(db, {
-        item_type: 'listing', original_id: ls.id, item_name: ls.business_name || ls.name || '',
-        item_zipcode: ls.zipcode || '',
-        owner_user_id: userId, owner_name: owner.name, owner_email: owner.email,
-        removed_by: req.user.id, removed_by_name: req.user.name,
-        reason: 'Bulk removal: ' + reason,
-        snapshot: { ...ls }
-      });
-    }
-
-    // Now delete
-    await db.run('DELETE FROM events WHERE added_by=?', [userId]);
-    try { await db.run('DELETE FROM listings WHERE user_id=?', [userId]); } catch(_) {}
-
-    res.json({ success: true, events_removed: events.length, listings_removed: listings.length });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADMIN: Search users by name/email (for picker in bulk-remove flow) ──
-app.get('/api/admin/users/search', requireAdmin, async (req, res) => {
-  try {
-    const q = (req.query.q || '').toString().trim();
-    if (q.length < 2) return res.json([]);
-    const db = await getDb();
-    const like = '%' + q + '%';
-    const rows = await db.all(
-      "SELECT id, name, email, phone, is_admin, is_town_crier, created_at, (SELECT COUNT(*) FROM events WHERE added_by=users.id) AS event_count FROM users WHERE (name LIKE ? OR email LIKE ? OR phone LIKE ?) AND email != 'guest@nearandfarevents.system' ORDER BY name LIMIT 15",
-      [like, like, like]
-    );
-    res.json(rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-
-// ── ADMIN: Set/clear statewide visibility for a listing ──
-app.put('/api/admin/listings/:id/statewide', requireAdmin, async (req, res) => {
-  try {
-    const { state } = req.body || {};
-    const stateCode = (state || '').toString().trim().toUpperCase();
-    if (stateCode && stateCode.length !== 2) return res.status(400).json({ error: 'State must be a 2-letter US state code, or empty to clear.' });
-    const db = await getDb();
-    await db.run('UPDATE listings SET statewide_state=? WHERE id=?', [stateCode, req.params.id]);
-    res.json({ success: true, statewide_state: stateCode });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADMIN: View removed items log ──
-app.get('/api/admin/removed-items', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
-    const rows = await db.all('SELECT id, item_type, original_id, item_name, item_date, item_zipcode, owner_user_id, owner_name, owner_email, removed_by, removed_by_name, reason, removed_at FROM removed_items ORDER BY removed_at DESC LIMIT ?', [limit]);
-    res.json(rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADMIN: Aggregate pending counts (events + listings) for top-bar pill ──
-app.get('/api/admin/pending-count', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const evs = await db.get("SELECT COUNT(*) AS n FROM events WHERE status='pending'");
-    let lst = { n: 0 };
-    try { lst = await db.get("SELECT COUNT(*) AS n FROM listings WHERE status='pending'"); } catch(_) {}
-    res.json({ events: evs.n || 0, listings: lst.n || 0, total: (evs.n || 0) + (lst.n || 0) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── MANUAL SPONSORS (admin) ──
-app.get('/api/sponsors', async (req, res) => {
-  try { const db = await getDb(); res.json(await db.all('SELECT * FROM sponsors ORDER BY id')); }
-  catch(e) { res.status(500).json({ error: e.message }); }
-});
-app.post('/api/sponsors', requireAdmin, async (req, res) => {
-  try {
-    const { name, tagline, url } = req.body || {};
-    if (!name?.trim()) return res.status(400).json({ error: 'Name required.' });
-    const db = await getDb();
-    const r = await db.run('INSERT INTO sponsors (name,tagline,url) VALUES (?,?,?)', [name.trim(), tagline||'', url||'']);
-    res.status(201).json(await db.get('SELECT * FROM sponsors WHERE id=?', [r.lastID]));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-app.put('/api/sponsors/:id', requireAdmin, async (req, res) => {
-  try {
-    const { name, tagline, url } = req.body || {};
-    const db = await getDb();
-    await db.run('UPDATE sponsors SET name=?,tagline=?,url=? WHERE id=?', [name||'', tagline||'', url||'', req.params.id]);
-    res.json(await db.get('SELECT * FROM sponsors WHERE id=?', [req.params.id]));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-app.delete('/api/sponsors/:id', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run('DELETE FROM sponsors WHERE id=?', [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── COMBINED DISPLAY SPONSORS (manual + active advertisers) ──
-// ── BANNER ADS (sponsor bar): basic-tier advertisers + manual sponsors. Premium tier does NOT appear here. ──
-app.get('/api/display/sponsors', async (req, res) => {
-  try {
-    const db = await getDb();
-    const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
-    const banner = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' ORDER BY id");
-    res.json([...manual, ...banner]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── POPUP ADS (in-event sponsored card): premium-tier advertisers only. ──
-app.get('/api/display/popup-ads', async (req, res) => {
-  try {
-    const db = await getDb();
-    const popup = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='premium' ORDER BY id");
-    res.json(popup);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADVERTISER AUTH ──
-app.post('/api/advertiser/register', async (req, res) => {
-  try {
-    const { name, email, password, business_name, tagline, url, phone } = req.body || {};
-    if (!name?.trim() || !email?.trim() || !password || !business_name?.trim())
-      return res.status(400).json({ error: 'Name, email, password, and business name are required.' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
-    const db = await getDb();
-    if (await db.get('SELECT id FROM advertisers WHERE email=?', [email.toLowerCase()]))
-      return res.status(409).json({ error: 'That email is already registered.' });
-    // Enforce 5-spot limit for event popup ads
-    const activeCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active'")).c;
-    const hash = bcrypt.hashSync(password, 10);
-    const r = await db.run(
-      'INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url,phone) VALUES (?,?,?,?,?,?,?)',
-      [name.trim(), email.toLowerCase(), hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'']
-    );
-    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [r.lastID]);
-    const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
-    res.status(201).json({ token, advertiser: safeAdv(adv) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/advertiser/login', async (req, res) => {
-  try {
-    const { email, password } = req.body || {};
-    const db = await getDb();
-    const adv = await db.get('SELECT * FROM advertisers WHERE email=?', [email?.toLowerCase()]);
-    if (!adv || !bcrypt.compareSync(password||'', adv.password_hash))
-      return res.status(401).json({ error: 'Incorrect email or password.' });
-    const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
-    res.json({ token, advertiser: safeAdv(adv) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.get('/api/advertiser/me', requireAdvertiser, async (req, res) => {
-  try {
-    const db = await getDb();
-    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
-    if (!adv) return res.status(404).json({ error: 'Account not found.' });
-    res.json(safeAdv(adv));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/advertiser/me', requireAdvertiser, async (req, res) => {
-  try {
-    const { business_name, tagline, url, phone } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-    const db = await getDb();
-    await db.run('UPDATE advertisers SET business_name=?,tagline=?,url=?,phone=? WHERE id=?',
-      [business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'', req.advertiser.id]);
-    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
-    res.json(safeAdv(adv));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Create Stripe checkout session
-app.post('/api/advertiser/checkout', requireAdvertiser, async (req, res) => {
-  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
-  try {
-    const { tier } = req.body || {};
-    const isPremium = tier === 'premium';
-    const priceId   = isPremium ? STRIPE_PRICE_PREMIUM : STRIPE_PRICE_BASIC;
-    if (!priceId) return res.status(503).json({ error: `Price not configured for ${tier} tier.` });
-
-    const db = await getDb();
-
-    // Premium tier: enforce 5-spot limit
-    if (isPremium) {
-      const premCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='premium'")).c;
-      if (premCount >= 5) return res.status(409).json({ error: 'All 5 premium ad spots are taken. Please join the waitlist.' });
-    }
-
-    // Update advertiser tier before checkout
-    await db.run('UPDATE advertisers SET tier=? WHERE id=?', [isPremium ? 'premium' : 'basic', req.advertiser.id]);
-
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      metadata: { advertiser_id: String(req.advertiser.id), tier: isPremium ? 'premium' : 'basic' },
-      success_url: `${SITE_URL}/advertise?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${SITE_URL}/advertise?cancelled=true`,
-    });
-    res.json({ url: session.url });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Cancel subscription
-app.post('/api/advertiser/cancel', requireAdvertiser, async (req, res) => {
-  try {
-    const db  = await getDb();
-    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
-    if (!adv) return res.status(404).json({ error: 'Account not found.' });
-    if (adv.status === 'cancelled') return res.json({ success: true, message: 'Already cancelled.' });
-
-    // If there's a Stripe subscription, try to cancel it (non-fatal if already gone)
-    if (adv.stripe_subscription_id && stripe) {
-      try {
-        await stripe.subscriptions.cancel(adv.stripe_subscription_id);
-      } catch (stripeErr) {
-        // Subscription may already be cancelled or never finalized — log and continue
-        console.warn('Stripe cancel non-fatal:', stripeErr.message);
-      }
-    }
-
-    await db.run("UPDATE advertisers SET status='cancelled', stripe_subscription_id='' WHERE id=?", [req.advertiser.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Re-check Stripe to confirm if a pending payment actually completed.
-// Useful if user got back from Stripe but verify-session never fired
-// (e.g., expired token, closed tab, network blip).
-app.post('/api/advertiser/refresh-status', requireAdvertiser, async (req, res) => {
-  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
-  try {
-    const db  = await getDb();
-    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
-    if (!adv) return res.status(404).json({ error: 'Account not found.' });
-
-    // If we know the customer, look for an active subscription on Stripe
-    if (adv.stripe_customer_id) {
-      const subs = await stripe.subscriptions.list({ customer: adv.stripe_customer_id, status: 'all', limit: 10 });
-      const live = subs.data.find(s => s.status === 'active' || s.status === 'trialing');
-      if (live) {
-        await db.run("UPDATE advertisers SET status='active', stripe_subscription_id=? WHERE id=?", [live.id, req.advertiser.id]);
-        const fresh = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
-        return res.json({ success: true, changed: true, advertiser: safeAdv(fresh) });
-      }
-    }
-
-    // No completed payment found
-    res.json({ success: true, changed: false, advertiser: safeAdv(adv) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADMIN: ADVERTISER MANAGEMENT ──
-// Returns all advertisers (with stripe info so admin UI can show sub status)
-app.get('/api/admin/advertisers', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,phone,tier,status,stripe_customer_id,stripe_subscription_id,created_at FROM advertisers ORDER BY created_at DESC');
-    res.json(rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.patch('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
-  try {
-    const { status } = req.body || {};
-    if (!['pending','active','paused','cancelled'].includes(status)) return res.status(400).json({ error: 'Invalid status.' });
-    const db = await getDb();
-    await db.run('UPDATE advertisers SET status=? WHERE id=?', [status, req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-function safeAdv(a) {
-  return { id:a.id, name:a.name, email:a.email, business_name:a.business_name, tagline:a.tagline, url:a.url, phone:a.phone||'', tier:a.tier||'basic', status:a.status, created_at:a.created_at };
-}
-
-app.get('/advertise',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
-app.get('/directory',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'directory.html')));
-// Email verification + password reset landing pages — served by index.html which handles the URL params client-side
-app.get('/verify',         (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/reset-password', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-// Guest event verification + management landing pages
-app.get('/verify-event',   (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/manage-event',   (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-
-// ── LEGAL PAGES (clean URLs + the .html versions both work via static middleware) ──
-const _legal = (file) => (_req, res) => {
-  const fpath = path.join(__dirname, 'public', 'legal', file);
-  res.sendFile(fpath, (err) => {
-    if (err) {
-      console.error(`Legal page not found: ${file}`, err.message);
-      res.status(404).type('html').send(`
-        <!DOCTYPE html><html><head><title>Legal Page Missing</title></head>
-        <body style="font-family:system-ui;max-width:560px;margin:60px auto;padding:0 20px;line-height:1.5">
-          <h1>Legal Page Not Found</h1>
-          <p>The file <code>public/legal/${file}</code> hasn't been uploaded to the server yet.</p>
-          <p>If you're the site owner: make sure the <code>public/legal/</code> folder and all 8 .html files are in your GitHub repo, then redeploy.</p>
-          <p><a href="/">← Back to home</a></p>
-        </body></html>
-      `);
-    }
-  });
-};
-app.get('/privacy',                 _legal('privacy.html'));
-app.get('/terms',                   _legal('terms.html'));
-app.get('/affiliate-disclosure',    _legal('affiliate-disclosure.html'));
-app.get('/cookies',                 _legal('cookies.html'));
-app.get('/community-guidelines',    _legal('community-guidelines.html'));
-app.get('/dmca',                    _legal('dmca.html'));
-app.get('/accessibility',           _legal('accessibility.html'));
-app.get('/contact',                 _legal('contact.html'));
-
-// ── LISTING AUTH ──
-function requireListing(req, res, next) {
-  const h = req.headers.authorization;
-  if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Authentication required.' });
-  try {
-    const decoded = jwt.verify(h.split(' ')[1], SECRET);
-    if (decoded.type !== 'listing') return res.status(403).json({ error: 'Listing access required.' });
-    req.listing = decoded;
-    next();
-  } catch { res.status(401).json({ error: 'Session expired.' }); }
-}
-
-// GET /api/listings (public)
-app.get('/api/listings', async (req, res) => {
-  const _zipcodeParam = (req.query.zipcode || '').toString().trim();
-  const _zipState = zipToState(_zipcodeParam);
-  try {
-    const db = await getDb();
-    let isAdmin = false;
-    const auth = req.headers.authorization;
-    if (auth && auth.startsWith('Bearer ')) {
-      try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; } catch(_) {}
-    }
-    const zipcode = (req.query.zipcode||'').toString().trim();
-    const rows = zipcode
-      ? await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,created_at FROM listings WHERE status='active' AND zipcode=? ORDER BY business_name ASC", [zipcode])
-      : await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,created_at FROM listings WHERE status='active' ORDER BY business_name ASC");
-    if (!isAdmin) {
-      const enabled = await getEnabledStates(db);
-      const filtered = rows.filter(r => {
-        const st = zipToState(r.zipcode);
-        return st && enabled.includes(st);
-      });
-      return res.json(filtered);
-    }
-    // Merge in statewide listings for this zip's state (if any)
-    if (_zipState) {
-      try {
-        const stateRows = await db.all("SELECT * FROM listings WHERE statewide_state=? AND status='approved' AND id NOT IN (SELECT id FROM listings WHERE zipcode=?)", [_zipState, _zipcodeParam]);
-        if (stateRows && stateRows.length) rows = rows.concat(stateRows);
-      } catch(_) {}
-    }
-    res.json(rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── UNIFIED AUTH LISTINGS ENDPOINTS (uses calendar user auth) ──
-
-// GET /api/listings/my - returns listings owned by current calendar user
-app.get('/api/listings/my', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all('SELECT * FROM listings WHERE user_id=? ORDER BY created_at DESC', [req.user.id]);
-    res.json(rows.map(safeListing));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/listings/create - create a listing tied to the calendar user (pending until paid)
-// LEGACY: paid listing creation (kept for backward compat)
-app.post('/api/listings/create-paid', requireAuth, async (req, res) => {
-  // Original logic preserved for any existing paid flow
-  return res.status(410).json({ error: 'Paid listings are no longer required. Use /api/listings/create-free instead.' });
-});
-
-// NEW: free listing creation (all listings are now free)
-// (statewide_state is admin-only; ignored on public submission)
-app.post('/api/listings/create-free', requireAuth, async (req, res) => {
-  try {
-    const { business_name, category, phone, website, address, description, zipcode } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-    const db = await getDb();
-    // Validate zipcode state (skip for admin)
-    if (!req.user.is_admin) {
-      const zipState = zipToState(zipcode);
-      const enabled = await getEnabledStates(db);
-      if (!zipState || !enabled.includes(zipState)) {
-        return res.status(403).json({ error: `Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: ${enabled.join(', ')}.` });
-      }
-    }
-    const placeholderEmail = `user-${req.user.id}-${Date.now()}@nearandfarevents.local`;
-    const placeholderPwd = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
-    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
-    const skipReview = !!(userRow && (userRow.is_admin || userRow.is_town_crier));
-    const status = skipReview ? 'active' : 'pending_review';
-    const expiresAt = new Date(); expiresAt.setFullYear(expiresAt.getFullYear() + 5); // long expiry since free
-    const zip = (zipcode || '').toString().trim() || '43764';
-    const r = await db.run(
-      `INSERT INTO listings (user_id, owner_name, owner_email, password_hash, business_name, category, phone, website, address, description, status, zipcode, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        req.user.id, req.user.name || business_name.trim(), placeholderEmail, placeholderPwd,
-        business_name.trim(), category || 'other', (phone||'').trim(), (website||'').trim(),
-        (address||'').trim(), (description||'').trim(), status, zip, expiresAt.toISOString()
-      ]
-    );
-    const listing = await db.get('SELECT * FROM listings WHERE id=?', [r.lastID]);
-    res.json({ ...safeListing(listing), pending_approval: !skipReview });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/listings/create', requireAuth, async (req, res) => {
-  try {
-    const { business_name, category, phone, website, address, description } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-    const db = await getDb();
-    const placeholderEmail = `user-${req.user.id}-${Date.now()}@nearandfarevents.local`;
-    const placeholderPwd = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
-    // Town Criers and admins skip 'pending_review' status after payment;
-    // others land in 'pending_review' after payment (admin must approve)
-    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
-    const skipReview = !!(userRow && (userRow.is_admin || userRow.is_town_crier));
-    const r = await db.run(
-      `INSERT INTO listings (user_id, owner_name, owner_email, password_hash, business_name, category, phone, website, address, description, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [
-        req.user.id, req.user.name || business_name.trim(), placeholderEmail, placeholderPwd,
-        business_name.trim(), category || 'other', (phone||'').trim(), (website||'').trim(),
-        (address||'').trim(), (description||'').trim()
-      ]
-    );
-    const listing = await db.get('SELECT * FROM listings WHERE id=?', [r.lastID]);
-    res.json({ ...safeListing(listing), skip_review: skipReview });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/listings/:id/checkout - start Stripe checkout for a user's listing
-app.post('/api/listings/:id/checkout', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const listing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [req.params.id, req.user.id]);
-    if (!listing) return res.status(404).json({ error: 'Listing not found.' });
-    if (!process.env.STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe is not configured.' });
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: [{ price: process.env.STRIPE_PRICE_LISTING, quantity: 1 }],
-      success_url: `${process.env.SITE_URL || 'https://www.nearandfarevents.com'}/directory?listing_paid=1&session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
-      cancel_url: `${process.env.SITE_URL || 'https://www.nearandfarevents.com'}/directory?listing_canceled=1`,
-      metadata: { listing_id: String(listing.id), user_id: String(req.user.id) }
-    });
-    res.json({ url: session.url });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/listings/my/verify-session - verify Stripe checkout and activate
-app.post('/api/listings/my/verify-session', requireAuth, async (req, res) => {
-  try {
-    const { session_id, listing_id } = req.body || {};
-    if (!session_id || !listing_id) return res.status(400).json({ error: 'Missing session_id or listing_id.' });
-    if (!process.env.STRIPE_SECRET_KEY) return res.status(500).json({ error: 'Stripe is not configured.' });
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    if (session.payment_status !== 'paid') return res.status(400).json({ error: 'Payment not completed.' });
-    const db = await getDb();
-    const listing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [listing_id, req.user.id]);
-    if (!listing) return res.status(404).json({ error: 'Listing not found.' });
-    // Town Criers and admins go live immediately; others go to 'pending_review' for admin approval
-    const userRow = await db.get('SELECT is_admin, is_town_crier FROM users WHERE id=?', [req.user.id]);
-    const skipReview = !!(userRow && (userRow.is_admin || userRow.is_town_crier));
-    const newStatus = skipReview ? 'active' : 'pending_review';
-    const expiresAt = new Date(); expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-    await db.run('UPDATE listings SET status=?, expires_at=? WHERE id=?', [newStatus, expiresAt.toISOString(), listing_id]);
-    const updated = await db.get('SELECT * FROM listings WHERE id=?', [listing_id]);
-    res.json({ ...safeListing(updated), pending_approval: !skipReview });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// PUT /api/listings/my/:id - user can edit their own listing
-app.put('/api/listings/my/:id', requireAuth, async (req, res) => {
-  try {
-    const { business_name, category, phone, website, address, description, zipcode } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-    const db = await getDb();
-    const existing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [req.params.id, req.user.id]);
-    if (!existing) return res.status(404).json({ error: 'Listing not found.' });
-    await db.run(
-      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=?,zipcode=? WHERE id=?',
-      [
-        business_name.trim(), category || 'other', (phone||'').trim(), (website||'').trim(),
-        (address||'').trim(), (description||'').trim(), (zipcode||existing.zipcode||'43764').toString().trim(),
-        req.params.id
-      ]
-    );
-    const updated = await db.get('SELECT * FROM listings WHERE id=?', [req.params.id]);
-    res.json(safeListing(updated));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/listings/my/:id/cancel - user can cancel their own listing
-app.post('/api/listings/my/:id/cancel', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const existing = await db.get('SELECT * FROM listings WHERE id=? AND user_id=?', [req.params.id, req.user.id]);
-    if (!existing) return res.status(404).json({ error: 'Listing not found.' });
-    await db.run("UPDATE listings SET status='expired' WHERE id=?", [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── LEGACY: Original listing auth endpoints (kept for backward compat) ──
-
-// POST /api/listings/register
-app.post('/api/listings/register', async (req, res) => {
-  try {
-    const { owner_name, owner_email, password, business_name, category, phone, website, address, description } = req.body || {};
-    if (!owner_name?.trim() || !owner_email?.trim() || !password || !business_name?.trim())
-      return res.status(400).json({ error: 'Name, email, password, and business name are required.' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
-    const db = await getDb();
-    if (await db.get('SELECT id FROM listings WHERE owner_email=?', [owner_email.toLowerCase()]))
-      return res.status(409).json({ error: 'That email is already registered.' });
-    const hash = bcrypt.hashSync(password, 10);
-    const r = await db.run(
-      'INSERT INTO listings (owner_name,owner_email,password_hash,business_name,category,phone,website,address,description) VALUES (?,?,?,?,?,?,?,?,?)',
-      [owner_name.trim(), owner_email.toLowerCase(), hash, business_name.trim(),
-       category||'other', phone?.trim()||'', website?.trim()||'', address?.trim()||'', description?.trim()||'']
-    );
-    const listing = await db.get('SELECT * FROM listings WHERE id=?', [r.lastID]);
-    const token = jwt.sign({ type:'listing', id: listing.id, email: listing.owner_email, business_name: listing.business_name }, SECRET, { expiresIn: '30d' });
-    res.status(201).json({ token, listing: safeListing(listing) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/listings/login
-app.post('/api/listings/login', async (req, res) => {
-  try {
-    const { email, password } = req.body || {};
-    const db = await getDb();
-    const listing = await db.get('SELECT * FROM listings WHERE owner_email=?', [email?.toLowerCase()]);
-    if (!listing || !bcrypt.compareSync(password||'', listing.password_hash))
-      return res.status(401).json({ error: 'Incorrect email or password.' });
-    const token = jwt.sign({ type:'listing', id: listing.id, email: listing.owner_email, business_name: listing.business_name }, SECRET, { expiresIn: '30d' });
-    res.json({ token, listing: safeListing(listing) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// GET /api/listings/me
-app.get('/api/listings/me', requireListing, async (req, res) => {
-  try {
-    const db = await getDb();
-    const listing = await db.get('SELECT * FROM listings WHERE id=?', [req.listing.id]);
-    if (!listing) return res.status(404).json({ error: 'Listing not found.' });
-    res.json(safeListing(listing));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// PUT /api/listings/me
-app.put('/api/listings/me', requireListing, async (req, res) => {
-  try {
-    const { business_name, category, phone, website, address, description } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-    const db = await getDb();
-    await db.run(
-      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=? WHERE id=?',
-      [business_name.trim(), category||'other', phone?.trim()||'', website?.trim()||'', address?.trim()||'', description?.trim()||'', req.listing.id]
-    );
-    const listing = await db.get('SELECT * FROM listings WHERE id=?', [req.listing.id]);
-    res.json(safeListing(listing));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/listings/checkout (one-time payment)
-app.post('/api/listings/checkout', requireListing, async (req, res) => {
-  if (!stripe || !STRIPE_PRICE_LISTING) return res.status(503).json({ error: 'Payment not configured. Contact hello@nearandfarevents.com' });
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: [{ price: STRIPE_PRICE_LISTING, quantity: 1 }],
-      metadata: { listing_id: String(req.listing.id) },
-      success_url: `${SITE_URL}/directory?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${SITE_URL}/directory?cancelled=true`,
-    });
-    res.json({ url: session.url });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/listings/cancel (marks as expired - no subscription to cancel)
-app.post('/api/listings/cancel', requireListing, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run("UPDATE listings SET status='expired' WHERE id=?", [req.listing.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Admin: get enabled states + per-state counts
-app.get('/api/admin/states', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const enabled = await getEnabledStates(db);
-    // Get all distinct zipcodes that have content to compute per-state counts
-    const evRows = await db.all("SELECT DISTINCT zipcode FROM events WHERE zipcode IS NOT NULL AND zipcode != ''");
-    const lsRows = await db.all("SELECT DISTINCT zipcode FROM listings WHERE zipcode IS NOT NULL AND zipcode != ''");
-    const userRows = await db.all("SELECT DISTINCT home_zipcode FROM users WHERE home_zipcode IS NOT NULL AND home_zipcode != ''");
-    const stateStats = {};
-    for (const r of evRows) {
-      const st = zipToState(r.zipcode);
-      if (st) { stateStats[st] = stateStats[st] || { events: 0, listings: 0, users: 0 }; stateStats[st].events++; }
-    }
-    for (const r of lsRows) {
-      const st = zipToState(r.zipcode);
-      if (st) { stateStats[st] = stateStats[st] || { events: 0, listings: 0, users: 0 }; stateStats[st].listings++; }
-    }
-    for (const r of userRows) {
-      const st = zipToState(r.home_zipcode);
-      if (st) { stateStats[st] = stateStats[st] || { events: 0, listings: 0, users: 0 }; stateStats[st].users++; }
-    }
-    res.json({ enabled, stateStats });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/admin/states', requireAdmin, async (req, res) => {
-  try {
-    const { states } = req.body || {};
-    if (!Array.isArray(states)) return res.status(400).json({ error: 'states must be an array' });
-    const cleaned = states.map(s => String(s).trim().toUpperCase()).filter(s => /^[A-Z]{2}$/.test(s));
-    const db = await getDb();
-    const value = cleaned.join(',');
-    await db.run(
-      'INSERT INTO settings (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
-      ['enabled_states', value]
-    );
-    _enabledStatesCache = null; // invalidate cache
-    res.json({ success: true, enabled: cleaned });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Public endpoint: which states are currently live (for user-facing error messages)
-app.get('/api/enabled-states', async (req, res) => {
-  try {
-    const db = await getDb();
-    const enabled = await getEnabledStates(db);
-    res.json({ enabled });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Notifications for current user (admins: pending counts; users: new events in their zipcodes)
-app.get('/api/notifications', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const u = await db.get('SELECT id,is_admin,home_zipcode,notify_zipcodes,last_seen_events FROM users WHERE id=?', [req.user.id]);
-    if (!u) return res.status(404).json({ error: 'User not found.' });
-    const result = { admin: !!u.is_admin, items: [], count: 0 };
-    if (u.is_admin) {
-      // Admin: pending events + listings + bulk submissions
-      const pendingEvents = await db.all("SELECT e.id, e.name, e.date, e.zipcode, u.name AS submitter FROM events e LEFT JOIN users u ON u.id=e.added_by WHERE e.status='pending' ORDER BY e.created_at DESC LIMIT 20");
-      const pendingListings = await db.all("SELECT l.id, l.business_name, l.zipcode, u.name AS submitter FROM listings l LEFT JOIN users u ON u.id=l.user_id WHERE l.status IN ('pending','pending_review') ORDER BY l.created_at DESC LIMIT 20");
-      pendingEvents.forEach(e => result.items.push({ type: 'pending_event', id: e.id, title: `New event: ${e.name}`, sub: `${e.zipcode} · submitted by ${e.submitter || 'someone'}`, action: 'approvals' }));
-      pendingListings.forEach(l => result.items.push({ type: 'pending_listing', id: l.id, title: `New business: ${l.business_name}`, sub: `${l.zipcode || ''} · submitted by ${l.submitter || 'someone'}`, action: 'approvals' }));
-      result.count = result.items.length;
-    } else {
-      // Regular user: new events in subscribed zipcodes since last_seen_events
-      const zips = new Set([u.home_zipcode || '43764']);
-      (u.notify_zipcodes || '').split(',').map(z => z.trim()).filter(Boolean).forEach(z => zips.add(z));
-      const since = u.last_seen_events || new Date(Date.now() - 7*24*60*60*1000).toISOString(); // default: last 7 days
-      const placeholders = [...zips].map(() => '?').join(',');
-      const newEvents = await db.all(
-        `SELECT e.id, e.name, e.date, e.location, e.zipcode FROM events e WHERE e.status='approved' AND e.zipcode IN (${placeholders}) AND e.created_at > ? ORDER BY e.created_at DESC LIMIT 30`,
-        [...zips, since]
-      );
-      newEvents.forEach(e => result.items.push({ type: 'new_event', id: e.id, title: e.name, sub: `${e.location} · ${new Date(e.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${e.zipcode}`, action: 'event' }));
-      result.count = result.items.length;
-      result.zipcodes = [...zips];
-    }
-    res.json(result);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Mark notifications as seen (updates last_seen_events timestamp)
-app.put('/api/notifications/mark-seen', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run('UPDATE users SET last_seen_events=? WHERE id=?', [new Date().toISOString(), req.user.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Update notify_zipcodes (comma-separated list)
-app.put('/api/notifications/zipcodes', requireAuth, async (req, res) => {
-  try {
-    const { zipcodes } = req.body || {};
-    const cleaned = (Array.isArray(zipcodes) ? zipcodes : (zipcodes||'').split(','))
-      .map(z => String(z).trim()).filter(z => /^\d{5}$/.test(z))
-      .filter((z, i, arr) => arr.indexOf(z) === i)
-      .join(',');
-    const db = await getDb();
-    await db.run('UPDATE users SET notify_zipcodes=? WHERE id=?', [cleaned, req.user.id]);
-    res.json({ success: true, notify_zipcodes: cleaned });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Get all distinct zipcodes with their event counts (for zipcode picker)
-app.get('/api/zipcodes', async (req, res) => {
-  try {
-    const db = await getDb();
-    let isAdmin = false;
-    const auth = req.headers.authorization;
-    if (auth && auth.startsWith('Bearer ')) {
-      try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; } catch(_) {}
-    }
-    const evRows = await db.all("SELECT zipcode, COUNT(*) as count FROM events WHERE status='approved' AND date >= date('now') GROUP BY zipcode ORDER BY count DESC");
-    const lsRows = await db.all("SELECT zipcode, COUNT(*) as count FROM listings WHERE status='active' GROUP BY zipcode");
-    const combined = {};
-    evRows.forEach(r => { combined[r.zipcode] = { zipcode: r.zipcode, events: r.count, listings: 0 }; });
-    lsRows.forEach(r => {
-      if (combined[r.zipcode]) combined[r.zipcode].listings = r.count;
-      else combined[r.zipcode] = { zipcode: r.zipcode, events: 0, listings: r.count };
-    });
-    let list = Object.values(combined);
-    // Filter to only enabled states (non-admin)
-    if (!isAdmin) {
-      const enabled = await getEnabledStates(db);
-      list = list.filter(o => {
-        const st = zipToState(o.zipcode);
-        return st && enabled.includes(st);
-      });
-    }
-    res.json(list.sort((a, b) => (b.events + b.listings) - (a.events + a.listings)));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Admin: get all listings
-app.get('/api/admin/listings', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    res.json(await db.all('SELECT * FROM listings ORDER BY created_at DESC'));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ADMIN APPROVAL ENDPOINTS ──
-
-// Get all pending events
-app.get('/api/admin/pending-events', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all(`
-      SELECT e.*, u.name AS submitter_name, u.email AS submitter_email
-      FROM events e LEFT JOIN users u ON e.added_by = u.id
-      WHERE e.status='pending' ORDER BY e.created_at DESC
-    `);
-    res.json(rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Approve a pending event
-app.put('/api/admin/events/:id/approve', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run("UPDATE events SET status='approved' WHERE id=?", [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Reject (delete) a pending event
-app.delete('/api/admin/events/:id/reject', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run('DELETE FROM events WHERE id=?', [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Get all pending listings (paid but awaiting approval)
-app.get('/api/admin/pending-listings', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all(`
-      SELECT l.*, u.name AS submitter_name, u.email AS submitter_email
-      FROM listings l LEFT JOIN users u ON l.user_id = u.id
-      WHERE l.status IN ('pending_review','pending') ORDER BY l.created_at DESC
-    `);
-    res.json(rows.map(safeListing));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Approve a pending listing
-app.delete('/api/admin/listings/:id/reject', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run('DELETE FROM listings WHERE id=?', [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/admin/listings/:id/approve', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run("UPDATE listings SET status='active' WHERE id=?", [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Get all users (for Town Crier management)
-app.get('/api/admin/users', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all(`
-      SELECT id, name, email, is_admin, is_town_crier, created_at,
-        (SELECT COUNT(*) FROM events WHERE added_by = users.id AND status='approved') AS approved_events_count,
-        (SELECT COUNT(*) FROM listings WHERE user_id = users.id) AS listings_count
-      FROM users ORDER BY created_at DESC
-    `);
-    res.json(rows);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Promote / demote Town Crier
-app.put('/api/admin/users/:id/town-crier', requireAdmin, async (req, res) => {
-  try {
-    const { is_town_crier } = req.body || {};
-    const db = await getDb();
-    await db.run('UPDATE users SET is_town_crier=? WHERE id=?', [is_town_crier ? 1 : 0, req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Get current user's Town Crier status (used by frontend to show badge)
-app.get('/api/auth/me', requireAuth, async (req, res) => {
-  try {
-    const db = await getDb();
-    const u = await db.get('SELECT id,name,email,phone,address,is_admin,is_town_crier,home_zipcode FROM users WHERE id=?', [req.user.id]);
-    if (!u) return res.status(404).json({ error: 'User not found.' });
-    if (u.email && u.email.endsWith('@local.placeholder')) u.email = '';
-    res.json(u);
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Admin: hard-delete a listing
-app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    await db.run('DELETE FROM listings WHERE id=?', [req.params.id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Admin: create a new listing (no payment required)
-app.post('/api/admin/listings', requireAdmin, async (req, res) => {
-  try {
-    const { business_name, category, phone, website, address, description, owner_email, owner_name } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-
-    const db = await getDb();
-
-    // Generate placeholder email if not provided
-    let email = (owner_email || '').trim().toLowerCase();
-    if (!email) {
-      email = `admin-${Date.now()}-${crypto.randomBytes(3).toString('hex')}@nearandfarevents.local`;
-    }
-
-    // Check email uniqueness
-    const existing = await db.get('SELECT id FROM listings WHERE owner_email=?', [email]);
-    if (existing) return res.status(400).json({ error: 'A listing with that email already exists.' });
-
-    // Random password (admin-created listings aren't meant for owner login by default)
-    const randomPwd = crypto.randomBytes(16).toString('hex');
-    const hash = await bcrypt.hash(randomPwd, 10);
-
-    // 1-year expiration
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-
-    const result = await db.run(
-      `INSERT INTO listings
-       (owner_name, owner_email, password_hash, business_name, category, phone, website, address, description, status, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
-      [
-        (owner_name || '').trim() || business_name.trim(),
-        email,
-        hash,
-        business_name.trim(),
-        category || 'other',
-        (phone || '').trim(),
-        (website || '').trim(),
-        (address || '').trim(),
-        (description || '').trim(),
-        expiresAt.toISOString()
-      ]
-    );
-
-    const listing = await db.get('SELECT * FROM listings WHERE id=?', [result.lastID]);
-    res.json(safeListing(listing));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Admin: edit any listing
-app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
-  try {
-    const { business_name, category, phone, website, address, description, status } = req.body || {};
-    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
-    const db = await getDb();
-    const existing = await db.get('SELECT * FROM listings WHERE id=?', [req.params.id]);
-    if (!existing) return res.status(404).json({ error: 'Listing not found.' });
-    await db.run(
-      'UPDATE listings SET business_name=?,category=?,phone=?,website=?,address=?,description=?,status=? WHERE id=?',
-      [
-        business_name.trim(),
-        category || 'other',
-        phone?.trim() || '',
-        website?.trim() || '',
-        address?.trim() || '',
-        description?.trim() || '',
-        status || existing.status,
-        req.params.id
-      ]
-    );
-    const updated = await db.get('SELECT * FROM listings WHERE id=?', [req.params.id]);
-    res.json(safeListing(updated));
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-function safeListing(l) {
-  return { id:l.id, owner_name:l.owner_name, owner_email:l.owner_email, business_name:l.business_name,
-    category:l.category, phone:l.phone||'', website:l.website||'', address:l.address||'',
-    description:l.description||'', status:l.status, expires_at:l.expires_at||'', created_at:l.created_at };
-}
-
-// ── SESSION VERIFICATION (replaces webhook reliance) ──
-// Verify listing payment after Stripe redirect
-app.post('/api/listings/verify-session', requireListing, async (req, res) => {
-  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
-  try {
-    const { session_id } = req.body || {};
-    if (!session_id) return res.status(400).json({ error: 'Session ID required.' });
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    if (session.metadata?.listing_id !== String(req.listing.id))
-      return res.status(403).json({ error: 'Session does not match this listing.' });
-    if (session.payment_status !== 'paid')
-      return res.status(400).json({ error: 'Payment not completed yet.' });
-    const db = await getDb();
-    const expires = new Date();
-    expires.setFullYear(expires.getFullYear() + 1);
-    await db.run(
-      "UPDATE listings SET status='active', stripe_customer_id=?, expires_at=? WHERE id=?",
-      [session.customer || '', expires.toISOString(), req.listing.id]
-    );
-    const listing = await db.get('SELECT * FROM listings WHERE id=?', [req.listing.id]);
-    res.json({ success: true, listing: safeListing(listing) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Verify advertiser payment after Stripe redirect
-app.post('/api/advertiser/verify-session', requireAdvertiser, async (req, res) => {
-  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
-  try {
-    const { session_id } = req.body || {};
-    if (!session_id) return res.status(400).json({ error: 'Session ID required.' });
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    if (session.metadata?.advertiser_id !== String(req.advertiser.id))
-      return res.status(403).json({ error: 'Session does not match this advertiser.' });
-    if (session.payment_status !== 'paid')
-      return res.status(400).json({ error: 'Payment not completed yet.' });
-    const db = await getDb();
-    await db.run(
-      "UPDATE advertisers SET status='active', stripe_customer_id=?, stripe_subscription_id=? WHERE id=?",
-      [session.customer || '', session.subscription || '', req.advertiser.id]
-    );
-    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
-    res.json({ success: true, advertiser: safeAdv(adv) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── ICAL DOWNLOAD WITH EMBEDDED SPONSOR ──
-function parseEventTime(timeStr, dateStr) {
-  if (!timeStr || timeStr === 'TBD' || /all\s*day/i.test(timeStr)) return { allDay: true };
-  const parseT = (h, m, ampm) => {
-    let hh = parseInt(h, 10);
-    const mm = parseInt(m || '0', 10);
-    if (ampm && /pm/i.test(ampm) && hh < 12) hh += 12;
-    if (ampm && /am/i.test(ampm) && hh === 12) hh = 0;
-    return { h: hh, m: mm };
-  };
-  const rangeMatch = timeStr.match(/(\d{1,2}):?(\d{0,2})\s*(AM|PM)?\s*[-\u2013to]+\s*(\d{1,2}):?(\d{0,2})\s*(AM|PM)?/i);
-  if (rangeMatch) {
-    const s = parseT(rangeMatch[1], rangeMatch[2], rangeMatch[3] || rangeMatch[6]);
-    const e = parseT(rangeMatch[4], rangeMatch[5], rangeMatch[6]);
-    const startDt = new Date(dateStr + 'T00:00:00');
-    const endDt   = new Date(dateStr + 'T00:00:00');
-    startDt.setHours(s.h, s.m, 0, 0);
-    endDt.setHours(e.h, e.m, 0, 0);
-    return { start: startDt, end: endDt, allDay: false };
+  if (p.get('cancelled') === 'true') {
+    banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment was cancelled. No charge was made. <a href="#portalSection" style="color:var(--amber-dk);font-weight:600">Try again</a></div>`;
+    window.history.replaceState({}, '', '/advertise');
   }
-  const singleMatch = timeStr.match(/(\d{1,2}):?(\d{0,2})\s*(AM|PM)?/i);
-  if (singleMatch) {
-    const t = parseT(singleMatch[1], singleMatch[2], singleMatch[3]);
-    const startDt = new Date(dateStr + 'T00:00:00');
-    startDt.setHours(t.h, t.m, 0, 0);
-    const endDt = new Date(startDt.getTime() + 2 * 3600 * 1000);
-    return { start: startDt, end: endDt, allDay: false };
-  }
-  return { allDay: true };
 }
 
-function fmtICS(date) {
-  return date.getFullYear() +
-    String(date.getMonth() + 1).padStart(2, '0') +
-    String(date.getDate()).padStart(2, '0') + 'T' +
-    String(date.getHours()).padStart(2, '0') +
-    String(date.getMinutes()).padStart(2, '0') + '00';
-}
-
-function escICS(text) {
-  return String(text || '')
-    .replace(/\\/g, '\\\\')
-    .replace(/;/g, '\\;')
-    .replace(/,/g, '\\,')
-    .replace(/\n/g, '\\n');
-}
-
-app.get('/api/events/:id/ical', async (req, res) => {
+// Verify the Stripe session and activate the advertiser
+async function verifySession(sessionId) {
+  const banner = document.getElementById('alertBanner');
+  banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">⏳ Activating your ad…</div>`;
   try {
-    const db = await getDb();
-    const event = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
-    if (!event) return res.status(404).send('Event not found');
-
-    // Pick a random premium advertiser to embed
-    const premiums = await db.all("SELECT * FROM advertisers WHERE status='active' AND tier='premium'");
-    const sponsor = premiums.length ? premiums[Math.floor(Math.random() * premiums.length)] : null;
-
-    const t = parseEventTime(event.time, event.date);
-
-    // Build description with event details + sponsor
-    let desc = '';
-    if (event.contact && event.contact !== '-') desc += `Contact: ${event.contact}\n`;
-    if (event.price)   desc += `Price: ${event.price}\n`;
-    if (event.time && event.time !== 'TBD') desc += `Time: ${event.time}\n`;
-    desc += '\nFull details at https://www.nearandfarevents.com\n';
-    if (sponsor) {
-      desc += '\n----------------------------------------\n';
-      desc += `📢 SPONSORED BY: ${sponsor.business_name}\n`;
-      if (sponsor.tagline) desc += `${sponsor.tagline}\n`;
-      if (sponsor.phone)   desc += `📞 Call: ${sponsor.phone}\n`;
-      if (sponsor.url)     desc += `🌐 Visit: ${sponsor.url}\n`;
-      desc += '\nThank you for supporting our community sponsors!';
-    }
-
-    let ics = '';
-    ics += 'BEGIN:VCALENDAR\r\n';
-    ics += 'VERSION:2.0\r\n';
-    ics += 'PRODID:-//NearAndFarEvents//EN\r\n';
-    ics += 'CALSCALE:GREGORIAN\r\n';
-    ics += 'METHOD:PUBLISH\r\n';
-    ics += 'BEGIN:VEVENT\r\n';
-    ics += `UID:event-${event.id}-${Date.now()}@nearandfarevents.com\r\n`;
-    ics += `DTSTAMP:${fmtICS(new Date())}\r\n`;
-    if (t.allDay) {
-      const startDate = event.date.replace(/-/g, '');
-      const next = new Date(event.date + 'T00:00:00');
-      next.setDate(next.getDate() + 1);
-      const endDate = next.toISOString().split('T')[0].replace(/-/g, '');
-      ics += `DTSTART;VALUE=DATE:${startDate}\r\n`;
-      ics += `DTEND;VALUE=DATE:${endDate}\r\n`;
-    } else {
-      ics += `DTSTART:${fmtICS(t.start)}\r\n`;
-      ics += `DTEND:${fmtICS(t.end)}\r\n`;
-    }
-    ics += `SUMMARY:${escICS(event.name)}\r\n`;
-    ics += `LOCATION:${escICS(event.location)}\r\n`;
-    ics += `DESCRIPTION:${escICS(desc)}\r\n`;
-    ics += `URL:https://www.nearandfarevents.com\r\n`;
-    ics += 'END:VEVENT\r\n';
-    ics += 'END:VCALENDAR\r\n';
-
-    const filename = event.name.replace(/[^a-z0-9]+/gi, '_').slice(0, 50) || 'event';
-    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}.ics"`);
-    res.send(ics);
+    const result = await api('/api/advertiser/verify-session', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId })
+    });
+    advertiser = result.advertiser;
+    localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    renderPortal();
+    banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Your ad is now live on the community calendar!</div>`;
   } catch(e) {
-    console.error('iCal generation failed:', e);
-    res.status(500).send('Could not generate calendar file.');
+    banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment received but auto-activation failed (${esc(e.message)}). Click <strong>"Already paid? Check status"</strong> below to retry, or email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a>.</div>`;
   }
-});
+}
 
-app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+async function refreshAdvertiser() {
+  try {
+    advertiser = await api('/api/advertiser/me');
+    localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    renderPortal();
+  } catch(e) {
+    if (e.message.includes('expired') || e.message.includes('required')) {
+      clearSession(); renderPortal();
+    }
+  }
+}
 
-getDb().then(() => app.listen(PORT, () => console.log('NewLex Calendar on port ' + PORT)))
-  .catch(err => { console.error('DB init failed:', err); process.exit(1); });
+function renderNav() {
+  const el = document.getElementById('navUser');
+  if (advertiser) {
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:100px;padding:5px 6px 5px 14px;box-shadow:0 2px 8px rgba(99,102,241,.08)">
+        <span style="font-size:13px;color:#fff;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(advertiser.business_name)}</span>
+        <button onclick="doLogout()" style="font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border-md);color:var(--text2);cursor:pointer;border-radius:100px;font-weight:600">Log out</button>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <button class="register-btn" onclick="showAuthAndScroll('register')">Register</button>
+      <button class="signin-btn" onclick="showAuthAndScroll('signin')">Sign In</button>`;
+  }
+}
+
+function renderPortal() {
+  renderNav();
+  if (!advertiser) {
+    renderAuthForm('register');
+  } else {
+    renderDashboard();
+    loadSpotsRemaining();
+  }
+}
+
+/* ── AUTH FORMS ── */
+function showAuthAndScroll(tab) {
+  renderAuthForm(tab);
+  // Scroll smoothly to the form
+  const card = document.getElementById('portalCard');
+  if (card) {
+    setTimeout(() => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+}
+function renderAuthForm(tab) {
+  document.getElementById('portalTitle').textContent = tab === 'register' ? 'Register Your Business' : 'Returning Advertiser';
+  document.getElementById('portalSub').textContent   = tab === 'register' ? 'Set up your business advertiser account — separate from the community calendar, just for businesses buying ad space.' : 'Sign in to manage your listing and subscription.';
+  document.getElementById('portalCard').innerHTML = `
+    <div class="auth-tabs">
+      <button class="auth-tab ${tab==='register'?'on':''}" onclick="renderAuthForm('register')">Register Your Business</button>
+      <button class="auth-tab ${tab==='login'?'on':''}"    onclick="renderAuthForm('login')">Returning Advertiser</button>
+    </div>
+    ${tab === 'register' ? `
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Create your business advertiser account below. This is separate from the community calendar and is for businesses purchasing ad space only.</p>
+      <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="aName" placeholder="Your full name"></div>
+      <div class="field"><label>Business Email <span class="req">*</span></label><input type="email" id="aEmail" placeholder="you@yourbusiness.com"></div>
+      <div class="field"><label>Password (6+ chars) <span class="req">*</span></label><input type="password" id="aPass"></div>
+      <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="aBiz" placeholder="Your business or organization name"></div>
+      <div class="field"><label>Tagline</label><input type="text" id="aTag" placeholder="Short description shown under your business name"></div>
+      <div class="field"><label>Business Phone</label><input type="tel" id="aPhone" placeholder="(740) 555-1234"></div>
+      <div class="field"><label>Website URL</label><input type="text" id="aUrl" placeholder="https://yourbusiness.com"></div>
+      <div class="form-actions">
+        <button class="btn-amber" onclick="doRegister()">Register My Business →</button>
+      </div>
+    ` : `
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Welcome back. Sign in to manage your listing and subscription.</p>
+      <div class="field"><label>Business Email</label><input type="email" id="aEmail" placeholder="you@yourbusiness.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="aPass"></div>
+      <div class="form-actions">
+        <button class="btn-amber" onclick="doLogin()">Sign In →</button>
+      </div>
+    `}
+    <div class="err-msg" id="authErr"></div>`;
+}
+
+async function doRegister() {
+  try {
+    const payload = {
+      name: document.getElementById('aName').value.trim(),
+      email: document.getElementById('aEmail').value.trim(),
+      password: document.getElementById('aPass').value,
+      business_name: document.getElementById('aBiz').value.trim(),
+      tagline: document.getElementById('aTag').value.trim(),
+      phone: document.getElementById('aPhone')?.value.trim() || '',
+      url: document.getElementById('aUrl').value.trim(),
+    };
+    const { token, advertiser: adv } = await api('/api/advertiser/register', { method:'POST', body:JSON.stringify(payload) });
+    setSession(token, adv);
+    renderPortal();
+  } catch(e) { document.getElementById('authErr').textContent = e.message; }
+}
+
+async function doLogin() {
+  try {
+    const { token, advertiser: adv } = await api('/api/advertiser/login', { method:'POST', body:JSON.stringify({
+      email: document.getElementById('aEmail').value.trim(),
+      password: document.getElementById('aPass').value,
+    })});
+    setSession(token, adv);
+    renderPortal();
+  } catch(e) { document.getElementById('authErr').textContent = e.message; }
+}
+
+function doLogout() { clearSession(); renderPortal(); }
+
+/* ── DASHBOARD ── */
+function renderDashboard() {
+  document.getElementById('portalTitle').textContent = 'Your Advertiser Dashboard';
+  document.getElementById('portalSub').textContent   = 'Manage your listing and subscription.';
+
+  const adv    = advertiser;
+  const status = adv.status;
+  const statusLabels = { active:'● Live', pending:'● Pending Payment', paused:'● Payment Failed', cancelled:'● Cancelled' };
+  const statusClass  = { active:'active', pending:'pending', paused:'paused', cancelled:'cancelled' };
+
+  document.getElementById('portalCard').innerHTML = `
+    <span class="status-pill ${statusClass[status]||'pending'}">${statusLabels[status]||status}</span>
+
+    ${status === 'active' ? '' : `
+      <div class="alert alert-warning" style="margin-bottom:20px">
+        ${status === 'pending'   ? '💳 Your listing is ready — complete payment below to go live.' : ''}
+        ${status === 'paused'    ? '⚠️ Your last payment failed. Update your payment method to reactivate.' : ''}
+        ${status === 'cancelled' ? '🔄 Your subscription was cancelled. Subscribe again to go live.' : ''}
+      </div>
+    `}
+
+    <!-- Live Preview -->
+    <div class="dash-section">
+      <div class="dash-label">Live Preview</div>
+      <div class="live-preview">
+        <span class="lp-label">📢 Sponsors</span>
+        <div class="lp-card" id="previewCard">
+          <div class="lp-name" id="prevName">${esc(adv.business_name)}</div>
+          <div class="lp-tag" id="prevTag">${esc(adv.tagline||'')}</div>
+          ${adv.url?`<span class="lp-url" id="prevUrl">Visit Website →</span>`:'<span class="lp-url" id="prevUrl" style="display:none">Visit Website →</span>'}
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Edit Listing -->
+    <div class="dash-section">
+      <div class="dash-label">Edit Your Listing</div>
+      <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="eBiz" value="${esc(adv.business_name)}" oninput="updatePreview()"></div>
+      <div class="field"><label>Tagline</label><input type="text" id="eTag" value="${esc(adv.tagline||'')}" placeholder="Short description" oninput="updatePreview()"></div>
+      <div class="field"><label>Business Phone</label><input type="tel" id="ePh" value="${esc(adv.phone||'')}" placeholder="(740) 555-1234"></div>
+      <div class="field"><label>Website URL</label><input type="text" id="eUrl" value="${esc(adv.url||'')}" placeholder="https://..."></div>
+      <button class="btn-navy" style="width:100%;margin-top:4px" onclick="saveEdits()">Save Changes</button>
+      <div class="ok-msg"  id="editOk"></div>
+      <div class="err-msg" id="editErr"></div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Subscription -->
+    <div class="dash-section">
+      <div class="dash-label">Subscription — $${adv.tier === 'premium' ? '50' : '25'} / month</div>
+      ${status === 'active' ? `
+        <p style="font-size:14px;color:var(--text2);margin-bottom:6px">Your subscription is active. Your card is charged <strong>$${adv.tier === 'premium' ? '50' : '25'}/month</strong> automatically on your billing date.</p>
+        <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6">To cancel, click the button below. Your ad will remain live until the end of your current billing period — no partial refunds.</p>
+        <button class="btn-danger" style="width:100%" onclick="confirmCancel('active')">Cancel My Subscription</button>
+        <div class="err-msg" id="cancelErr"></div>
+      ` : status === 'pending' ? `
+        <p style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.6">Your listing is created but waiting for payment.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="tierSelector">
+          <div id="tierBasic" onclick="selectTier('basic')" style="border:2px solid ${adv.tier === 'basic' ? 'var(--amber)' : 'var(--border-md)'};border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center;background:${adv.tier === 'basic' ? 'var(--amber-lt)' : 'transparent'}">
+            <div style="font-size:18px;font-weight:700;color:var(--text)">$25<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-top:2px">Sponsor Bar</div>
+          </div>
+          <div id="tierPremium" onclick="selectTier('premium')" style="border:2px solid ${adv.tier === 'premium' ? 'var(--amber)' : 'var(--border-md)'};border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center;background:${adv.tier === 'premium' ? 'var(--amber-lt)' : 'transparent'}">
+            <div style="font-size:18px;font-weight:700;color:var(--amber-dk)">$50<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--amber-dk);margin-top:2px">⭐ Event Popup Ad</div>
+          </div>
+        </div>
+        <p style="font-size:13px;font-weight:700;color:var(--amber-dk);margin-bottom:10px" id="spotsRemaining"></p>
+        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0;margin-bottom:10px" onclick="startCheckout()" id="checkoutBtn">💳 Complete Payment</button>
+        <button class="btn-ghost" style="width:100%;font-size:13px;padding:9px 0;margin-bottom:10px;border:1.5px solid var(--border-md)" onclick="refreshStatusFromStripe()" id="refreshBtn">🔄 Already paid? Check status</button>
+        <div class="ok-msg" id="refreshOk"></div>
+        <div class="err-msg" id="refreshErr"></div>
+        <hr class="divider" style="margin:14px 0">
+        <p style="font-size:13px;color:var(--text3);margin-bottom:10px;line-height:1.5">Changed your mind? You haven't been charged. Cancel this pending listing and your account will be closed.</p>
+        <button class="btn-danger" style="width:100%;font-size:13px;padding:9px 0" onclick="confirmCancel('pending')">Cancel This Listing</button>
+        <div class="err-msg" id="cancelErr"></div>
+      ` : status === 'paused' ? `
+        <p style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.6">⚠️ Your last payment failed. Reactivate below or cancel your account.</p>
+        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0;margin-bottom:10px" onclick="startCheckout()">🔄 Reactivate Subscription</button>
+        <button class="btn-danger" style="width:100%;font-size:13px;padding:9px 0" onclick="confirmCancel('paused')">Cancel Subscription</button>
+        <div class="err-msg" id="cancelErr"></div>
+      ` : `
+        <!-- Tier Selector -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="tierSelector">
+          <div id="tierBasic" onclick="selectTier('basic')" style="border:2px solid var(--border-md);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center">
+            <div style="font-size:18px;font-weight:700;color:var(--text)">$25<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-top:2px">Sponsor Bar</div>
+          </div>
+          <div id="tierPremium" onclick="selectTier('premium')" style="border:2px solid var(--amber);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center;background:var(--amber-lt)">
+            <div style="font-size:18px;font-weight:700;color:var(--amber-dk)">$50<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--amber-dk);margin-top:2px">⭐ Event Popup Ad</div>
+          </div>
+        </div>
+        <p style="font-size:13px;font-weight:700;color:var(--amber-dk);margin-bottom:10px" id="spotsRemaining">⚡ Limited to 5 event ad spots — checking availability…</p>
+        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0" onclick="startCheckout()" id="checkoutBtn">
+          💳 Subscribe Now
+        </button>
+        <p style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6">
+          🔄 <strong>Recurring monthly charge.</strong> Your card is billed automatically each month. Cancel any time from this dashboard — your ad stays live until the end of the billing period. No contracts, no setup fees.
+        </p>
+        <div class="err-msg" id="checkoutErr"></div>
+      `}
+    </div>`;
+}
+
+function updatePreview() {
+  const name = document.getElementById('eBiz')?.value || '';
+  const tag  = document.getElementById('eTag')?.value || '';
+  if (document.getElementById('prevName')) document.getElementById('prevName').textContent = name;
+  if (document.getElementById('prevTag'))  document.getElementById('prevTag').textContent  = tag;
+}
+
+async function saveEdits() {
+  try {
+    const updated = await api('/api/advertiser/me', { method:'PUT', body: JSON.stringify({
+      business_name: document.getElementById('eBiz').value.trim(),
+      tagline:       document.getElementById('eTag').value.trim(),
+      phone:         document.getElementById('ePh')?.value.trim() || '',
+      url:           document.getElementById('eUrl').value.trim(),
+    })});
+    advertiser = { ...advertiser, ...updated };
+    localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    document.getElementById('editOk').textContent  = '✓ Saved!';
+    document.getElementById('editErr').textContent = '';
+    setTimeout(() => { const el = document.getElementById('editOk'); if(el) el.textContent=''; }, 3000);
+  } catch(e) { document.getElementById('editErr').textContent = e.message; }
+}
+
+async function loadSpotsRemaining() {
+  try {
+    const all = await fetch('/api/display/sponsors').then(r=>r.json());
+    const taken = all.filter(s => s.source === 'advertiser' && s.tier === 'premium').length;
+    const remaining = 5 - taken;
+    const el = document.getElementById('spotsRemaining');
+    if (el) {
+      if (remaining <= 0) {
+        el.textContent = '🔴 All 5 event ad spots are taken — select Sponsor Bar or join waitlist.';
+        el.style.color = 'var(--danger)';
+      } else {
+        el.textContent = `⚡ Only ${remaining} of 5 event ad spot${remaining===1?'':'s'} remaining!`;
+        el.style.color = remaining <= 2 ? 'var(--danger)' : 'var(--amber-dk)';
+      }
+    }
+    // Apply initial tier selection
+    selectTier(selectedTier);
+  } catch(e) { console.error(e); }
+}
+
+function selectTier(tier) {
+  selectedTier = tier;
+  const basic   = document.getElementById('tierBasic');
+  const premium = document.getElementById('tierPremium');
+  const btn     = document.getElementById('checkoutBtn');
+  if (!basic || !premium) return;
+  if (tier === 'premium') {
+    premium.style.borderColor = 'var(--amber)';
+    premium.style.background  = 'var(--amber-lt)';
+    basic.style.borderColor   = 'var(--border-md)';
+    basic.style.background    = '';
+    if (btn) btn.textContent  = '💳 Subscribe — $50/month';
+  } else {
+    basic.style.borderColor   = 'var(--amber)';
+    basic.style.background    = 'var(--amber-lt)';
+    premium.style.borderColor = 'var(--border-md)';
+    premium.style.background  = '';
+    if (btn) btn.textContent  = '💳 Subscribe — $25/month';
+  }
+}
+
+async function startCheckout() {
+  try {
+    const { url } = await api('/api/advertiser/checkout', { method:'POST', body: JSON.stringify({ tier: selectedTier }) });
+    window.location.href = url;
+  } catch(e) {
+    const el = document.getElementById('checkoutErr');
+    if (el) el.textContent = e.message;
+  }
+}
+
+async function confirmCancel(currentState) {
+  // State-specific confirmation messages
+  const messages = {
+    active:  'Cancel your subscription? Your ad will stay live until the end of the current billing period. After that, your listing will be removed and you will not be charged again. Continue?',
+    pending: "Cancel this pending listing? You haven't been charged, and your account will be closed. You can register again any time. Continue?",
+    paused:  'Cancel this subscription? Your ad is currently not running and you will not be charged again. Continue?'
+  };
+  const msg = messages[currentState] || 'Cancel your subscription?';
+  if (!confirm(msg)) return;
+  try {
+    await api('/api/advertiser/cancel', { method:'POST' });
+    advertiser.status = 'cancelled';
+    advertiser.stripe_subscription_id = '';
+    localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    const banner = document.getElementById('alertBanner');
+    if (banner) {
+      const txt = currentState === 'pending'
+        ? '✓ Pending listing cancelled. You can subscribe again any time below.'
+        : '✓ Subscription cancelled. Your card will not be charged again.';
+      banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">${txt}</div>`;
+      setTimeout(() => { banner.innerHTML = ''; }, 6000);
+    }
+    renderPortal();
+  } catch(e) {
+    const el = document.getElementById('cancelErr');
+    if (el) el.textContent = e.message;
+  }
+}
+
+// "Already paid? Check status" — re-checks Stripe in case verify-session
+// never fired (closed tab, expired token, etc.)
+async function refreshStatusFromStripe() {
+  const okEl  = document.getElementById('refreshOk');
+  const errEl = document.getElementById('refreshErr');
+  const btn   = document.getElementById('refreshBtn');
+  if (okEl)  okEl.textContent = '';
+  if (errEl) errEl.textContent = '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Checking with Stripe…'; }
+  try {
+    const r = await api('/api/advertiser/refresh-status', { method:'POST' });
+    if (r.changed) {
+      advertiser = r.advertiser;
+      localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+      if (okEl) okEl.textContent = '🎉 Payment confirmed! Your ad is now live.';
+      setTimeout(() => renderPortal(), 1200);
+    } else {
+      if (errEl) errEl.textContent = "We didn't find a completed payment. If you just paid, give it a minute and try again. If you're sure you paid, email hello@nearandfarevents.com.";
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 Already paid? Check status'; }
+    }
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Already paid? Check status'; }
+  }
+}
+
+function scrollToPortal(tier) {
+  if (tier) selectedTier = tier;
+  document.getElementById('portalSection').scrollIntoView({ behavior: 'smooth' });
+  // If already logged in, update the selected tier display
+  if (advertiser) renderDashboard();
+}
+
+// ── INACTIVITY AUTO-LOGOUT (30 min) ──
+let inactivityTimer = null;
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  if (!advertiser) return;
+  inactivityTimer = setTimeout(() => {
+    doLogout();
+    showInactivityNotice();
+  }, 30 * 60 * 1000);
+}
+function showInactivityNotice() {
+  const notice = document.createElement('div');
+  notice.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;padding:12px 22px;border-radius:8px;z-index:9999;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:90%;text-align:center';
+  notice.textContent = '⏱️ You have been logged out due to inactivity.';
+  document.body.appendChild(notice);
+  setTimeout(() => notice.remove(), 5000);
+}
+['mousedown','keypress','scroll','touchstart','click'].forEach(evt =>
+  document.addEventListener(evt, resetInactivityTimer, { passive: true })
+);
+
+// Init
+checkURLParams();
+if (advToken) {
+  refreshAdvertiser().then(() => { renderPortal(); resetInactivityTimer(); });
+} else {
+  renderPortal();
+}
+</script>
+
+<!-- ── SITE FOOTER ── -->
+<footer id="site-footer" style="margin-top:60px;padding:32px 20px;border-top:1px solid var(--border);background:rgba(255,255,255,0.5);backdrop-filter:blur(8px);font-size:13px;color:var(--text3);text-align:center;line-height:1.65">
+  <div style="font-family:var(--font-head);font-weight:700;font-size:16px;margin-bottom:10px">
+    <span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span>
+    <span class="brand-grad">Near and Far Events</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:0 2px;margin-bottom:14px;max-width:680px;margin-left:auto;margin-right:auto;line-height:2">
+    <a href="/privacy" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Privacy</a><span style="color:var(--border-md)">·</span>
+    <a href="/terms" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Terms</a><span style="color:var(--border-md)">·</span>
+    <a href="/affiliate-disclosure" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Affiliate Disclosure</a><span style="color:var(--border-md)">·</span>
+    <a href="/cookies" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Cookies</a><span style="color:var(--border-md)">·</span>
+    <a href="/community-guidelines" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Community Guidelines</a><span style="color:var(--border-md)">·</span>
+    <a href="/dmca" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">DMCA</a><span style="color:var(--border-md)">·</span>
+    <a href="/accessibility" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Accessibility</a><span style="color:var(--border-md)">·</span>
+    <a href="/contact" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Contact</a>
+  </div>
+  <div style="color:var(--text3);font-size:12px">© 2026 Near and Far Events LLC. All rights reserved.</div>
+</footer>
+
+<!-- ── COOKIE CONSENT BANNER ── -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:18px;left:18px;right:18px;max-width:520px;margin:0 auto;background:rgba(255,255,255,0.97);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1.5px solid var(--border-md);border-radius:14px;padding:16px 18px;z-index:9999;box-shadow:0 8px 28px rgba(99,102,241,.18),0 4px 14px rgba(236,72,153,.10),0 0 0 4px rgba(99,102,241,.05);font-size:13px;line-height:1.5;color:var(--text)">
+  <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+    <span style="font-size:18px;line-height:1">🍪</span>
+    <div style="flex:1">
+      <strong style="display:block;font-size:14px;margin-bottom:2px;color:var(--text)">We use cookies</strong>
+      <span style="color:var(--text2)">Essential cookies keep you signed in. Analytics cookies (Google Analytics) help us improve. You choose. <a href="/cookies" style="color:var(--amber-dk);font-weight:600">Learn more</a></span>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button onclick="cookieConsent('decline')" style="font-size:12px;padding:7px 14px;border-radius:100px;background:var(--surface);border:1.5px solid var(--border-md);color:var(--text2);cursor:pointer;font-weight:700;font-family:var(--font-body)">Decline analytics</button>
+    <button onclick="cookieConsent('accept')" style="font-size:12px;padding:7px 14px;border-radius:100px;background:var(--gradient);border:1.5px solid transparent;color:#fff;cursor:pointer;font-weight:700;font-family:var(--font-body);box-shadow:0 2px 6px rgba(99,102,241,.20)">Accept all</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY = 'nf_cookies';
+  const choice = localStorage.getItem(KEY);
+  const banner = document.getElementById('cookieBanner');
+  if (!choice && banner) {
+    setTimeout(() => { banner.style.display = 'block'; }, 800);
+  }
+  // If user previously declined, disable Google Analytics on every load
+  if (choice === 'decline' && typeof window['gtag'] === 'function') {
+    // Disable GA: standard opt-out
+    try { window['ga-disable-G-XXXXXXXXXX'] = true; } catch(_) {}
+  }
+})();
+function cookieConsent(action){
+  localStorage.setItem('nf_cookies', action);
+  const b = document.getElementById('cookieBanner');
+  if (b) b.style.display = 'none';
+  if (action === 'decline') {
+    try { window['ga-disable-G-XXXXXXXXXX'] = true; } catch(_) {}
+  }
+}
+</script>
+
+
+
+<!-- SHARED SPONSOR BAR (banner ads) -->
+<div id="sponsorBar">
+  <div id="sponCards"></div>
+</div>
+<script>
+// ── Shared sponsor bar loader ──
+async function loadSharedSponsorBar(){
+  try {
+    const sponsors = await fetch('/api/display/sponsors').then(r=>r.json()).catch(()=>[]);
+    const wrap = document.getElementById('sponCards');
+    if (!wrap) return;
+    let html = '';
+    (sponsors||[]).forEach(s => {
+      const url = s.url ? (s.url.startsWith('http') ? s.url : 'https://' + s.url) : '';
+      html += '<div class="spon-card">' +
+        '<div class="spon-name">' + (s.name||'').replace(/</g,'&lt;') + '</div>' +
+        (s.tagline ? '<div class="spon-tag">' + (s.tagline||'').replace(/</g,'&lt;') + '</div>' : '') +
+        (url ? '<a class="spon-link" href="' + url + '" target="_blank" rel="noopener">Visit &rarr;</a>' : '') +
+      '</div>';
+    });
+    html += '<div class="spon-card advertise-card" onclick="window.location.href=\'/advertise\'">' +
+      '<div class="spon-name" style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">+ Advertise Here</div>' +
+      '<div class="spon-tag">Reach Your Community &mdash; $25/mo</div>' +
+      '<span class="spon-link">Learn more &rarr;</span>' +
+    '</div>';
+    wrap.innerHTML = html;
+  } catch(_) {}
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadSharedSponsorBar);
+} else {
+  loadSharedSponsorBar();
+}
+</script>
+</body>
+</html>
