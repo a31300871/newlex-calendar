@@ -359,11 +359,70 @@ nav::after{
   .signin-btn,.register-btn{font-size:10px;padding:4px 7px}
 }
 .hdr-right{gap:6px !important}
+
+
+/* ── DARK MODE ── */
+[data-theme="dark"]{
+  --cream:#0F172A; --surface:#1E293B; --surface2:#334155;
+  --text:#F1F5F9; --text2:#CBD5E1; --text3:#94A3B8;
+  --border:#334155; --border-md:#475569;
+  --amber-lt:rgba(99,102,241,.18);
+}
+[data-theme="dark"] body{
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.18), transparent 50%),
+    radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.14), transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.10), transparent 50%) !important;
+}
+[data-theme="dark"] nav{background:rgba(15,23,42,0.85) !important;border-bottom-color:var(--border) !important}
+[data-theme="dark"] .nav-brand,[data-theme="dark"] .user-name{color:var(--text) !important}
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{background:var(--surface) !important;color:var(--text) !important;border-color:var(--border-md) !important}
+[data-theme="dark"] .listing-row,[data-theme="dark"] .modal-box,[data-theme="dark"] .featured-wrap,[data-theme="dark"] .adv-card,[data-theme="dark"] .preview-bar,[data-theme="dark"] .preview-card,[data-theme="dark"] .live-preview,[data-theme="dark"] .lp-card,[data-theme="dark"] .portal-card,[data-theme="dark"] .pricing-card,[data-theme="dark"] .popup-preview-shell,[data-theme="dark"] .dir-preview-inner{background:var(--surface) !important;color:var(--text) !important;border-color:var(--border-md) !important}
+[data-theme="dark"] .fp,[data-theme="dark"] .search-wrap,[data-theme="dark"] footer{background:var(--surface) !important;color:var(--text) !important}
+[data-theme="dark"] footer a{color:var(--text2) !important}
+[data-theme="dark"] #cookieBanner{background:rgba(30,41,59,0.97) !important;color:var(--text) !important}
+[data-theme="dark"] .draft-banner{background:linear-gradient(135deg,#78350F,#92400E) !important;color:#FDE68A !important}
+.theme-toggle{
+  background:var(--surface);border:1.5px solid var(--border-md);
+  border-radius:100px;padding:6px 12px;cursor:pointer;
+  font-size:13px;font-weight:700;color:var(--text2);
+  font-family:var(--font-body);transition:all .2s;
+  margin-right:6px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.theme-toggle:hover{background:var(--amber-lt);color:var(--amber-dk);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10)}
+
+
 </style>
 
 <!-- Google Analytics 4 (GA4) — Replace G-XXXXXXXXXX with your own Measurement ID -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
 <script>
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (label) label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('nf_theme', next);
+  applyTheme(next);
+}
+(function(){
+  try {
+    const saved = localStorage.getItem('nf_theme');
+    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  } catch(_) {}
+  document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('nf_theme') || 'light';
+    applyTheme(saved);
+  });
+})();
+
+
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
