@@ -194,24 +194,180 @@ function requireAdvertiser(req, res, next) {
 }
 
 // ── USER AUTH ──
+// ──────────────────────────────────────────────────────────
+// EMAIL SERVICE — sends transactional emails via Resend API
+// Falls back to console.log if RESEND_API_KEY isn't set (dev/test)
+// ──────────────────────────────────────────────────────────
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Near and Far Events <hello@nearandfarevents.com>';
+const PUBLIC_URL = process.env.SITE_URL || 'https://www.nearandfarevents.com';
+
+async function sendEmail({ to, subject, html, text }) {
+  if (!to) throw new Error('No recipient');
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log(`[EMAIL MOCK] To: ${to} | Subject: ${subject}\n${text || html.replace(/<[^>]+>/g,'')}\n---`);
+    return { id: 'mock-' + Date.now(), mock: true };
+  }
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html, text })
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      console.error('Resend error:', data);
+      throw new Error('Email send failed: ' + (data.message || r.status));
+    }
+    return data;
+  } catch (e) {
+    console.error('Email send error:', e.message);
+    throw e;
+  }
+}
+
+// Shared email layout — frosted-glass card with gradient header
+function emailLayout(title, bodyHtml) {
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#FAFBFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0F172A;line-height:1.55">
+  <div style="max-width:560px;margin:0 auto;padding:24px 16px">
+    <div style="text-align:center;padding:18px 0 22px">
+      <div style="display:inline-block;padding:10px 18px;border-radius:100px;background:linear-gradient(135deg,#6366F1,#EC4899,#F59E0B);color:#fff;font-size:18px;font-weight:800;letter-spacing:-.01em">✦ Near and Far Events</div>
+    </div>
+    <div style="background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:30px 28px;box-shadow:0 4px 20px rgba(99,102,241,.08)">
+      <h1 style="font-size:22px;font-weight:700;margin:0 0 16px;color:#0F172A;letter-spacing:-.01em">${title}</h1>
+      ${bodyHtml}
+    </div>
+    <div style="text-align:center;font-size:12px;color:#94A3B8;padding:18px 12px 12px;line-height:1.7">
+      Near and Far Events · <a href="${PUBLIC_URL}" style="color:#6366F1;text-decoration:none">nearandfarevents.com</a><br>
+      Questions? Reply to this email or write us at <a href="mailto:hello@nearandfarevents.com" style="color:#6366F1;text-decoration:none">hello@nearandfarevents.com</a>
+    </div>
+  </div>
+</body></html>`;
+}
+
+function emailButton(href, label) {
+  return `<table cellpadding="0" cellspacing="0" border="0" style="margin:18px auto"><tr><td style="border-radius:100px;background:linear-gradient(135deg,#6366F1,#EC4899,#F59E0B)">
+    <a href="${href}" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;border-radius:100px">${label}</a>
+  </td></tr></table>`;
+}
+
+// Cryptographically random token + hash helpers
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, phone, password, address } = req.body || {};
     if (!name?.trim() || !password) return res.status(400).json({ error: 'Name and password are required.' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    // Stronger password rules (spec §12)
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return res.status(400).json({ error: 'Password must include both letters and numbers.' });
     if (!address?.trim()) return res.status(400).json({ error: 'Address is required.' });
     const emailClean = (email || '').toLowerCase().trim();
     const phoneClean = normalizePhone(phone);
     if (!emailClean && !phoneClean) return res.status(400).json({ error: 'Please provide either an email or a phone number.' });
     if (phone && !phoneClean) return res.status(400).json({ error: 'Phone number must be 10 digits (US format).' });
+    if (emailClean && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailClean)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     const db = await getDb();
     if (emailClean && await db.get('SELECT id FROM users WHERE email=?', [emailClean])) return res.status(409).json({ error: 'Email already registered.' });
     if (phoneClean && await db.get('SELECT id FROM users WHERE phone=?', [phoneClean])) return res.status(409).json({ error: 'Phone number already registered.' });
-    const emailForDb = emailClean || (`phone-${phoneClean}-${Date.now()}@local.placeholder`);
     const hash = bcrypt.hashSync(password, 10);
-    const r = await db.run('INSERT INTO users (name,email,phone,password_hash,address) VALUES (?,?,?,?,?)', [name.trim(), emailForDb, phoneClean || null, hash, address.trim()]);
-    const user = { id: r.lastID, name: name.trim(), email: emailClean, phone: phoneClean || '', is_admin: 0, is_town_crier: 0 };
-    res.status(201).json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
+
+    if (emailClean) {
+      // Email registration → must verify
+      const emailForDb = emailClean;
+      const token = generateToken();
+      const tokenHash = hashToken(token);
+      const expires = new Date(Date.now() + 24*60*60*1000).toISOString();
+      const r = await db.run(
+        'INSERT INTO users (name,email,phone,password_hash,address,email_verified,verify_token_hash,verify_expires,last_verify_sent_at) VALUES (?,?,?,?,?,0,?,?,?)',
+        [name.trim(), emailForDb, phoneClean || null, hash, address.trim(), tokenHash, expires, new Date().toISOString()]
+      );
+      // Send verification email (non-fatal if it fails — user can request resend)
+      try {
+        const verifyUrl = `${PUBLIC_URL}/verify?token=${token}&email=${encodeURIComponent(emailClean)}`;
+        await sendEmail({
+          to: emailClean,
+          subject: 'Verify your Near and Far Events account',
+          html: emailLayout('Welcome — verify your email', `
+            <p style="margin:0 0 14px">Hi ${escapeHtml(name.trim())},</p>
+            <p style="margin:0 0 14px">Thanks for joining Near and Far Events! Click the button below to verify your email and activate your account.</p>
+            ${emailButton(verifyUrl, 'Verify My Email')}
+            <p style="margin:18px 0 8px;font-size:13px;color:#475569">Or paste this link in your browser:<br><a href="${verifyUrl}" style="color:#6366F1;word-break:break-all">${verifyUrl}</a></p>
+            <p style="margin:18px 0 0;font-size:13px;color:#94A3B8">This link expires in 24 hours. If you didn't sign up, you can safely ignore this email.</p>`),
+          text: `Welcome to Near and Far Events!\n\nVerify your email by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours. If you didn't sign up, ignore this email.`
+        });
+      } catch (e) { console.error('Verify email failed:', e.message); }
+      return res.status(201).json({ success: true, requiresVerification: true, email: emailClean });
+    } else {
+      // Phone-only registration → auto-verified (no email to verify)
+      const emailForDb = (`phone-${phoneClean}-${Date.now()}@nearandfarevents.local`);
+      const r = await db.run(
+        'INSERT INTO users (name,email,phone,password_hash,address,email_verified) VALUES (?,?,?,?,?,1)',
+        [name.trim(), emailForDb, phoneClean, hash, address.trim()]
+      );
+      const user = { id: r.lastID, name: name.trim(), email: '', phone: phoneClean, is_admin: 0, is_town_crier: 0 };
+      return res.status(201).json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Verify email
+app.get('/api/auth/verify/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: 'Verification token missing.' });
+    const db = await getDb();
+    const tokenHash = hashToken(token);
+    const row = await db.get('SELECT * FROM users WHERE verify_token_hash=?', [tokenHash]);
+    if (!row) return res.status(400).json({ error: 'Invalid or expired verification link. You can request a new one from the sign-in screen.' });
+    if (row.verify_expires && new Date(row.verify_expires) < new Date()) {
+      return res.status(400).json({ error: 'This verification link has expired. Sign in to request a new one.' });
+    }
+    await db.run("UPDATE users SET email_verified=1, verify_token_hash='', verify_expires='' WHERE id=?", [row.id]);
+    const emailForUser = (row.email && row.email.endsWith('@nearandfarevents.local')) ? '' : row.email;
+    const user = { id: row.id, name: row.name, email: emailForUser, phone: row.phone || '', is_admin: row.is_admin, is_town_crier: row.is_town_crier };
+    res.json({ success: true, token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Resend verification email (rate-limited to 1 per minute)
+app.post('/api/auth/resend-verify', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+    const emailClean = String(email).toLowerCase().trim();
+    const db = await getDb();
+    const row = await db.get('SELECT * FROM users WHERE email=?', [emailClean]);
+    // Always return success to avoid leaking which emails are registered
+    if (!row || row.email_verified) return res.json({ success: true });
+    // Rate-limit: don't resend if one was sent in the last 60 seconds
+    if (row.last_verify_sent_at) {
+      const since = Date.now() - new Date(row.last_verify_sent_at).getTime();
+      if (since < 60_000) return res.json({ success: true, wait: Math.ceil((60000 - since)/1000) });
+    }
+    const token = generateToken();
+    const tokenHash = hashToken(token);
+    const expires = new Date(Date.now() + 24*60*60*1000).toISOString();
+    await db.run('UPDATE users SET verify_token_hash=?, verify_expires=?, last_verify_sent_at=? WHERE id=?', [tokenHash, expires, new Date().toISOString(), row.id]);
+    try {
+      const verifyUrl = `${PUBLIC_URL}/verify?token=${token}&email=${encodeURIComponent(emailClean)}`;
+      await sendEmail({
+        to: emailClean, subject: 'Verify your Near and Far Events account',
+        html: emailLayout('Verify your email', `
+          <p style="margin:0 0 14px">Here's a fresh verification link for your account:</p>
+          ${emailButton(verifyUrl, 'Verify My Email')}
+          <p style="margin:18px 0 0;font-size:13px;color:#94A3B8">This link expires in 24 hours. If you didn't request this, ignore this email.</p>`),
+        text: `Verify your Near and Far Events account:\n${verifyUrl}\n\nExpires in 24 hours.`
+      });
+    } catch(e) { console.error('Resend verify email failed:', e.message); }
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -230,11 +386,106 @@ app.post('/api/auth/login', async (req, res) => {
       row = await db.get('SELECT * FROM users WHERE email=?', [raw.toLowerCase()]);
     }
     if (!row || !bcrypt.compareSync(password || '', row.password_hash)) return res.status(401).json({ error: 'Incorrect email/phone or password.' });
-    const emailForUser = (row.email && row.email.endsWith('@local.placeholder')) ? '' : row.email;
+    // Enforce email verification
+    if (!row.email_verified) {
+      return res.status(403).json({ error: 'Please verify your email before signing in. Check your inbox for the verification link.', needsVerification: true, email: row.email && !row.email.endsWith('@nearandfarevents.local') ? row.email : null });
+    }
+    const emailForUser = (row.email && row.email.endsWith('@nearandfarevents.local')) ? '' : row.email;
     const user = { id: row.id, name: row.name, email: emailForUser, phone: row.phone || '', is_admin: row.is_admin, is_town_crier: row.is_town_crier };
     res.json({ token: jwt.sign(user, SECRET, { expiresIn: '30d' }), user });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// Forgot password — request reset link
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+    const emailClean = String(email).toLowerCase().trim();
+    const db = await getDb();
+    const row = await db.get('SELECT * FROM users WHERE email=?', [emailClean]);
+    // Always return success even if the email isn't found (don't leak which emails are registered)
+    if (row) {
+      const token = generateToken();
+      const tokenHash = hashToken(token);
+      const expires = new Date(Date.now() + 60*60*1000).toISOString(); // 1 hour
+      await db.run('UPDATE users SET reset_token_hash=?, reset_expires=? WHERE id=?', [tokenHash, expires, row.id]);
+      try {
+        const resetUrl = `${PUBLIC_URL}/reset-password?token=${token}&email=${encodeURIComponent(emailClean)}`;
+        await sendEmail({
+          to: emailClean, subject: 'Reset your Near and Far Events password',
+          html: emailLayout('Reset your password', `
+            <p style="margin:0 0 14px">We received a request to reset your password. Click below to set a new one.</p>
+            ${emailButton(resetUrl, 'Reset My Password')}
+            <p style="margin:18px 0 8px;font-size:13px;color:#475569">Or paste this link in your browser:<br><a href="${resetUrl}" style="color:#6366F1;word-break:break-all">${resetUrl}</a></p>
+            <p style="margin:18px 0 0;font-size:13px;color:#94A3B8"><strong style="color:#475569">This link expires in 1 hour.</strong> If you didn't request a password reset, you can safely ignore this email — your password won't change.</p>`),
+          text: `Reset your Near and Far Events password:\n${resetUrl}\n\nExpires in 1 hour. If you didn't request this, ignore this email.`
+        });
+      } catch(e) { console.error('Reset email failed:', e.message); }
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reset password — submit new password with token
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, new_password } = req.body || {};
+    if (!token || !new_password) return res.status(400).json({ error: 'Token and new password are required.' });
+    if (new_password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    if (!/[A-Za-z]/.test(new_password) || !/[0-9]/.test(new_password)) return res.status(400).json({ error: 'Password must include both letters and numbers.' });
+    const db = await getDb();
+    const tokenHash = hashToken(token);
+    const row = await db.get('SELECT * FROM users WHERE reset_token_hash=?', [tokenHash]);
+    if (!row) return res.status(400).json({ error: 'This reset link is invalid or has been used. Request a new one if needed.' });
+    if (row.reset_expires && new Date(row.reset_expires) < new Date()) {
+      return res.status(400).json({ error: 'This reset link has expired. Request a new one.' });
+    }
+    const newHash = bcrypt.hashSync(new_password, 10);
+    // Clear reset tokens AND mark email_verified (since they could click the email link, they own the inbox)
+    await db.run("UPDATE users SET password_hash=?, reset_token_hash='', reset_expires='', email_verified=1 WHERE id=?", [newHash, row.id]);
+    // Notify the user that their password was changed
+    if (row.email && !row.email.endsWith('@nearandfarevents.local')) {
+      try {
+        await sendEmail({
+          to: row.email, subject: 'Your Near and Far Events password was changed',
+          html: emailLayout('Password updated', `
+            <p style="margin:0 0 14px">Your password was just changed.</p>
+            <p style="margin:0 0 14px;font-size:14px;color:#475569">If this was you — great, no further action needed. <a href="${PUBLIC_URL}" style="color:#6366F1">Sign in here</a>.</p>
+            <p style="margin:0;font-size:13px;color:#94A3B8"><strong style="color:#DC2626">If this wasn't you</strong>, contact us immediately at <a href="mailto:hello@nearandfarevents.com" style="color:#6366F1">hello@nearandfarevents.com</a>.</p>`),
+          text: `Your Near and Far Events password was just changed. If this wasn't you, contact hello@nearandfarevents.com immediately.`
+        });
+      } catch(_) {}
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// CCPA: Data export — download all personal data we have
+app.get('/api/auth/export', requireAuth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const user = await db.get('SELECT id,name,email,phone,address,home_zipcode,is_admin,is_town_crier,email_verified,notify_zipcodes,created_at FROM users WHERE id=?', [req.user.id]);
+    if (!user) return res.status(404).json({ error: 'Account not found.' });
+    const events = await db.all('SELECT * FROM events WHERE added_by=?', [req.user.id]);
+    const listings = await db.all('SELECT * FROM listings WHERE user_id=?', [req.user.id]);
+    const exported = {
+      exported_at: new Date().toISOString(),
+      user: user,
+      events_submitted: events,
+      listings_submitted: listings,
+      note: 'This is all personal data we hold about your account. Payment data is stored by Stripe (not us). For Stripe data, contact Stripe directly.'
+    };
+    res.setHeader('Content-Disposition', `attachment; filename="nearandfar-data-${user.id}-${Date.now()}.json"`);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(exported, null, 2));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// HTML escape helper for email templates (defensive)
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 
 // Update home zipcode
 app.put('/api/auth/zipcode', requireAuth, async (req, res) => {
@@ -348,6 +599,160 @@ app.post('/api/events', requireAuth, async (req, res) => {
     );
     const ev = await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]);
     res.status(201).json({ ...ev, pending_approval: status === 'pending' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ──────────────────────────────────────────────────────────
+// GUEST (anonymous) EVENT SUBMISSION — no account required
+// User submits with name + email; receives verification email;
+// clicking the link activates the event into the moderation queue.
+// Also receives a magic edit/delete link for that event.
+// ──────────────────────────────────────────────────────────
+app.post('/api/events/guest', async (req, res) => {
+  try {
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, submitter_name, submitter_email, submitter_phone } = req.body || {};
+    if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Event name, location, and date are required.' });
+    if (!submitter_name?.trim()) return res.status(400).json({ error: 'Please tell us your name so we can contact you about this event.' });
+    if (!submitter_email?.trim()) return res.status(400).json({ error: 'Email is required so we can verify your submission and send you the edit link.' });
+    const emailClean = String(submitter_email).toLowerCase().trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailClean)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+    const phoneClean = normalizePhone(submitter_phone);
+    if (submitter_phone && !phoneClean) return res.status(400).json({ error: 'Phone number must be 10 digits (US format).' });
+
+    const db = await getDb();
+    // Validate zipcode is in an enabled state
+    const zipState = zipToState(zipcode);
+    const enabled = await getEnabledStates(db);
+    if (!zipState || !enabled.includes(zipState)) {
+      return res.status(403).json({ error: `Near and Far Events isn't live in your area yet. We're rolling out state by state — currently live in: ${enabled.join(', ')}.` });
+    }
+    // Duplicate check (same name + date already approved)
+    const dup = await db.get(
+      "SELECT id FROM events WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND date=? AND status='approved'",
+      [name.trim(), date]
+    );
+    if (dup) return res.status(409).json({ error: "An event with that name already exists on that date. Check the calendar to avoid duplicates." });
+
+    // Find the sentinel guest user for foreign key
+    const guestUser = await db.get("SELECT id FROM users WHERE email='guest@nearandfarevents.system'");
+    if (!guestUser) return res.status(500).json({ error: 'Guest submission temporarily unavailable. Please try again or create an account.' });
+
+    const verifyToken = generateToken();
+    const manageToken = generateToken();
+    const verifyHash = hashToken(verifyToken);
+    const manageHash = hashToken(manageToken);
+    const expires = new Date(Date.now() + 7*24*60*60*1000).toISOString(); // 7 days to verify
+    const zip = (zipcode || '').toString().trim() || '43764';
+
+    const r = await db.run(
+      `INSERT INTO events
+        (cat, name, location, date, time, price, contact, added_by, status, zipcode, affiliate_url,
+         is_anonymous, submitter_name, submitter_email, submitter_phone,
+         submitter_verify_token_hash, submitter_manage_token_hash, submitter_verify_expires)
+       VALUES (?,?,?,?,?,?,?,?,'pending_verify',?,?, 1, ?,?,?, ?,?,?)`,
+      [
+        cat||'other', name.trim(), location.trim(), date,
+        time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-',
+        guestUser.id, zip, (affiliate_url||'').trim(),
+        submitter_name.trim(), emailClean, phoneClean || '',
+        verifyHash, manageHash, expires
+      ]
+    );
+
+    // Send verification email with BOTH links: verify + manage
+    const verifyUrl = `${PUBLIC_URL}/verify-event?token=${verifyToken}`;
+    const manageUrl = `${PUBLIC_URL}/manage-event?token=${manageToken}`;
+    try {
+      await sendEmail({
+        to: emailClean,
+        subject: 'Confirm your event on Near and Far Events',
+        html: emailLayout('Confirm your event submission', `
+          <p style="margin:0 0 14px">Hi ${escapeHtml(submitter_name.trim())},</p>
+          <p style="margin:0 0 14px">Thanks for submitting your event! Click the button below to confirm your email and send it to our review team:</p>
+          <table cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 6px"><tr><td style="font-size:13px;font-weight:700;color:#0F172A;padding:2px 0">Your event:</td></tr><tr><td style="font-size:15px;color:#0F172A;padding:2px 0">${escapeHtml(name.trim())}</td></tr><tr><td style="font-size:13px;color:#475569;padding:1px 0">📍 ${escapeHtml(location.trim())}</td></tr><tr><td style="font-size:13px;color:#475569;padding:1px 0 8px">📅 ${escapeHtml(date)}${time?.trim() ? ' at ' + escapeHtml(time.trim()) : ''}</td></tr></table>
+          ${emailButton(verifyUrl, '✓ Confirm This Event')}
+          <p style="margin:24px 0 6px;font-size:13px;color:#475569"><strong>Need to edit or delete this event later?</strong> Bookmark this link — it's how you'll manage your event without an account:</p>
+          <p style="margin:0 0 4px;font-size:12px"><a href="${manageUrl}" style="color:#6366F1;word-break:break-all">${manageUrl}</a></p>
+          <p style="margin:18px 0 0;font-size:12px;color:#94A3B8">Confirmation link expires in 7 days. The manage link works as long as your event is published.<br>If you didn't submit this, you can safely ignore this email.</p>`),
+        text: `Thanks for submitting "${name.trim()}" on Near and Far Events!\n\nConfirm your event:\n${verifyUrl}\n\nManage your event (edit/delete) — save this link:\n${manageUrl}\n\nThe confirmation link expires in 7 days.`
+      });
+    } catch (e) { console.error('Guest verify email failed:', e.message); }
+
+    res.status(201).json({ success: true, email: emailClean });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Verify a guest-submitted event (clicked email link) — moves it from pending_verify → pending (moderation)
+app.get('/api/events/guest-verify/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: 'Verification token missing.' });
+    const db = await getDb();
+    const verifyHash = hashToken(token);
+    const ev = await db.get("SELECT * FROM events WHERE submitter_verify_token_hash=? AND status='pending_verify'", [verifyHash]);
+    if (!ev) {
+      // Idempotent: maybe already verified — check if a token-match exists for an already-pending or approved event
+      const already = await db.get("SELECT id, status FROM events WHERE submitter_verify_token_hash=?", [verifyHash]);
+      if (already) return res.json({ success: true, alreadyVerified: true, eventId: already.id });
+      return res.status(400).json({ error: 'This verification link is invalid or has already been used. Check your email for a newer link or contact hello@nearandfarevents.com.' });
+    }
+    if (ev.submitter_verify_expires && new Date(ev.submitter_verify_expires) < new Date()) {
+      return res.status(400).json({ error: 'This verification link has expired. Please re-submit your event.' });
+    }
+    // Move to moderation queue + record verification time
+    await db.run("UPDATE events SET status='pending', submitter_verified_at=?, submitter_verify_token_hash='', submitter_verify_expires='' WHERE id=?", [new Date().toISOString(), ev.id]);
+    res.json({ success: true, eventName: ev.name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Fetch event details for editing via magic manage link (guest)
+app.get('/api/events/manage/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: 'Manage token missing.' });
+    const db = await getDb();
+    const manageHash = hashToken(token);
+    const ev = await db.get("SELECT * FROM events WHERE submitter_manage_token_hash=?", [manageHash]);
+    if (!ev) return res.status(400).json({ error: 'This manage link is invalid. If your event was deleted, this link no longer works.' });
+    res.json({
+      id: ev.id, cat: ev.cat, name: ev.name, location: ev.location, date: ev.date,
+      time: ev.time, price: ev.price, contact: ev.contact, zipcode: ev.zipcode,
+      affiliate_url: ev.affiliate_url, status: ev.status,
+      submitter_name: ev.submitter_name, submitter_email: ev.submitter_email, submitter_phone: ev.submitter_phone
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update event via magic manage link
+app.put('/api/events/manage/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url } = req.body || {};
+    if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
+    const db = await getDb();
+    const manageHash = hashToken(token);
+    const ev = await db.get("SELECT id, status FROM events WHERE submitter_manage_token_hash=?", [manageHash]);
+    if (!ev) return res.status(400).json({ error: 'Manage link is invalid.' });
+    // After editing, send back through moderation for safety
+    const newStatus = ev.status === 'approved' ? 'pending' : ev.status;
+    await db.run(
+      `UPDATE events SET cat=?, name=?, location=?, date=?, time=?, price=?, contact=?, zipcode=?, affiliate_url=?, status=? WHERE id=?`,
+      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||'').toString().trim()||'43764', (affiliate_url||'').trim(), newStatus, ev.id]
+    );
+    res.json({ success: true, requeued: newStatus === 'pending' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Delete event via magic manage link
+app.delete('/api/events/manage/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const db = await getDb();
+    const manageHash = hashToken(token);
+    const ev = await db.get("SELECT id FROM events WHERE submitter_manage_token_hash=?", [manageHash]);
+    if (!ev) return res.status(400).json({ error: 'Manage link is invalid.' });
+    await db.run('DELETE FROM events WHERE id=?', [ev.id]);
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -611,6 +1016,12 @@ function safeAdv(a) {
 
 app.get('/advertise',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
 app.get('/directory',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'directory.html')));
+// Email verification + password reset landing pages — served by index.html which handles the URL params client-side
+app.get('/verify',         (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/reset-password', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+// Guest event verification + management landing pages
+app.get('/verify-event',   (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/manage-event',   (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // ── LEGAL PAGES (clean URLs + the .html versions both work via static middleware) ──
 const _legal = (file) => (_req, res) => {
