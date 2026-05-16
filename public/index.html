@@ -95,15 +95,17 @@ button:active{opacity:.8}
 
 /* ── PULSE ANIMATION (slower, gentler) ── */
 @keyframes btnPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,.5),0 0 0 0 rgba(236,72,153,.3)}
-  50%    {background:#0F6E56;border-color:#0F6E56;box-shadow:0 0 0 5px rgba(15,110,86,0)}
+  0%,100%{box-shadow:0 2px 8px rgba(99,102,241,.30),0 0 0 3px rgba(236,72,153,.08),0 0 0 0 rgba(99,102,241,.5)}
+  50%    {box-shadow:0 4px 14px rgba(99,102,241,.45),0 0 0 6px rgba(236,72,153,.20),0 0 0 14px rgba(99,102,241,0)}
 }
 #addEventBtn{
   animation:btnPulse 3s ease-in-out infinite;
-  color:#fff;font-weight:700;font-size:14px;padding:8px 16px;
-  border-radius:var(--r);white-space:nowrap;flex-shrink:0;border:1.5px solid var(--amber)
+  background:var(--gradient);color:#fff;font-weight:700;font-size:14px;padding:8px 16px;
+  border-radius:var(--r);white-space:nowrap;flex-shrink:0;border:1.5px solid transparent;
+  box-shadow:0 2px 8px rgba(99,102,241,.30),0 0 0 3px rgba(236,72,153,.08);
+  transition:all .2s cubic-bezier(.4,0,.2,1);
 }
-#addEventBtn:hover{animation-play-state:paused;background:var(--amber-dk);border-color:var(--amber-dk)}
+#addEventBtn:hover{animation-play-state:paused;filter:brightness(1.08);box-shadow:0 4px 16px rgba(99,102,241,.45),0 0 0 4px rgba(236,72,153,.15);transform:translateY(-1px)}
 
 /* ── FIXED HEADER ── */
 #hdr{
