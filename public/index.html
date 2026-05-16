@@ -339,17 +339,75 @@ button:active{opacity:.8}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ── FIXED SPONSOR BAR ── */
-#sponsorBar{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--spon-h);background:var(--navy);border-top:3px solid var(--amber);display:flex;align-items:center;padding:0 16px;gap:12px}
-.spon-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5);white-space:nowrap;flex-shrink:0}
+/* ── MODERNIZED SPONSOR BAR ── */
+#sponsorBar{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--spon-h);
+  background:rgba(255,255,255,0.94);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+  box-shadow:0 -1px 0 rgba(15,23,42,0.04),0 -8px 24px -12px rgba(99,102,241,0.20);
+}
+#sponsorBar::before{
+  content:'';position:absolute;left:0;right:0;top:-3px;height:3px;
+  background:var(--gradient);
+  filter:blur(0.5px);
+  box-shadow:0 0 18px rgba(99,102,241,0.45),0 0 30px rgba(236,72,153,0.3);
+}
+.spon-label{
+  font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;
+  white-space:nowrap;flex-shrink:0;
+  background:var(--gradient);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
 .spon-cards{display:flex;gap:9px;flex:1;overflow-x:auto;align-items:stretch;scrollbar-width:none}
 .spon-cards::-webkit-scrollbar{display:none}
-.spon-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 13px;min-width:170px;max-width:230px;flex-shrink:0;position:relative;transition:background .15s}
-.spon-card:hover{background:rgba(255,255,255,.11)}
-.spon-card.advertise-card{border:1.5px dashed rgba(186,117,23,.5);background:rgba(186,117,23,.06);cursor:pointer}
-.spon-card.advertise-card:hover{background:rgba(186,117,23,.12)}
-.spon-name{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.spon-tag{font-size:11px;color:rgba(255,255,255,.5);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.spon-link{font-size:11px;color:#EF9F27;text-decoration:none;font-weight:600;display:inline-block;margin-top:2px}
+.spon-card{
+  background:var(--surface);
+  border:1.5px solid var(--border-md);
+  border-radius:10px;
+  padding:9px 14px;min-width:170px;max-width:230px;flex-shrink:0;
+  position:relative;transition:all .2s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 1px 3px rgba(15,23,42,.04);
+  overflow:hidden;
+}
+.spon-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--gradient);
+  border-radius:10px 0 0 10px;
+}
+.spon-card:hover{
+  border-color:var(--amber);
+  background:linear-gradient(135deg,var(--amber-lt),#FFF);
+  box-shadow:0 0 0 3px rgba(99,102,241,.10),0 6px 16px rgba(99,102,241,.18),0 2px 8px rgba(236,72,153,.10);
+  transform:translateY(-2px);
+}
+.spon-card.advertise-card{
+  border:1.5px dashed var(--amber);
+  background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(236,72,153,.04));
+  cursor:pointer;
+}
+.spon-card.advertise-card::before{display:none}
+.spon-card.advertise-card:hover{
+  background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(236,72,153,.08));
+  border-style:solid;
+}
+.spon-name{
+  font-size:14px;font-weight:800;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.2;
+}
+.spon-tag{
+  font-size:11px;color:var(--text2);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-weight:500;
+}
+.spon-link{
+  font-size:11px;color:var(--amber-dk);text-decoration:none;font-weight:700;
+  display:inline-block;margin-top:2px;
+}
+.spon-link:hover{color:var(--pink)}
 .spon-link:hover{text-decoration:underline}
 .spon-admin{position:absolute;top:5px;right:6px;display:flex;gap:3px}
 .s-edit-btn,.s-del-btn{font-size:10px;padding:1px 6px;border-radius:3px;border:none;cursor:pointer;font-family:var(--font-body)}
@@ -1486,7 +1544,7 @@ function renderSponsors(){
   }
   // Always show a polished "Advertise" card at the end
   html+=`<div class="spon-card advertise-card" onclick="showAdvertiseInfo()">
-    <div class="spon-name" style="color:#EF9F27">Advertise Here</div>
+    <div class="spon-name" style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">+ Advertise Here</div>
     <div class="spon-tag">Reach Your Community — $25/mo</div>
     <span class="spon-link">Learn more →</span>
   </div>`;
