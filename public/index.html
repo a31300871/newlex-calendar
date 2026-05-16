@@ -482,10 +482,10 @@ button:active{opacity:.8}
 .ad-pulse{animation:adFadeIn .5s ease forwards .3s,adPulse 1s ease .9s 2}
 @keyframes adPulse{0%,100%{box-shadow:0 2px 8px rgba(15,23,42,.05),0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 4px 16px rgba(99,102,241,.18),0 0 0 6px rgba(236,72,153,.12)}}
 .ad-sponsored{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
-.ad-biz-name{font-size:20px;font-weight:700;color:#fff;line-height:1.2}
+.ad-biz-name{font-size:20px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;line-height:1.2}
 .ad-tagline{font-size:13px;color:var(--text2);line-height:1.45}
-.ad-phone{font-size:15px;font-weight:600;color:var(--amber-mid);text-decoration:none;display:flex;align-items:center;gap:6px}
-.ad-phone:hover{color:#fff}
+.ad-phone{font-size:15px;font-weight:700;color:var(--amber-dk);text-decoration:none;display:flex;align-items:center;gap:6px}
+.ad-phone:hover{color:var(--text);text-decoration:underline}
 .ad-website{display:block;text-align:center;background:var(--amber);color:#fff;font-weight:700;font-size:14px;padding:10px 0;border-radius:var(--r);text-decoration:none;transition:background .15s;margin-top:4px}
 .ad-website:hover{background:var(--amber-dk)}
 .ad-no-ads{background:var(--surface2);border:1.5px dashed var(--border-md);border-radius:var(--r-lg);padding:20px;text-align:center;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:center}
@@ -1120,7 +1120,7 @@ async function loadEvents(){
   catch(e){document.getElementById('evList').innerHTML=`<div class="no-events">${esc(e.message)}</div>`;}
 }
 async function loadSponsors(){
-  try{allSponsors=await api('/api/display/sponsors');renderSponsors();}
+  try{const [s, p] = await Promise.all([api('/api/display/sponsors'), api('/api/display/popup-ads')]); allSponsors=s; allPopupAds=p||[]; renderSponsors();}
   catch(e){console.error(e);}
 }
 
@@ -1305,6 +1305,7 @@ function renderAuth(){
           <button onclick="openBulkRemove()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">👤 Bulk Remove by User</button>
           <button onclick="openManualAdvertiser()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📢 Add Business Ad</button>
           <button onclick="openStatewideListing()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🌎 Make Listing State-Wide</button>
+          <button onclick="openManageAds()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🛠 Manage Business Ads</button>
           <button onclick="openRemovedItemsLog()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📜 Removed Items Log</button>
           <div style="height:1px;background:var(--border)"></div>
         ` : ''}
@@ -1710,6 +1711,75 @@ async function doStatewideListing(){
     showMessageModal('✓ Done', state ? `"${_swSelectedListing.name}" now appears in every zipcode in ${state}.` : `"${_swSelectedListing.name}" is now single-zip only.`, 'success');
     _swSelectedListing = null;
   } catch(e) { document.getElementById('swErr').textContent = e.message; }
+}
+
+
+
+// ── ADMIN: View/Delete advertisers (handles Stripe cancellation when applicable) ──
+async function openManageAds(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">🛠 Manage Business Ads</div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text2);line-height:1.5">
+      All current advertisers. Click <strong>🗑 Delete</strong> to remove. If the advertiser has an active Stripe subscription, it will be <strong>cancelled automatically</strong>. Manual ads (no Stripe) just delete cleanly.
+    </div>
+    <div id="maListContent" style="max-height:60vh;overflow-y:auto">Loading...</div>
+    <div class="modal-actions" style="margin-top:14px"><button class="btn-ghost" style="flex:1" onclick="closeModal('evModal')">Close</button></div>`;
+  openModal('evModal');
+  await refreshAdsList();
+}
+
+async function refreshAdsList(){
+  try {
+    const ads = await api('/api/admin/advertisers');
+    const container = document.getElementById('maListContent');
+    if (!ads || !ads.length) {
+      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:14px">No advertisers yet.</div>';
+      return;
+    }
+    container.innerHTML = ads.map(a => {
+      const tierLabel = a.tier === 'premium'
+        ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;letter-spacing:.04em">PREMIUM • POPUP</span>'
+        : '<span style="background:var(--amber-lt);color:var(--amber-dk);padding:2px 8px;border-radius:100px;font-size:10px;font-weight:800;letter-spacing:.04em">BASIC • BANNER</span>';
+      const stripeLabel = a.stripe_subscription_id
+        ? '<span style="background:#DBEAFE;color:#1E40AF;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.04em">💳 STRIPE SUB</span>'
+        : '<span style="background:var(--surface2);color:var(--text3);padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600">MANUAL</span>';
+      const statusColor = a.status === 'active' || a.status === 'approved' ? '#10B981' : '#94A3B8';
+      return `<div style="padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:8px;background:var(--surface);position:relative;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gradient)"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <div style="font-weight:800;font-size:15px;color:var(--text)">${esc(a.business_name || a.name || '(no name)')}</div>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+              ${tierLabel} ${stripeLabel}
+              <span style="background:${statusColor}22;color:${statusColor};padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.04em">${esc((a.status||'').toUpperCase())}</span>
+            </div>
+            ${a.tagline ? `<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.45">${esc(a.tagline)}</div>` : ''}
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">${esc(a.email||'')} ${a.phone?'· '+esc(a.phone):''} ${a.url?'· <a href="'+esc(a.url)+'" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;font-weight:600">website ↗</a>':''}</div>
+          </div>
+          <button onclick="deleteAdvertiser(${a.id}, ${JSON.stringify(a.business_name||a.name||'').replace(/"/g,'&quot;')}, ${a.stripe_subscription_id?1:0})" style="background:transparent;color:#DC2626;border:1.5px solid #DC2626;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;flex-shrink:0">🗑 Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('maListContent').innerHTML = '<div style="color:#DC2626;padding:14px;text-align:center">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function deleteAdvertiser(id, name, hasSub){
+  const subWarning = hasSub
+    ? `\n\n⚠️ This advertiser has an active Stripe subscription — it will be CANCELLED. The customer will not be charged again.`
+    : '';
+  if (!confirm(`Delete advertisement for "${name}"?${subWarning}\n\nThis cannot be undone.`)) return;
+  try {
+    const r = await api('/api/admin/advertisers/' + id, { method:'DELETE', body: JSON.stringify({ reason: 'Admin deleted via Manage Ads panel' })});
+    let msg = `"${name}" has been removed.`;
+    if (r.stripeStatus === 'cancelled') msg += ' Their Stripe subscription was cancelled.';
+    else if (r.stripeStatus === 'stripe_error_but_continued') msg += ' (Stripe cancel had an issue — please verify in Stripe dashboard.)';
+    showMessageModal('✓ Advertiser Deleted', msg, 'success');
+    await loadSponsors();           // refresh banner data
+    await refreshAdsList();          // refresh modal list
+  } catch(e) { showMessageModal('Delete Failed', e.message, 'error'); }
 }
 
 
@@ -2524,9 +2594,9 @@ document.getElementById('srch').addEventListener('input',function(){srchQ=this.v
 
 /* ── EVENT DETAIL + AD ── */
 function getRandomAd() {
-  const premium = allSponsors.filter(s => s.source === 'advertiser' && s.tier === 'premium');
-  if (!premium.length) return null;
-  return premium[Math.floor(Math.random() * premium.length)];
+  // Popup ads come from the dedicated premium-only endpoint — NEVER from banner ads
+  if (!allPopupAds || !allPopupAds.length) return null;
+  return allPopupAds[Math.floor(Math.random() * allPopupAds.length)];
 }
 
 function fmtDateFull(d) {
