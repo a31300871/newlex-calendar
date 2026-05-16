@@ -459,7 +459,7 @@ async function verifySession(sessionId) {
     renderPortal();
     banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Your ad is now live on the community calendar!</div>`;
   } catch(e) {
-    banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment received but activation failed: ${esc(e.message)}. Please email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a> and we will activate it manually.</div>`;
+    banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment received but auto-activation failed (${esc(e.message)}). Click <strong>"Already paid? Check status"</strong> below to retry, or email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a>.</div>`;
   }
 }
 
@@ -624,11 +624,37 @@ function renderDashboard() {
 
     <!-- Subscription -->
     <div class="dash-section">
-      <div class="dash-label">Subscription — $25 / month</div>
+      <div class="dash-label">Subscription — $${adv.tier === 'premium' ? '50' : '25'} / month</div>
       ${status === 'active' ? `
-        <p style="font-size:14px;color:var(--text2);margin-bottom:6px">Your subscription is active. Your card is charged <strong>$25/month</strong> automatically on your billing date.</p>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:6px">Your subscription is active. Your card is charged <strong>$${adv.tier === 'premium' ? '50' : '25'}/month</strong> automatically on your billing date.</p>
         <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6">To cancel, click the button below. Your ad will remain live until the end of your current billing period — no partial refunds.</p>
-        <button class="btn-danger" style="width:100%" onclick="confirmCancel()">Cancel My Subscription</button>
+        <button class="btn-danger" style="width:100%" onclick="confirmCancel('active')">Cancel My Subscription</button>
+        <div class="err-msg" id="cancelErr"></div>
+      ` : status === 'pending' ? `
+        <p style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.6">Your listing is created but waiting for payment.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="tierSelector">
+          <div id="tierBasic" onclick="selectTier('basic')" style="border:2px solid ${adv.tier === 'basic' ? 'var(--amber)' : 'var(--border-md)'};border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center;background:${adv.tier === 'basic' ? 'var(--amber-lt)' : 'transparent'}">
+            <div style="font-size:18px;font-weight:700;color:var(--text)">$25<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-top:2px">Sponsor Bar</div>
+          </div>
+          <div id="tierPremium" onclick="selectTier('premium')" style="border:2px solid ${adv.tier === 'premium' ? 'var(--amber)' : 'var(--border-md)'};border-radius:var(--r);padding:12px;cursor:pointer;transition:all .15s;text-align:center;background:${adv.tier === 'premium' ? 'var(--amber-lt)' : 'transparent'}">
+            <div style="font-size:18px;font-weight:700;color:var(--amber-dk)">$50<span style="font-size:12px;font-weight:400;color:var(--text2)">/mo</span></div>
+            <div style="font-size:12px;font-weight:600;color:var(--amber-dk);margin-top:2px">⭐ Event Popup Ad</div>
+          </div>
+        </div>
+        <p style="font-size:13px;font-weight:700;color:var(--amber-dk);margin-bottom:10px" id="spotsRemaining"></p>
+        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0;margin-bottom:10px" onclick="startCheckout()" id="checkoutBtn">💳 Complete Payment</button>
+        <button class="btn-ghost" style="width:100%;font-size:13px;padding:9px 0;margin-bottom:10px;border:1.5px solid var(--border-md)" onclick="refreshStatusFromStripe()" id="refreshBtn">🔄 Already paid? Check status</button>
+        <div class="ok-msg" id="refreshOk"></div>
+        <div class="err-msg" id="refreshErr"></div>
+        <hr class="divider" style="margin:14px 0">
+        <p style="font-size:13px;color:var(--text3);margin-bottom:10px;line-height:1.5">Changed your mind? You haven't been charged. Cancel this pending listing and your account will be closed.</p>
+        <button class="btn-danger" style="width:100%;font-size:13px;padding:9px 0" onclick="confirmCancel('pending')">Cancel This Listing</button>
+        <div class="err-msg" id="cancelErr"></div>
+      ` : status === 'paused' ? `
+        <p style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.6">⚠️ Your last payment failed. Reactivate below or cancel your account.</p>
+        <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0;margin-bottom:10px" onclick="startCheckout()">🔄 Reactivate Subscription</button>
+        <button class="btn-danger" style="width:100%;font-size:13px;padding:9px 0" onclick="confirmCancel('paused')">Cancel Subscription</button>
         <div class="err-msg" id="cancelErr"></div>
       ` : `
         <!-- Tier Selector -->
@@ -644,7 +670,7 @@ function renderDashboard() {
         </div>
         <p style="font-size:13px;font-weight:700;color:var(--amber-dk);margin-bottom:10px" id="spotsRemaining">⚡ Limited to 5 event ad spots — checking availability…</p>
         <button class="btn-amber" style="width:100%;font-size:16px;padding:12px 0" onclick="startCheckout()" id="checkoutBtn">
-          ${status === 'paused' ? '🔄 Reactivate Subscription' : '💳 Subscribe Now'}
+          💳 Subscribe Now
         </button>
         <p style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6">
           🔄 <strong>Recurring monthly charge.</strong> Your card is billed automatically each month. Cancel any time from this dashboard — your ad stays live until the end of the billing period. No contracts, no setup fees.
@@ -728,16 +754,58 @@ async function startCheckout() {
   }
 }
 
-async function confirmCancel() {
-  if (!confirm('Cancel your subscription? Your ad will be removed at the end of the current billing period.')) return;
+async function confirmCancel(currentState) {
+  // State-specific confirmation messages
+  const messages = {
+    active:  'Cancel your subscription? Your ad will stay live until the end of the current billing period. After that, your listing will be removed and you will not be charged again. Continue?',
+    pending: "Cancel this pending listing? You haven't been charged, and your account will be closed. You can register again any time. Continue?",
+    paused:  'Cancel this subscription? Your ad is currently not running and you will not be charged again. Continue?'
+  };
+  const msg = messages[currentState] || 'Cancel your subscription?';
+  if (!confirm(msg)) return;
   try {
     await api('/api/advertiser/cancel', { method:'POST' });
     advertiser.status = 'cancelled';
+    advertiser.stripe_subscription_id = '';
     localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+    const banner = document.getElementById('alertBanner');
+    if (banner) {
+      const txt = currentState === 'pending'
+        ? '✓ Pending listing cancelled. You can subscribe again any time below.'
+        : '✓ Subscription cancelled. Your card will not be charged again.';
+      banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">${txt}</div>`;
+      setTimeout(() => { banner.innerHTML = ''; }, 6000);
+    }
     renderPortal();
   } catch(e) {
     const el = document.getElementById('cancelErr');
     if (el) el.textContent = e.message;
+  }
+}
+
+// "Already paid? Check status" — re-checks Stripe in case verify-session
+// never fired (closed tab, expired token, etc.)
+async function refreshStatusFromStripe() {
+  const okEl  = document.getElementById('refreshOk');
+  const errEl = document.getElementById('refreshErr');
+  const btn   = document.getElementById('refreshBtn');
+  if (okEl)  okEl.textContent = '';
+  if (errEl) errEl.textContent = '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Checking with Stripe…'; }
+  try {
+    const r = await api('/api/advertiser/refresh-status', { method:'POST' });
+    if (r.changed) {
+      advertiser = r.advertiser;
+      localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
+      if (okEl) okEl.textContent = '🎉 Payment confirmed! Your ad is now live.';
+      setTimeout(() => renderPortal(), 1200);
+    } else {
+      if (errEl) errEl.textContent = "We didn't find a completed payment. If you just paid, give it a minute and try again. If you're sure you paid, email hello@nearandfarevents.com.";
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 Already paid? Check status'; }
+    }
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Already paid? Check status'; }
   }
 }
 
@@ -777,5 +845,63 @@ if (advToken) {
   renderPortal();
 }
 </script>
+
+<!-- ── SITE FOOTER ── -->
+<footer id="site-footer" style="margin-top:60px;padding:32px 20px;border-top:1px solid var(--border);background:rgba(255,255,255,0.5);backdrop-filter:blur(8px);font-size:13px;color:var(--text3);text-align:center;line-height:1.65">
+  <div style="font-family:var(--font-head);font-weight:700;font-size:16px;margin-bottom:10px">
+    <span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span>
+    <span class="brand-grad">Near and Far Events</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:0 2px;margin-bottom:14px;max-width:680px;margin-left:auto;margin-right:auto;line-height:2">
+    <a href="/privacy" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Privacy</a><span style="color:var(--border-md)">·</span>
+    <a href="/terms" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Terms</a><span style="color:var(--border-md)">·</span>
+    <a href="/affiliate-disclosure" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Affiliate Disclosure</a><span style="color:var(--border-md)">·</span>
+    <a href="/cookies" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Cookies</a><span style="color:var(--border-md)">·</span>
+    <a href="/community-guidelines" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Community Guidelines</a><span style="color:var(--border-md)">·</span>
+    <a href="/dmca" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">DMCA</a><span style="color:var(--border-md)">·</span>
+    <a href="/accessibility" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Accessibility</a><span style="color:var(--border-md)">·</span>
+    <a href="/contact" style="color:var(--text2);text-decoration:none;font-weight:600;padding:0 8px;white-space:nowrap">Contact</a>
+  </div>
+  <div style="color:var(--text3);font-size:12px">© 2026 Near and Far Events LLC. All rights reserved.</div>
+</footer>
+
+<!-- ── COOKIE CONSENT BANNER ── -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:18px;left:18px;right:18px;max-width:520px;margin:0 auto;background:rgba(255,255,255,0.97);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1.5px solid var(--border-md);border-radius:14px;padding:16px 18px;z-index:9999;box-shadow:0 8px 28px rgba(99,102,241,.18),0 4px 14px rgba(236,72,153,.10),0 0 0 4px rgba(99,102,241,.05);font-size:13px;line-height:1.5;color:var(--text)">
+  <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+    <span style="font-size:18px;line-height:1">🍪</span>
+    <div style="flex:1">
+      <strong style="display:block;font-size:14px;margin-bottom:2px;color:var(--text)">We use cookies</strong>
+      <span style="color:var(--text2)">Essential cookies keep you signed in. Analytics cookies (Google Analytics) help us improve. You choose. <a href="/cookies" style="color:var(--amber-dk);font-weight:600">Learn more</a></span>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button onclick="cookieConsent('decline')" style="font-size:12px;padding:7px 14px;border-radius:100px;background:var(--surface);border:1.5px solid var(--border-md);color:var(--text2);cursor:pointer;font-weight:700;font-family:var(--font-body)">Decline analytics</button>
+    <button onclick="cookieConsent('accept')" style="font-size:12px;padding:7px 14px;border-radius:100px;background:var(--gradient);border:1.5px solid transparent;color:#fff;cursor:pointer;font-weight:700;font-family:var(--font-body);box-shadow:0 2px 6px rgba(99,102,241,.20)">Accept all</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY = 'nf_cookies';
+  const choice = localStorage.getItem(KEY);
+  const banner = document.getElementById('cookieBanner');
+  if (!choice && banner) {
+    setTimeout(() => { banner.style.display = 'block'; }, 800);
+  }
+  // If user previously declined, disable Google Analytics on every load
+  if (choice === 'decline' && typeof window['gtag'] === 'function') {
+    // Disable GA: standard opt-out
+    try { window['ga-disable-G-XXXXXXXXXX'] = true; } catch(_) {}
+  }
+})();
+function cookieConsent(action){
+  localStorage.setItem('nf_cookies', action);
+  const b = document.getElementById('cookieBanner');
+  if (b) b.style.display = 'none';
+  if (action === 'decline') {
+    try { window['ga-disable-G-XXXXXXXXXX'] = true; } catch(_) {}
+  }
+}
+</script>
+
 </body>
 </html>
