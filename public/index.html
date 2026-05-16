@@ -566,7 +566,7 @@ button:active{opacity:.8}
 
   <div class="search-wrap" style="margin-top:10px">
     <input type="text" id="srch" placeholder="🔍 Search events by name or location…" style="padding-left:14px">
-    <button id="addEventInline" onclick="clickAddEvent()" style="background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;border:1.5px solid #16A34A;border-radius:var(--r);padding:7px 14px;cursor:pointer;flex-shrink:0;font-size:13px;font-weight:700;white-space:nowrap;font-family:var(--font-body);display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(22,163,74,.25)" title="Add an event (or multiple at once)">
+    <button id="addEventInline" onclick="clickAddEvent()" style="background:var(--gradient);color:#fff;border:1.5px solid transparent;border-radius:var(--r);padding:8px 16px;cursor:pointer;flex-shrink:0;font-size:13px;font-weight:700;white-space:nowrap;font-family:var(--font-body);display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(99,102,241,.30),0 0 0 3px rgba(236,72,153,.08);transition:all .2s cubic-bezier(.4,0,.2,1)" onmouseover="this.style.boxShadow='0 4px 16px rgba(99,102,241,.45),0 0 0 4px rgba(236,72,153,.15)';this.style.transform='translateY(-1px)';this.style.filter='brightness(1.08)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(99,102,241,.30),0 0 0 3px rgba(236,72,153,.08)';this.style.transform='';this.style.filter=''" title="Add an event (or multiple at once)">
       <span style="font-size:16px;line-height:1;font-weight:300">+</span> Add Event(s)
     </button>
   </div>
