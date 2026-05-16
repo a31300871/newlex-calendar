@@ -257,6 +257,35 @@ function emailButton(href, label) {
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
+
+
+// ── Audit log helper: record an admin-removed item (24-month retention per spec §6) ──
+async function logRemovedItem(db, params) {
+  try {
+    await db.run(
+      `INSERT INTO removed_items
+        (item_type, original_id, item_name, item_date, item_zipcode,
+         owner_user_id, owner_name, owner_email,
+         removed_by, removed_by_name, reason, snapshot)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        params.item_type, params.original_id, params.item_name || '',
+        params.item_date || '', params.item_zipcode || '',
+        params.owner_user_id || null, params.owner_name || '', params.owner_email || '',
+        params.removed_by, params.removed_by_name || '',
+        params.reason || '', JSON.stringify(params.snapshot || {})
+      ]
+    );
+  } catch(e) { console.error('Audit log failed:', e.message); }
+}
+
+// Sanitize event description: strip HTML tags, normalize newlines, cap length
+function cleanDescription(s) {
+  if (!s) return '';
+  let v = String(s).replace(/<[^>]*>/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  return v.slice(0, 2000).trim();
+}
+
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
@@ -574,7 +603,7 @@ app.get('/api/events', async (req, res) => {
 
 app.post('/api/events', requireAuth, async (req, res) => {
   try {
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url } = req.body || {};
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
     // Validate zipcode is in an enabled state (skip for admin)
@@ -594,8 +623,8 @@ app.post('/api/events', requireAuth, async (req, res) => {
     const status = (userRow && (userRow.is_admin || userRow.is_town_crier)) ? 'approved' : 'pending';
     const zip = (zipcode || '').toString().trim() || '43764';
     const r = await db.run(
-      'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', req.user.id, status, zip, (affiliate_url||'').trim()]
+      'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', req.user.id, status, zip, (affiliate_url||'').trim(), cleanDescription(description)]
     );
     const ev = await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]);
     res.status(201).json({ ...ev, pending_approval: status === 'pending' });
@@ -610,7 +639,7 @@ app.post('/api/events', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────────────────────
 app.post('/api/events/guest', async (req, res) => {
   try {
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, submitter_name, submitter_email, submitter_phone } = req.body || {};
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description, submitter_name, submitter_email, submitter_phone } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Event name, location, and date are required.' });
     if (!submitter_name?.trim()) return res.status(400).json({ error: 'Please tell us your name so we can contact you about this event.' });
     if (!submitter_email?.trim()) return res.status(400).json({ error: 'Email is required so we can verify your submission and send you the edit link.' });
@@ -646,14 +675,14 @@ app.post('/api/events/guest', async (req, res) => {
 
     const r = await db.run(
       `INSERT INTO events
-        (cat, name, location, date, time, price, contact, added_by, status, zipcode, affiliate_url,
+        (cat, name, location, date, time, price, contact, added_by, status, zipcode, affiliate_url, description,
          is_anonymous, submitter_name, submitter_email, submitter_phone,
          submitter_verify_token_hash, submitter_manage_token_hash, submitter_verify_expires)
-       VALUES (?,?,?,?,?,?,?,?,'pending_verify',?,?, 1, ?,?,?, ?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,'pending_verify',?,?,?, 1, ?,?,?, ?,?,?)`,
       [
         cat||'other', name.trim(), location.trim(), date,
         time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-',
-        guestUser.id, zip, (affiliate_url||'').trim(),
+        guestUser.id, zip, (affiliate_url||'').trim(), cleanDescription(description),
         submitter_name.trim(), emailClean, phoneClean || '',
         verifyHash, manageHash, expires
       ]
@@ -717,7 +746,7 @@ app.get('/api/events/manage/:token', async (req, res) => {
     res.json({
       id: ev.id, cat: ev.cat, name: ev.name, location: ev.location, date: ev.date,
       time: ev.time, price: ev.price, contact: ev.contact, zipcode: ev.zipcode,
-      affiliate_url: ev.affiliate_url, status: ev.status,
+      affiliate_url: ev.affiliate_url, description: ev.description || '', status: ev.status,
       submitter_name: ev.submitter_name, submitter_email: ev.submitter_email, submitter_phone: ev.submitter_phone
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -727,7 +756,7 @@ app.get('/api/events/manage/:token', async (req, res) => {
 app.put('/api/events/manage/:token', async (req, res) => {
   try {
     const { token } = req.params;
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url } = req.body || {};
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
     const manageHash = hashToken(token);
@@ -736,8 +765,8 @@ app.put('/api/events/manage/:token', async (req, res) => {
     // After editing, send back through moderation for safety
     const newStatus = ev.status === 'approved' ? 'pending' : ev.status;
     await db.run(
-      `UPDATE events SET cat=?, name=?, location=?, date=?, time=?, price=?, contact=?, zipcode=?, affiliate_url=?, status=? WHERE id=?`,
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||'').toString().trim()||'43764', (affiliate_url||'').trim(), newStatus, ev.id]
+      `UPDATE events SET cat=?, name=?, location=?, date=?, time=?, price=?, contact=?, zipcode=?, affiliate_url=?, description=?, status=? WHERE id=?`,
+      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||'').toString().trim()||'43764', (affiliate_url||'').trim(), cleanDescription(description), newStatus, ev.id]
     );
     res.json({ success: true, requeued: newStatus === 'pending' });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -778,8 +807,8 @@ app.post('/api/events/bulk', requireAuth, async (req, res) => {
       if (dup) { skipped++; continue; }
       const zip = (ev.zipcode || '').toString().trim() || '43764';
       await db.run(
-        'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-        [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time?.trim()||'TBD', ev.price?.trim()||'Free', ev.contact?.trim()||'-', req.user.id, status, zip, (ev.affiliate_url||'').trim()]
+        'INSERT INTO events (cat,name,location,date,time,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+        [ev.cat||'other', ev.name.trim(), ev.location.trim(), ev.date, ev.time?.trim()||'TBD', ev.price?.trim()||'Free', ev.contact?.trim()||'-', req.user.id, status, zip, (ev.affiliate_url||'').trim(), cleanDescription(ev.description)]
       );
       inserted++;
     }
@@ -793,11 +822,11 @@ app.put('/api/events/:id', requireAuth, async (req, res) => {
     const ev = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
     if (!ev) return res.status(404).json({ error: 'Event not found.' });
     if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only edit events you posted.' });
-    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url } = req.body || {};
+    const { cat, name, location, date, time, price, contact, zipcode, affiliate_url, description } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     await db.run(
-      'UPDATE events SET cat=?,name=?,location=?,date=?,time=?,price=?,contact=?,zipcode=?,affiliate_url=? WHERE id=?',
-      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||ev.zipcode||'43764').toString().trim(), (affiliate_url||'').trim(), req.params.id]
+      'UPDATE events SET cat=?,name=?,location=?,date=?,time=?,price=?,contact=?,zipcode=?,affiliate_url=?,description=? WHERE id=?',
+      [cat||'other', name.trim(), location.trim(), date, time?.trim()||'TBD', price?.trim()||'Free', contact?.trim()||'-', (zipcode||ev.zipcode||'43764').toString().trim(), (affiliate_url||'').trim(), cleanDescription(description), req.params.id]
     );
     res.json(await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [req.params.id]));
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -809,8 +838,101 @@ app.delete('/api/events/:id', requireAuth, async (req, res) => {
     const ev = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
     if (!ev) return res.status(404).json({ error: 'Event not found.' });
     if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only remove your own events.' });
+    // Audit log: only when an admin removes someone else's content (not self-deletions)
+    if (req.user.is_admin && ev.added_by !== req.user.id) {
+      const owner = await db.get('SELECT name, email FROM users WHERE id=?', [ev.added_by]);
+      await logRemovedItem(db, {
+        item_type: 'event', original_id: ev.id, item_name: ev.name,
+        item_date: ev.date, item_zipcode: ev.zipcode,
+        owner_user_id: ev.added_by, owner_name: owner?.name || ev.submitter_name || '', owner_email: owner?.email || ev.submitter_email || '',
+        removed_by: req.user.id, removed_by_name: req.user.name,
+        reason: req.body?.reason || '',
+        snapshot: { cat: ev.cat, name: ev.name, location: ev.location, date: ev.date, time: ev.time, price: ev.price, contact: ev.contact, zipcode: ev.zipcode, description: ev.description }
+      });
+    }
     await db.run('DELETE FROM events WHERE id=?', [req.params.id]);
     res.json({ success: true, id: Number(req.params.id) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN: Bulk remove all content by a specific user ──
+app.delete('/api/admin/users/:userId/all-content', requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) return res.status(400).json({ error: 'Invalid user ID.' });
+    const reason = (req.body?.reason || '').toString().slice(0, 500);
+    const db = await getDb();
+    const owner = await db.get('SELECT name, email FROM users WHERE id=?', [userId]);
+    if (!owner) return res.status(404).json({ error: 'User not found.' });
+
+    // Fetch + log all their events
+    const events = await db.all('SELECT * FROM events WHERE added_by=?', [userId]);
+    for (const ev of events) {
+      await logRemovedItem(db, {
+        item_type: 'event', original_id: ev.id, item_name: ev.name,
+        item_date: ev.date, item_zipcode: ev.zipcode,
+        owner_user_id: userId, owner_name: owner.name, owner_email: owner.email,
+        removed_by: req.user.id, removed_by_name: req.user.name,
+        reason: 'Bulk removal: ' + reason,
+        snapshot: { cat: ev.cat, name: ev.name, location: ev.location, date: ev.date, time: ev.time, price: ev.price, contact: ev.contact, zipcode: ev.zipcode, description: ev.description }
+      });
+    }
+
+    // Fetch + log all their listings (if listings table exists)
+    let listings = [];
+    try { listings = await db.all('SELECT * FROM listings WHERE user_id=?', [userId]); } catch(_) {}
+    for (const ls of listings) {
+      await logRemovedItem(db, {
+        item_type: 'listing', original_id: ls.id, item_name: ls.business_name || ls.name || '',
+        item_zipcode: ls.zipcode || '',
+        owner_user_id: userId, owner_name: owner.name, owner_email: owner.email,
+        removed_by: req.user.id, removed_by_name: req.user.name,
+        reason: 'Bulk removal: ' + reason,
+        snapshot: { ...ls }
+      });
+    }
+
+    // Now delete
+    await db.run('DELETE FROM events WHERE added_by=?', [userId]);
+    try { await db.run('DELETE FROM listings WHERE user_id=?', [userId]); } catch(_) {}
+
+    res.json({ success: true, events_removed: events.length, listings_removed: listings.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN: Search users by name/email (for picker in bulk-remove flow) ──
+app.get('/api/admin/users/search', requireAdmin, async (req, res) => {
+  try {
+    const q = (req.query.q || '').toString().trim();
+    if (q.length < 2) return res.json([]);
+    const db = await getDb();
+    const like = '%' + q + '%';
+    const rows = await db.all(
+      "SELECT id, name, email, phone, is_admin, is_town_crier, created_at, (SELECT COUNT(*) FROM events WHERE added_by=users.id) AS event_count FROM users WHERE (name LIKE ? OR email LIKE ? OR phone LIKE ?) AND email != 'guest@nearandfarevents.system' ORDER BY name LIMIT 15",
+      [like, like, like]
+    );
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN: View removed items log ──
+app.get('/api/admin/removed-items', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+    const rows = await db.all('SELECT id, item_type, original_id, item_name, item_date, item_zipcode, owner_user_id, owner_name, owner_email, removed_by, removed_by_name, reason, removed_at FROM removed_items ORDER BY removed_at DESC LIMIT ?', [limit]);
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN: Aggregate pending counts (events + listings) for top-bar pill ──
+app.get('/api/admin/pending-count', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const evs = await db.get("SELECT COUNT(*) AS n FROM events WHERE status='pending'");
+    let lst = { n: 0 };
+    try { lst = await db.get("SELECT COUNT(*) AS n FROM listings WHERE status='pending'"); } catch(_) {}
+    res.json({ events: evs.n || 0, listings: lst.n || 0, total: (evs.n || 0) + (lst.n || 0) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
