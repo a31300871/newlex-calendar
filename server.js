@@ -619,10 +619,10 @@ app.get('/api/events', async (req, res) => {
       sql = 'SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE 1=1' + zipFilter + ' ORDER BY e.date ASC,e.start_time ASC,e.time ASC';
       params = zipParam;
     } else if (userId) {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?)) AND (e.effective_end_at = '' OR e.effective_end_at > datetime('now'))" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?)) AND COALESCE(NULLIF(e.effective_end_at,''), datetime(e.date || ' 23:59:00', '+4 hours')) > datetime('now')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
       params = [userId, ...zipParam];
     } else {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved' AND (e.effective_end_at = '' OR e.effective_end_at > datetime('now'))" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved' AND COALESCE(NULLIF(e.effective_end_at,''), datetime(e.date || ' 23:59:00', '+4 hours')) > datetime('now')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
       params = zipParam;
     }
     const rows = await db.all(sql, params);
@@ -929,7 +929,7 @@ app.post('/api/admin/advertisers/manual', requireAdmin, async (req, res) => {
     const unusableHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
     const r = await db.run(
       `INSERT INTO advertisers (name, email, password_hash, business_name, tagline, url, status, tier, phone, email_verified)
-       VALUES (?,?,?,?,?,?,'approved',?,?,1)`,
+       VALUES (?,?,?,?,?,?,'active',?,?,1)`,
       [(business_name||'').trim() + ' (manual)', fakeEmail, unusableHash, business_name.trim(),
        (tagline||'').trim(), (url||'').trim(), validTier, (phone||'').trim()]
     );
@@ -1066,7 +1066,7 @@ app.get('/api/display/sponsors', async (req, res) => {
   try {
     const db = await getDb();
     const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
-    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status='active' ORDER BY id");
+    const paid   = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') ORDER BY id");
     res.json([...manual, ...paid]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
