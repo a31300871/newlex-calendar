@@ -56,6 +56,24 @@ async function getDb() {
       stripe_subscription_id TEXT DEFAULT '',
       created_at             TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS removed_items (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_type    TEXT NOT NULL,
+      original_id  INTEGER NOT NULL,
+      item_name    TEXT NOT NULL,
+      item_date    TEXT DEFAULT '',
+      item_zipcode TEXT DEFAULT '',
+      owner_user_id INTEGER,
+      owner_name   TEXT DEFAULT '',
+      owner_email  TEXT DEFAULT '',
+      removed_by   INTEGER NOT NULL,
+      removed_by_name TEXT DEFAULT '',
+      reason       TEXT DEFAULT '',
+      snapshot     TEXT NOT NULL DEFAULT '{}',
+      removed_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_removed_at ON removed_items(removed_at);
+    CREATE INDEX IF NOT EXISTS idx_removed_owner ON removed_items(owner_user_id);
     CREATE INDEX IF NOT EXISTS idx_events_date    ON events(date);
     CREATE INDEX IF NOT EXISTS idx_events_cat     ON events(cat);
     CREATE INDEX IF NOT EXISTS idx_adv_status     ON advertisers(status);
@@ -114,7 +132,11 @@ async function getDb() {
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN reset_expires TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("UPDATE advertisers SET email_verified=1 WHERE email_verified=0 AND created_at < datetime('now')"); } catch(_) {}
 
+  // 24-month auto-purge of removed_items log (spec §6 retention)
+  try { await _db.run("DELETE FROM removed_items WHERE removed_at < datetime('now', '-24 months')"); } catch(_) {}
+
   // ── Phase B: Anonymous (guest) event submission with email verification + magic edit links ──
+  try { await _db.run("ALTER TABLE events ADD COLUMN description TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN is_anonymous INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN submitter_name TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN submitter_email TEXT DEFAULT ''"); } catch(_) {}
