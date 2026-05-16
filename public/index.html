@@ -95,7 +95,7 @@ button:active{opacity:.8}
 
 /* ── PULSE ANIMATION (slower, gentler) ── */
 @keyframes btnPulse{
-  0%,100%{background:#BA7517;border-color:#BA7517;box-shadow:0 0 0 0 rgba(186,117,23,.5)}
+  0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,.5),0 0 0 0 rgba(236,72,153,.3)}
   50%    {background:#0F6E56;border-color:#0F6E56;box-shadow:0 0 0 5px rgba(15,110,86,0)}
 }
 #addEventBtn{
@@ -212,7 +212,7 @@ button:active{opacity:.8}
   border-radius:10px;padding:5px 5px 5px 12px;margin-bottom:8px;
   transition:border-color .15s,box-shadow .15s;position:relative
 }
-.search-wrap:focus-within{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+.search-wrap:focus-within{border-color:var(--amber);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 14px rgba(99,102,241,.10)}
 .search-wrap input{
   border:none;background:transparent;padding:8px 10px;
   flex:1;outline:none;font-size:16px;height:auto;min-width:0;
@@ -411,12 +411,12 @@ button:active{opacity:.8}
 .spon-link:hover{text-decoration:underline}
 .spon-admin{position:absolute;top:5px;right:6px;display:flex;gap:3px}
 .s-edit-btn,.s-del-btn{font-size:10px;padding:1px 6px;border-radius:3px;border:none;cursor:pointer;font-family:var(--font-body)}
-.s-edit-btn{background:rgba(255,255,255,.15);color:#fff}
-.s-edit-btn:hover{background:rgba(255,255,255,.25)}
+.s-edit-btn{background:var(--surface2);color:var(--text2);border:1px solid var(--border-md)}
+.s-edit-btn:hover{background:var(--amber-lt);color:var(--amber-dk);border-color:var(--amber)}
 .s-del-btn{background:rgba(180,40,40,.3);color:#ffb3b3}
 .s-del-btn:hover{background:rgba(180,40,40,.5)}
-#addSponsorBarBtn{font-size:12px;padding:6px 12px;white-space:nowrap;flex-shrink:0;background:rgba(255,255,255,.10);border:1px dashed rgba(255,255,255,.30);color:rgba(255,255,255,.7);border-radius:var(--r)}
-#addSponsorBarBtn:hover{background:rgba(255,255,255,.18);color:#fff}
+#addSponsorBarBtn{font-size:12px;padding:6px 12px;white-space:nowrap;flex-shrink:0;background:var(--surface);border:1.5px dashed var(--amber);color:var(--amber-dk);border-radius:var(--r);font-weight:700;cursor:pointer;font-family:var(--font-body)}
+#addSponsorBarBtn:hover{background:var(--amber-lt);border-style:solid;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
 
 /* ── MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:12px}
@@ -445,7 +445,7 @@ button:active{opacity:.8}
 .import-csv-area{width:100%;height:120px;font-family:monospace;font-size:12px;resize:vertical;padding:10px;border:1.5px solid var(--border-md);border-radius:var(--r)}
 .import-csv-area:focus{border-color:var(--amber);outline:none}
 .preview-table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
-.preview-table th{background:var(--navy);color:#fff;padding:5px 8px;text-align:left;font-size:11px}
+.preview-table th{background:linear-gradient(135deg,var(--amber-lt),#FFF);color:var(--text);padding:7px 10px;text-align:left;font-size:11px;font-weight:800;border-bottom:1.5px solid var(--amber);text-transform:uppercase;letter-spacing:.04em}
 .preview-table td{padding:5px 8px;border-bottom:0.5px solid var(--border);color:var(--text2)}
 .preview-table tr:nth-child(even) td{background:var(--surface2)}
 .preview-wrap{max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px}
@@ -459,13 +459,14 @@ button:active{opacity:.8}
 .ev-detail-cat{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:100px;border:1.5px solid;width:fit-content}
 
 /* ── SPONSOR AD CARD ── */
-.ad-card{background:var(--navy);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:10px;opacity:0;animation:adFadeIn .5s ease forwards .3s}
+.ad-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:10px;opacity:0;animation:adFadeIn .5s ease forwards .3s;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.05)}
+.ad-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gradient);border-radius:var(--r-lg) 0 0 var(--r-lg)}
 @keyframes adFadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
 .ad-pulse{animation:adFadeIn .5s ease forwards .3s,adPulse 1s ease .9s 2}
-@keyframes adPulse{0%,100%{box-shadow:0 0 0 0 rgba(186,117,23,0)}50%{box-shadow:0 0 0 8px rgba(186,117,23,.25)}}
-.ad-sponsored{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+@keyframes adPulse{0%,100%{box-shadow:0 2px 8px rgba(15,23,42,.05),0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 4px 16px rgba(99,102,241,.18),0 0 0 6px rgba(236,72,153,.12)}}
+.ad-sponsored{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 .ad-biz-name{font-size:20px;font-weight:700;color:#fff;line-height:1.2}
-.ad-tagline{font-size:13px;color:rgba(255,255,255,.65);line-height:1.4}
+.ad-tagline{font-size:13px;color:var(--text2);line-height:1.45}
 .ad-phone{font-size:15px;font-weight:600;color:var(--amber-mid);text-decoration:none;display:flex;align-items:center;gap:6px}
 .ad-phone:hover{color:#fff}
 .ad-website{display:block;text-align:center;background:var(--amber);color:#fff;font-weight:700;font-size:14px;padding:10px 0;border-radius:var(--r);text-decoration:none;transition:background .15s;margin-top:4px}
@@ -679,7 +680,7 @@ function updateZipDisplay(){
   const allBtn = document.getElementById('allAreasBtn');
   if (lbl) lbl.textContent = showAllAreas ? 'All Zips' : 'Zip ' + currentZipcode;
   if (allBtn) {
-    if (showAllAreas) { allBtn.style.background = 'var(--navy)'; allBtn.style.color = '#fff'; allBtn.style.borderColor = 'var(--navy)'; }
+    if (showAllAreas) { allBtn.style.background = 'var(--gradient)'; allBtn.style.color = '#fff'; allBtn.style.borderColor = 'transparent'; allBtn.style.boxShadow = 'var(--glow-sm)'; }
     else { allBtn.style.background = ''; allBtn.style.color = ''; allBtn.style.borderColor = ''; }
   }
 }
@@ -1786,7 +1787,7 @@ function openEventDetail(ev) {
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           ${ev.affiliate_url ? `
-            <a class="btn-amber btn-sm" style="flex:1;min-width:140px;text-align:center;text-decoration:none;background:linear-gradient(135deg,#BA7517,#D4951F);box-shadow:0 3px 10px rgba(186,117,23,.3);font-weight:800" href="${esc(ev.affiliate_url)}" target="_blank" rel="noopener sponsored">🎟️ Get Tickets →</a>
+            <a class="btn-amber btn-sm" style="flex:1;min-width:140px;text-align:center;text-decoration:none;background:var(--gradient);box-shadow:0 2px 8px rgba(99,102,241,.25),0 0 0 3px rgba(236,72,153,.08);font-weight:800;border:1.5px solid transparent" href="${esc(ev.affiliate_url)}" target="_blank" rel="noopener sponsored">🎟️ Get Tickets →</a>
           ` : ''}
           <a class="btn-sm" style="flex:1;min-width:90px;text-align:center;text-decoration:none;background:var(--surface2);color:var(--text);border:1.5px solid var(--border-md)" href="/api/events/${ev.id}/ical">📅 Add to Calendar</a>
           <button class="btn-sm" style="flex:1;min-width:90px;background:var(--surface2);color:var(--text);border-color:var(--border-md)" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
