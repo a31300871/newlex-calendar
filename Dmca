@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Community Guidelines · Near and Far Events</title>
-<meta name="description" content="Rules for posting events and listings on Near and Far Events">
+<title>DMCA Policy · Near and Far Events</title>
+<meta name="description" content="Copyright takedown process for Near and Far Events">
 <meta name="robots" content="noindex,follow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236366F1'/><stop offset='.5' stop-color='%23EC4899'/><stop offset='1' stop-color='%23F59E0B'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><path d='M16 7c-3.3 0-6 2.7-6 6 0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6zm0 8a2 2 0 110-4 2 2 0 010 4z' fill='white'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -116,70 +116,47 @@ footer .ft-mark{font-family:var(--font-head);font-weight:700;font-size:15px;marg
 </div>
 
 <div class="legal-wrap">
-<h1>Community Guidelines</h1>
+<h1>DMCA Copyright Policy</h1>
 <span class="updated">Last updated: May 15, 2026</span>
 
-<p>Near and Far Events exists to help neighbors discover what's happening in their community. These Guidelines keep that experience trustworthy and useful for everyone.</p>
+<p>Near and Far Events respects intellectual property rights and complies with the <strong>Digital Millennium Copyright Act (DMCA, 17 U.S.C. § 512)</strong>. This policy explains how copyright owners can report infringing content and how we respond.</p>
 
-<h2>What's Welcome</h2>
-<ul>
-  <li>Real community events: concerts, festivals, sports, church events, government meetings, fundraisers, school activities, farmers' markets, art shows</li>
-  <li>Honest business listings in the directory</li>
-  <li>Accurate dates, times, locations, and pricing</li>
-  <li>Family-friendly content (the Service is rated for general audiences)</li>
-</ul>
-
-<h2>What's Not Allowed</h2>
-<ul>
-  <li><strong>Fake or fraudulent listings</strong> — events that don't exist, scam ticket sales, phishing schemes</li>
-  <li><strong>Counterfeit tickets</strong> or unlicensed resale</li>
-  <li><strong>Illegal activity</strong> — events that violate state or federal law</li>
-  <li><strong>Hate speech, harassment, or threats</strong> targeting individuals or groups</li>
-  <li><strong>Adult or sexually explicit content</strong></li>
-  <li><strong>Misleading medical or financial claims</strong> — investment seminars promising returns, unproven medical treatments, etc.</li>
-  <li><strong>Copyright infringement</strong> — submitting images, posters, or content you don't own or have permission to use</li>
-  <li><strong>Impersonation</strong> — pretending to be a person or organization you're not</li>
-  <li><strong>Spam</strong> — duplicate submissions, irrelevant promotional content, excessive submissions</li>
-  <li><strong>Malicious links</strong> — phishing, malware, or scam URLs</li>
-</ul>
-
-<h2>How Moderation Works</h2>
+<h2>Filing a DMCA Takedown Notice</h2>
+<p>If you believe content on our Service infringes your copyright, send a written notice to our designated DMCA agent. The notice must include:</p>
 <ol>
-  <li>You submit an event or listing</li>
-  <li>Our automated systems check for spam, malicious URLs, and obvious policy violations</li>
-  <li>A human moderator (administrator or trusted "Town Crier") reviews and approves, edits for clarity, or rejects</li>
-  <li>Approved content goes live; rejected content is removed with a brief reason emailed to you</li>
-  <li>Events automatically expire after their end date and are archived</li>
+  <li>Your physical or electronic signature (digital is fine)</li>
+  <li>Identification of the copyrighted work claimed to be infringed</li>
+  <li>Identification of the material on Near and Far Events you claim is infringing — a URL is sufficient</li>
+  <li>Your contact information: name, mailing address, telephone number, and email</li>
+  <li>A statement that you have a good-faith belief that the use is not authorized by the copyright owner, its agent, or the law</li>
+  <li>A statement, made under penalty of perjury, that the information in your notice is accurate and that you are the copyright owner or authorized to act on their behalf</li>
 </ol>
 
-<h2>Town Criers</h2>
-<p>Town Criers are trusted community members granted permission to publish events without admin approval. They are still bound by these Guidelines. Town Crier status can be revoked at any time for violations.</p>
-
-<h2>Reporting Violations</h2>
-<p>If you see content that violates these Guidelines:</p>
-<ul>
-  <li>Email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a> with the event link and a brief description of the issue</li>
-  <li>For copyright infringement, see our <a href="/legal/dmca.html">DMCA Policy</a></li>
-  <li>For privacy concerns, see our <a href="/legal/privacy.html">Privacy Policy</a></li>
-</ul>
-
-<h2>Consequences</h2>
-<p>Depending on severity, violations can result in:</p>
-<ul>
-  <li>Content removal</li>
-  <li>Warning emailed to the submitter</li>
-  <li>Suspension of account</li>
-  <li>Permanent ban</li>
-  <li>Referral to law enforcement (in cases of fraud, threats, or illegal activity)</li>
-</ul>
-
-<h2>Appeals</h2>
-<p>If your content was removed and you believe the decision was incorrect, reply to the rejection email with an explanation. A different moderator will review.</p>
-
-<h2>Contact</h2>
+<h2>Our Designated DMCA Agent</h2>
 <div class="contact-box">
-  <p><a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a></p>
+  <p><strong>DMCA Agent — Near and Far Events LLC</strong><br>
+  Email: <a href="mailto:dmca@nearandfarevents.com">dmca@nearandfarevents.com</a><br>
+  Mailing address: <em>[to be added after LLC formation and statutory agent appointment]</em></p>
 </div>
+
+<h2>Response Timeline</h2>
+<p>We respond to complete DMCA notices within <strong>48 business hours</strong> of receipt. Properly identified infringing content is typically removed pending resolution.</p>
+
+<h2>Counter-Notification</h2>
+<p>If your content was removed under a DMCA notice and you believe the removal was a mistake or misidentification, you may file a counter-notification. Send to the email above and include:</p>
+<ol>
+  <li>Your physical or electronic signature</li>
+  <li>Identification of the removed content and where it appeared before removal</li>
+  <li>A statement under penalty of perjury that you believe the content was removed as a result of mistake or misidentification</li>
+  <li>Your name, address, phone, and email</li>
+  <li>A statement that you consent to the jurisdiction of the federal district court for the district where your address is located</li>
+</ol>
+
+<h2>Repeat Infringers</h2>
+<p>We will terminate the accounts of users who are repeat infringers, in accordance with the DMCA.</p>
+
+<h2>Bad-Faith Notices</h2>
+<p>Filing a fraudulent DMCA notice exposes you to liability under <strong>17 U.S.C. § 512(f)</strong>. Please consider whether your use of the disputed material may be a fair use before sending a notice.</p>
 </div>
 
 <footer>
