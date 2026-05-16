@@ -600,8 +600,8 @@ button:active{opacity:.8}
 [data-theme="dark"] .theme-toggle{color:var(--text2)}
 
 /* ── TIME PICKER STYLING ── */
-.time-picker-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.time-picker-row select{padding:7px 8px;font-size:14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);color:var(--text);min-width:62px;font-family:var(--font-body)}
+.time-picker-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto}
+.time-picker-row select{padding:7px 6px;font-size:14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);color:var(--text);width:auto;min-width:54px;flex-shrink:0;font-family:var(--font-body)}
 .time-picker-row .tpsep{font-weight:800;color:var(--text2);font-size:16px}
 .time-picker-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;min-width:42px;display:inline-block}
 .time-pickers-wrap{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-bottom:11px}
@@ -626,7 +626,7 @@ button:active{opacity:.8}
 <header id="hdr">
   <div class="hdr-row1">
     <div class="hdr-title"><span style="font-size:1.1em;display:inline-block;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.6em;font-weight:500;opacity:.7;letter-spacing:.02em">Discover what's happening, near and far</span></div>
-    <div class="hdr-right" id="authArea"></div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><div class="hdr-right" id="authArea"></div>
   </div>
   <div class="hdr-row2">
     <a href="/" class="nav-btn active" aria-label="Calendar">
@@ -821,7 +821,9 @@ function buildTimePickerHTML(prefix, startTime, endTime, allDay){
     return {h:h12, m:String(m).padStart(2,'0'), ap};
   }
   const s = parse(startTime), e = parse(endTime);
-  const tbd = !startTime && !endTime && !allDay;
+  // Only auto-check TBD when editing an event that explicitly was TBD (legacy 'TBD' string in time column).
+  // For new events, leave pickers visible so users see the dropdowns.
+  const tbd = false;
   function picker(idPrefix, sel){
     return `
       <select id="${idPrefix}H">
@@ -1302,6 +1304,7 @@ function renderAuth(){
           <button onclick="openApprovalsPanel()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:600">📋 <span id="pendingCountBadge"></span>Approvals & Local Insiders</button>
           <button onclick="openBulkRemove()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">👤 Bulk Remove by User</button>
           <button onclick="openManualAdvertiser()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📢 Add Business Ad</button>
+          <button onclick="openStatewideListing()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🌎 Make Listing State-Wide</button>
           <button onclick="openRemovedItemsLog()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📜 Removed Items Log</button>
           <div style="height:1px;background:var(--border)"></div>
         ` : ''}
@@ -1626,6 +1629,90 @@ async function downloadMyData(){
 // ── ADMIN: Bulk Remove by User ──
 
 // ── ADMIN: Manually add an advertisement ──
+
+// ── ADMIN: Make a listing visible state-wide (one row, appears in every zip in that state) ──
+async function openStatewideListing(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">🌎 State-Wide Listing</div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text2);line-height:1.5">
+      Set a directory listing to appear in <strong>every zipcode</strong> within a single state at once (e.g. a regional service, a state-wide chain). One row in the database — appears everywhere. Saves storage and is easy to update.
+    </div>
+    <div class="field"><label>Find listing by business name</label><input type="text" id="swQ" placeholder="Start typing..." oninput="swSearchListings()" autocomplete="off"></div>
+    <div id="swResults" style="margin-bottom:14px"></div>
+    <div id="swSelected" style="display:none;background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;margin-bottom:14px"></div>
+    <div class="field" id="swStateField" style="display:none">
+      <label>Show in every zip of which state?</label>
+      <select id="swState" style="width:100%;padding:9px 11px;font-family:var(--font-body);font-size:14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text)">
+        <option value="">— Choose state —</option>
+        <option value="OH">Ohio (OH)</option>
+        <option value="PA">Pennsylvania (PA)</option>
+        <option value="WV">West Virginia (WV)</option>
+        <option value="KY">Kentucky (KY)</option>
+        <option value="IN">Indiana (IN)</option>
+        <option value="MI">Michigan (MI)</option>
+        <option value="">— Or clear (zip-specific only) —</option>
+      </select>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Leave blank to revert to single-zip visibility.</div>
+    </div>
+    <div class="modal-actions" id="swActions" style="display:none">
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="doStatewideListing()">Apply</button>
+    </div>
+    <div class="err-msg" id="swErr"></div>`;
+  openModal('evModal');
+}
+let _swSelectedListing = null;
+let _swTimer = null;
+function swSearchListings(){
+  clearTimeout(_swTimer);
+  _swTimer = setTimeout(async () => {
+    const q = document.getElementById('swQ').value.trim();
+    if (q.length < 2) { document.getElementById('swResults').innerHTML = ''; return; }
+    try {
+      // Fetch all listings, filter client-side (simpler than building an admin search endpoint)
+      const all = await fetch('/api/listings?all=1', { headers:{'Authorization':'Bearer '+localStorage.getItem('nlcc_token')} }).then(r=>r.json()).catch(()=>[]);
+      const matches = (all||[]).filter(l => (l.business_name||l.name||'').toLowerCase().includes(q.toLowerCase())).slice(0,12);
+      if (!matches.length) { document.getElementById('swResults').innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px">No matches</div>'; return; }
+      const html = matches.map(l => {
+        const name = l.business_name || l.name || '(no name)';
+        const zip = l.zipcode || '';
+        const sw = l.statewide_state || '';
+        const args = JSON.stringify({id:l.id, name, zip, sw}).replace(/"/g, '&quot;');
+        return `<div onclick='swSelectFromData(${args})' style="padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;cursor:pointer;background:var(--surface);transition:all .15s" onmouseover="this.style.background='var(--amber-lt)';this.style.borderColor='var(--amber)'" onmouseout="this.style.background='var(--surface)';this.style.borderColor='var(--border)'">
+          <div style="font-weight:700;font-size:14px">${esc(name)}</div>
+          <div style="font-size:12px;color:var(--text2)">Zip ${esc(zip)}${sw?' · <strong style="color:var(--amber-dk)">State-wide: '+esc(sw)+'</strong>':''}</div>
+        </div>`;
+      }).join('');
+      document.getElementById('swResults').innerHTML = html;
+    } catch(e){}
+  }, 300);
+}
+function swSelectFromData(data){ swSelect(data.id, data.name, data.zip, data.sw); }
+function swSelect(id, name, zip, currentState){
+  _swSelectedListing = { id, name, zip };
+  document.getElementById('swResults').innerHTML = '';
+  document.getElementById('swQ').value = '';
+  document.getElementById('swSelected').style.display = 'block';
+  document.getElementById('swSelected').innerHTML = `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Selected:</div>
+    <div style="font-weight:800;font-size:15px">${name}</div>
+    <div style="font-size:12px;color:var(--text2)">Currently in zip ${zip} ${currentState?`· State-wide: <strong style="color:var(--amber-dk)">${currentState}</strong>`:''}</div>`;
+  document.getElementById('swStateField').style.display = 'block';
+  document.getElementById('swActions').style.display = 'flex';
+  if (currentState) document.getElementById('swState').value = currentState;
+}
+async function doStatewideListing(){
+  if (!_swSelectedListing) { document.getElementById('swErr').textContent = 'Please select a listing first.'; return; }
+  const state = document.getElementById('swState').value.trim().toUpperCase();
+  try {
+    const r = await api('/api/admin/listings/' + _swSelectedListing.id + '/statewide', { method:'PUT', body: JSON.stringify({ state })});
+    showMessageModal('✓ Done', state ? `"${_swSelectedListing.name}" now appears in every zipcode in ${state}.` : `"${_swSelectedListing.name}" is now single-zip only.`, 'success');
+    _swSelectedListing = null;
+  } catch(e) { document.getElementById('swErr').textContent = e.message; }
+}
+
+
 function openManualAdvertiser(){
   closeAcctMenu();
   document.getElementById('evModalContent').innerHTML = `
