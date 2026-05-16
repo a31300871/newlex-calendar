@@ -233,7 +233,55 @@ nav::after{
 
 /* ── PORTAL (auth + dashboard) ── */
 .portal-wrap{max-width:500px;margin:0 auto;padding:0 24px 60px}
-.portal-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:28px 28px 24px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.portal-card{
+  position:relative;
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:28px 28px 24px;
+  box-shadow:0 0 0 4px rgba(99,102,241,.05),0 8px 32px rgba(99,102,241,.10),0 1px 3px rgba(15,23,42,.04);
+  overflow:hidden;
+}
+.portal-card::before{
+  content:'';position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--gradient);
+  box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3);
+}
+
+/* Event Popup Ad Preview */
+.popup-preview-wrap{max-width:480px;margin:0 auto}
+.popup-preview-shell{
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  box-shadow:0 8px 28px rgba(99,102,241,.12),0 2px 8px rgba(15,23,42,.05);
+  position:relative;
+}
+.popup-preview-header{
+  display:flex;align-items:flex-start;gap:10px;
+  padding-bottom:14px;margin-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+.ad-card-preview{
+  background:linear-gradient(135deg,rgba(99,102,241,.04),rgba(236,72,153,.03),rgba(245,158,11,.03));
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:14px 14px 12px 18px;
+  position:relative;
+  overflow:hidden;
+}
+.ad-card-preview-strip{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gradient);border-radius:var(--r) 0 0 var(--r)}
+.ad-sponsored-preview{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;margin-bottom:4px}
+.ad-name-preview{font-size:17px;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:4px}
+.ad-tagline-preview{font-size:13px;color:var(--text2);line-height:1.45;margin-bottom:8px}
+.ad-btn-preview{
+  flex:1;display:inline-block;text-align:center;text-decoration:none;
+  font-size:12px;font-weight:700;padding:7px 10px;border-radius:6px;
+  transition:all .15s;cursor:default;
+}
+.ad-btn-preview.phone{background:var(--surface);color:var(--text);border:1.5px solid var(--border-md)}
+.ad-btn-preview.site{background:var(--gradient);color:#fff;box-shadow:0 2px 6px rgba(99,102,241,.25)}
 .portal-title{font-family:var(--font-head);font-size:22px;font-weight:700;margin-bottom:20px}
 .auth-tabs{display:flex;gap:6px;margin-bottom:20px}
 .auth-tab{flex:1;font-size:14px;padding:8px 0;border-radius:var(--r)}
@@ -315,7 +363,7 @@ nav::after{
 <!-- NAV -->
 <nav>
   <div class="hdr-row1">
-    <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span></a>
+    <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.62em;font-weight:500;opacity:.7;letter-spacing:.02em;color:var(--text2)">Discover what's happening, near and far</span></a>
     <div class="hdr-right"><span class="nav-user" id="navUser"></span></div>
   </div>
   <div class="hdr-row2">
@@ -387,19 +435,52 @@ nav::after{
     </div>
   </div>
 
-  <!-- PREVIEW -->
-  <div style="margin-top:32px">
-    <div class="dash-label">How your ad looks on the calendar</div>
-    <div class="preview-bar">
-      <span class="preview-label">📢 Sponsors</span>
-      <div class="preview-card">
-        <div class="p-name">Your Business Name</div>
-        <div class="p-tag">Your tagline goes right here</div>
-        <span class="p-url">Visit Website →</span>
+  <!-- PREVIEW: How your ads look -->
+  <div style="margin-top:36px">
+    <div class="section-title" style="font-size:20px;margin-bottom:6px">See Your Ads in Action</div>
+    <div class="section-sub" style="margin-bottom:18px">Here's exactly what each ad tier looks like to visitors on the site.</div>
+
+    <!-- Sponsor Bar preview -->
+    <div style="margin-bottom:20px">
+      <div class="dash-label" style="margin-bottom:8px">📢 Sponsor Bar ($25/mo) — appears at bottom of every page</div>
+      <div class="preview-bar">
+        <span class="preview-label">📢 Sponsors</span>
+        <div class="preview-card">
+          <div class="p-name">Your Business Name</div>
+          <div class="p-tag">Your tagline goes right here</div>
+          <span class="p-url">Visit Website →</span>
+        </div>
+        <div class="preview-card" style="opacity:.45;border-style:dashed">
+          <div class="p-name" style="color:var(--text3)">Another Sponsor</div>
+          <div class="p-tag">...</div>
+        </div>
       </div>
-      <div class="preview-card" style="opacity:.4;border-style:dashed">
-        <div class="p-name" style="color:var(--text3)">Another Sponsor</div>
-        <div class="p-tag">...</div>
+    </div>
+
+    <!-- Event Popup Ad preview -->
+    <div>
+      <div class="dash-label" style="margin-bottom:8px">⭐ Event Popup Ad ($50/mo) — appears inside every event detail popup</div>
+      <div class="popup-preview-wrap">
+        <div class="popup-preview-shell">
+          <div class="popup-preview-header">
+            <span style="font-size:18px">🎉</span>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--text)">Summer Concert in the Park</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:1px">📍 Main Street Park · Sat, Jun 14 · 7:00 PM</div>
+            </div>
+          </div>
+          <div class="ad-card-preview">
+            <div class="ad-card-preview-strip"></div>
+            <div class="ad-sponsored-preview">📢 Sponsored</div>
+            <div class="ad-name-preview">Your Business Name</div>
+            <div class="ad-tagline-preview">A short, compelling tagline that gets attention.</div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <a href="#" onclick="return false" class="ad-btn-preview phone">📞 (555) 123-4567</a>
+              <a href="#" onclick="return false" class="ad-btn-preview site">Visit Website →</a>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:8px;font-style:italic">↑ Visitors see this every time they click on any event</div>
       </div>
     </div>
   </div>
@@ -429,7 +510,7 @@ nav::after{
 
       <!-- PREMIUM -->
       <div class="pricing-card" style="position:relative">
-        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--amber);color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 14px;border-radius:100px;white-space:nowrap">⭐ Most Popular</div>
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gradient);color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 16px;border-radius:100px;white-space:nowrap;box-shadow:0 4px 12px rgba(99,102,241,.35),0 0 0 3px rgba(236,72,153,.10)">⭐ Most Popular</div>
         <div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-dk);margin-bottom:8px">Event Popup Ad</div>
         <div class="price-amount">$50</div>
         <div class="price-period">per month</div>
@@ -461,7 +542,7 @@ nav::after{
 </div>
 
 <div style="background:var(--surface2);border-top:1px solid var(--border);padding:20px 24px;text-align:center">
-  <p style="font-size:13px;color:var(--text3);max-width:500px;margin:0 auto">This portal is for <strong>businesses purchasing ad space only</strong>. If you are a community member looking to post events, <a href="/" style="color:var(--amber);text-decoration:none;font-weight:600">go back to the calendar</a> and register there.</p>
+  <p style="font-size:14px;color:var(--text);max-width:520px;margin:0 auto;line-height:1.6;background:linear-gradient(135deg,var(--amber-lt),rgba(236,72,153,.08));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);padding:12px 16px;border-radius:8px;font-weight:500"><strong style="color:var(--amber-dk)">📢 Business portal:</strong> This section is for <strong>businesses purchasing ad space only</strong>. Community members posting events should <a href="/" style="color:var(--amber-dk);text-decoration:underline;font-weight:700">use the calendar</a> instead.</p>
 </div>
 
 
