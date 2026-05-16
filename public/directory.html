@@ -173,20 +173,79 @@ nav::after{
 .section-title{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--text)}
 .section-sub{font-size:14px;color:var(--text3);margin-top:2px}
 
-/* ── FEATURED ADVERTISERS GRID ── */
-.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:10px}
-.adv-card{background:var(--navy);border-radius:var(--r-lg);padding:20px;position:relative;transition:transform .15s,box-shadow .15s}
-.adv-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,39,68,.3)}
-.adv-card-tag{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px}
-.adv-card-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.2}
-.adv-card-tag2{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:10px;line-height:1.4}
-.adv-card-phone{font-size:14px;color:var(--amber-mid);text-decoration:none;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:8px}
-.adv-card-phone:hover{color:#fff}
-.adv-card-btn{display:block;text-align:center;background:var(--amber);color:#fff;font-weight:700;font-size:13px;padding:8px 0;border-radius:var(--r);text-decoration:none;transition:background .15s}
-.adv-card-btn:hover{background:var(--amber-dk)}
-.adv-placeholder{border:2px dashed rgba(255,255,255,.15);background:rgba(255,255,255,.03)}
-.adv-placeholder .adv-card-name{color:rgba(255,255,255,.3);font-size:15px}
-.adv-placeholder .adv-card-tag2{color:rgba(255,255,255,.25)}
+/* ── FEATURED BUSINESSES (modernized to match brand) ── */
+.featured-wrap{
+  background:linear-gradient(135deg,rgba(99,102,241,.06) 0%,rgba(236,72,153,.04) 50%,rgba(245,158,11,.04) 100%);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:22px 22px 20px;
+  margin-bottom:28px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 4px 20px rgba(99,102,241,.06),0 1px 3px rgba(15,23,42,.04);
+}
+.featured-wrap::before{
+  content:'';position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--gradient);
+  box-shadow:0 0 18px rgba(99,102,241,.45),0 0 30px rgba(236,72,153,.3);
+}
+.featured-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.featured-title{font-family:var(--font-head);font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.15;display:flex;align-items:center;gap:8px;color:var(--text)}
+.featured-title-mark{background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-size:1.1em}
+.featured-sub{font-size:13px;color:var(--text3);font-weight:600;margin-top:2px}
+.featured-cta{
+  font-size:13px;font-weight:700;text-decoration:none;
+  padding:8px 14px;border-radius:100px;
+  background:var(--gradient);color:#fff;
+  box-shadow:0 2px 8px rgba(99,102,241,.25),0 0 0 3px rgba(236,72,153,.08);
+  transition:all .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;display:inline-block;
+}
+.featured-cta:hover{box-shadow:0 4px 16px rgba(99,102,241,.40),0 0 0 4px rgba(236,72,153,.15);transform:translateY(-1px);filter:brightness(1.08)}
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.adv-card{
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:18px 18px 16px;
+  position:relative;
+  transition:all .2s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(15,23,42,.04);
+}
+.adv-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:var(--gradient);
+  border-radius:var(--r) 0 0 var(--r);
+}
+.adv-card:hover{
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(99,102,241,.10),0 8px 24px rgba(99,102,241,.18),0 4px 12px rgba(236,72,153,.10);
+  transform:translateY(-3px);
+}
+.adv-card-tag{
+  font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--gradient);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  margin-bottom:6px;
+}
+.adv-card-name{font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;line-height:1.2}
+.adv-card-tag2{font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.4}
+.adv-card-phone{font-size:14px;color:var(--amber-dk);text-decoration:none;font-weight:700;display:flex;align-items:center;gap:5px;margin-bottom:10px}
+.adv-card-phone:hover{color:var(--pink)}
+.adv-card-btn{
+  display:block;text-align:center;
+  background:var(--gradient);color:#fff;
+  font-weight:700;font-size:13px;padding:9px 0;
+  border-radius:var(--r);text-decoration:none;
+  transition:all .15s;
+  box-shadow:0 2px 6px rgba(99,102,241,.20);
+}
+.adv-card-btn:hover{filter:brightness(1.08);box-shadow:0 4px 12px rgba(99,102,241,.30);transform:translateY(-1px)}
+.adv-placeholder{opacity:.55;border-style:dashed;border-color:var(--border-md)}
+.adv-placeholder::before{background:linear-gradient(135deg,var(--border-md),var(--border));opacity:.5}
+.adv-placeholder .adv-card-tag{color:var(--text3);background:none;-webkit-text-fill-color:var(--text3)}
+.adv-placeholder .adv-card-name{color:var(--text3);font-size:15px}
+.adv-placeholder .adv-card-tag2{color:var(--text3)}
 
 /* ── DIRECTORY ── */
 /* 3-Pill filter row (matches calendar) */
@@ -375,6 +434,20 @@ nav::after{
   <!-- POPOVER MENU FOR TYPE FILTER -->
   <div class="fp-popover" id="dirPopWhat"></div>
 
+  <!-- ⭐ FEATURED BUSINESSES (now at top) -->
+  <div class="featured-wrap" style="margin-top:22px">
+    <div class="featured-head">
+      <div>
+        <div class="featured-title"><span class="featured-title-mark">⭐</span> Featured Businesses</div>
+        <div class="featured-sub">Premium advertisers in your area</div>
+      </div>
+      <a href="/advertise?tier=premium" class="featured-cta">Claim a spot — $50/mo →</a>
+    </div>
+    <div class="adv-grid" id="advGrid">
+      <div style="color:var(--text3);font-size:14px;padding:20px 0">Loading featured businesses…</div>
+    </div>
+  </div>
+
   <!-- HEADER ROW WITH COUNT + ADMIN -->
   <div class="section-head" style="margin-top:18px;margin-bottom:14px">
     <div>
@@ -385,22 +458,6 @@ nav::after{
   </div>
 
   <div class="listing-list" id="listingGrid"></div>
-</div>
-
-<!-- FEATURED ADVERTISERS (moved below directory) -->
-<div style="background:var(--navy2);padding:30px 0 24px">
-  <div class="section" style="padding-top:0;padding-bottom:0">
-    <div class="section-head">
-      <div>
-        <div class="section-title" style="color:#fff;font-size:20px">⭐ Featured Businesses</div>
-        <div class="section-sub" style="color:rgba(255,255,255,.5)">Premium advertisers</div>
-      </div>
-      <a href="/advertise?tier=premium" style="font-size:13px;color:var(--amber-mid);text-decoration:none;font-weight:600">Claim a featured spot — $50/mo →</a>
-    </div>
-    <div class="adv-grid" id="advGrid">
-      <div style="color:rgba(255,255,255,.3);font-size:14px;padding:20px 0">Loading featured businesses…</div>
-    </div>
-  </div>
 </div>
 
 <!-- CTA BANNER -->
