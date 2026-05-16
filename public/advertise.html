@@ -222,8 +222,8 @@ nav::after{
 .preview-card .p-url{font-size:11px;color:var(--amber-dk);font-weight:700;margin-top:3px;display:block}
 
 /* Pricing */
-.pricing-card{background:var(--surface);border:2px solid var(--amber);border-radius:var(--r-lg);padding:36px 32px;max-width:400px;margin:0 auto;text-align:center;box-shadow:0 0 0 4px rgba(99,102,241,.08),0 8px 32px rgba(99,102,241,.18),0 4px 12px rgba(236,72,153,.10);position:relative;overflow:hidden}
-.pricing-card::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.4)}
+.pricing-card{background:var(--surface);border:1.5px solid var(--amber);border-radius:var(--r-lg);padding:36px 32px;max-width:400px;margin:0 auto;text-align:center;box-shadow:0 0 0 4px rgba(99,102,241,.08),0 8px 32px rgba(99,102,241,.18),0 4px 12px rgba(236,72,153,.10);position:relative}
+.pricing-card::before{content:'';position:absolute;left:-1.5px;right:-1.5px;top:-1.5px;height:4px;background:var(--gradient);border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:0 0 14px rgba(99,102,241,.4)}
 .price-amount{font-family:var(--font-head);font-size:56px;font-weight:700;color:var(--amber);line-height:1}
 .price-period{font-size:18px;color:var(--text2)}
 .price-features{list-style:none;margin:24px 0;text-align:left}
@@ -247,6 +247,18 @@ nav::after{
   background:var(--gradient);
   box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3);
 }
+
+/* Directory Featured Preview */
+.dir-preview-wrap{max-width:480px;margin:0 auto}
+.dir-preview-inner{
+  background:linear-gradient(135deg,rgba(99,102,241,.06) 0%,rgba(236,72,153,.04) 50%,rgba(245,158,11,.04) 100%);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  position:relative;
+  box-shadow:0 4px 16px rgba(99,102,241,.08),0 1px 3px rgba(15,23,42,.04);
+}
+.dir-preview-inner .featured-strip{position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3);border-radius:var(--r-lg) var(--r-lg) 0 0}
 
 /* Event Popup Ad Preview */
 .popup-preview-wrap{max-width:480px;margin:0 auto}
@@ -457,6 +469,27 @@ nav::after{
       </div>
     </div>
 
+    <!-- Directory Featured preview (also included with $50/mo Premium) -->
+    <div style="margin-bottom:20px">
+      <div class="dash-label" style="margin-bottom:8px">⭐ Featured in Business Directory (included with $50/mo Premium)</div>
+      <div class="dir-preview-wrap">
+        <div class="dir-preview-inner">
+          <div class="featured-strip"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text)"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">⭐</span> Featured Businesses</div>
+            <span style="font-size:11px;color:var(--text3);font-weight:600">Top of directory listing</span>
+          </div>
+          <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.04)">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gradient);border-radius:var(--r) 0 0 var(--r)"></div>
+            <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;margin-bottom:4px">Featured</div>
+            <div style="font-size:17px;font-weight:800;color:var(--text);line-height:1.2;margin-bottom:3px">Your Business Name</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.4;margin-bottom:10px">Your business description sits here.</div>
+            <a href="#" onclick="return false" style="display:block;text-align:center;font-size:13px;font-weight:700;padding:9px 0;border-radius:var(--r);background:var(--gradient);color:#fff;text-decoration:none;box-shadow:0 2px 6px rgba(99,102,241,.20)">Get Directions →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Event Popup Ad preview -->
     <div>
       <div class="dash-label" style="margin-bottom:8px">⭐ Event Popup Ad ($50/mo) — appears inside every event detail popup</div>
@@ -505,7 +538,7 @@ nav::after{
           <li><span class="check">✓</span> Edit anytime</li>
           <li><span class="check">✓</span> Cancel anytime</li>
         </ul>
-        <button class="btn-navy" style="width:100%;font-size:15px;padding:12px 0" onclick="scrollToPortal('basic')">Get Started</button>
+        <button onclick="scrollToPortal('basic')" style="width:100%;font-size:15px;padding:12px 0;background:var(--surface);color:var(--amber-dk);border:1.5px solid var(--amber);border-radius:100px;font-weight:700;cursor:pointer;font-family:var(--font-body);box-shadow:0 0 0 3px rgba(99,102,241,.06);transition:all .2s cubic-bezier(.4,0,.2,1)" onmouseover="this.style.background='var(--amber-lt)';this.style.boxShadow='0 0 0 4px rgba(99,102,241,.12),0 4px 12px rgba(99,102,241,.20)';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='var(--surface)';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.06)';this.style.transform=''">Get Started →</button>
       </div>
 
       <!-- PREMIUM -->
@@ -519,11 +552,12 @@ nav::after{
           <li><span class="check">✓</span> Full business card ad with animation</li>
           <li><span class="check">✓</span> Tappable phone number</li>
           <li><span class="check">✓</span> Website button in every popup</li>
+          <li><span class="check">✓</span> <strong>Featured in Business Directory</strong></li>
           <li><span class="check">✓</span> Sponsor bar included</li>
           <li><span class="check">✓</span> <strong>Limited to 5 spots only</strong></li>
           <li><span class="check">✓</span> Cancel anytime</li>
         </ul>
-        <button class="btn-amber" style="width:100%;font-size:15px;padding:12px 0" onclick="scrollToPortal('premium')">Claim a Spot</button>
+        <button onclick="scrollToPortal('premium')" style="width:100%;font-size:15px;padding:12px 0;background:var(--gradient);color:#fff;border:1.5px solid transparent;border-radius:100px;font-weight:700;cursor:pointer;font-family:var(--font-body);box-shadow:0 4px 14px rgba(99,102,241,.30),0 0 0 4px rgba(236,72,153,.10);transition:all .2s cubic-bezier(.4,0,.2,1)" onmouseover="this.style.boxShadow='0 6px 20px rgba(99,102,241,.45),0 0 0 5px rgba(236,72,153,.18)';this.style.transform='translateY(-2px)';this.style.filter='brightness(1.08)'" onmouseout="this.style.boxShadow='0 4px 14px rgba(99,102,241,.30),0 0 0 4px rgba(236,72,153,.10)';this.style.transform='';this.style.filter=''">Claim a Spot →</button>
       </div>
 
     </div>
