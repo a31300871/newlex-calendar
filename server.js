@@ -613,7 +613,23 @@ app.get('/advertise',  (_req, res) => res.sendFile(path.join(__dirname, 'public'
 app.get('/directory',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'directory.html')));
 
 // ── LEGAL PAGES (clean URLs + the .html versions both work via static middleware) ──
-const _legal = (file) => (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', file));
+const _legal = (file) => (_req, res) => {
+  const fpath = path.join(__dirname, 'public', 'legal', file);
+  res.sendFile(fpath, (err) => {
+    if (err) {
+      console.error(`Legal page not found: ${file}`, err.message);
+      res.status(404).type('html').send(`
+        <!DOCTYPE html><html><head><title>Legal Page Missing</title></head>
+        <body style="font-family:system-ui;max-width:560px;margin:60px auto;padding:0 20px;line-height:1.5">
+          <h1>Legal Page Not Found</h1>
+          <p>The file <code>public/legal/${file}</code> hasn't been uploaded to the server yet.</p>
+          <p>If you're the site owner: make sure the <code>public/legal/</code> folder and all 8 .html files are in your GitHub repo, then redeploy.</p>
+          <p><a href="/">← Back to home</a></p>
+        </body></html>
+      `);
+    }
+  });
+};
 app.get('/privacy',                 _legal('privacy.html'));
 app.get('/terms',                   _legal('terms.html'));
 app.get('/affiliate-disclosure',    _legal('affiliate-disclosure.html'));
