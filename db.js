@@ -137,6 +137,13 @@ async function getDb() {
 
   // ── Phase B: Anonymous (guest) event submission with email verification + magic edit links ──
   try { await _db.run("ALTER TABLE events ADD COLUMN description TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN start_time TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN end_time TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN all_day INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN effective_end_at TEXT DEFAULT ''"); } catch(_) {}
+  // Backfill: legacy events without effective_end_at — assume end of day + 4 hours
+  try { await _db.run("UPDATE events SET effective_end_at = datetime(date || ' 23:59:00', '+4 hours') WHERE effective_end_at = '' OR effective_end_at IS NULL"); } catch(_) {}
+  try { await _db.run("ALTER TABLE listings ADD COLUMN statewide_state TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN is_anonymous INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN submitter_name TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN submitter_email TEXT DEFAULT ''"); } catch(_) {}
