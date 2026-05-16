@@ -539,14 +539,50 @@ app.post('/api/advertiser/checkout', requireAdvertiser, async (req, res) => {
 
 // Cancel subscription
 app.post('/api/advertiser/cancel', requireAdvertiser, async (req, res) => {
+  try {
+    const db  = await getDb();
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
+    if (!adv) return res.status(404).json({ error: 'Account not found.' });
+    if (adv.status === 'cancelled') return res.json({ success: true, message: 'Already cancelled.' });
+
+    // If there's a Stripe subscription, try to cancel it (non-fatal if already gone)
+    if (adv.stripe_subscription_id && stripe) {
+      try {
+        await stripe.subscriptions.cancel(adv.stripe_subscription_id);
+      } catch (stripeErr) {
+        // Subscription may already be cancelled or never finalized — log and continue
+        console.warn('Stripe cancel non-fatal:', stripeErr.message);
+      }
+    }
+
+    await db.run("UPDATE advertisers SET status='cancelled', stripe_subscription_id='' WHERE id=?", [req.advertiser.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Re-check Stripe to confirm if a pending payment actually completed.
+// Useful if user got back from Stripe but verify-session never fired
+// (e.g., expired token, closed tab, network blip).
+app.post('/api/advertiser/refresh-status', requireAdvertiser, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
   try {
     const db  = await getDb();
     const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
-    if (!adv?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
-    await stripe.subscriptions.cancel(adv.stripe_subscription_id);
-    await db.run("UPDATE advertisers SET status='cancelled', stripe_subscription_id='' WHERE id=?", [req.advertiser.id]);
-    res.json({ success: true });
+    if (!adv) return res.status(404).json({ error: 'Account not found.' });
+
+    // If we know the customer, look for an active subscription on Stripe
+    if (adv.stripe_customer_id) {
+      const subs = await stripe.subscriptions.list({ customer: adv.stripe_customer_id, status: 'all', limit: 10 });
+      const live = subs.data.find(s => s.status === 'active' || s.status === 'trialing');
+      if (live) {
+        await db.run("UPDATE advertisers SET status='active', stripe_subscription_id=? WHERE id=?", [live.id, req.advertiser.id]);
+        const fresh = await db.get('SELECT * FROM advertisers WHERE id=?', [req.advertiser.id]);
+        return res.json({ success: true, changed: true, advertiser: safeAdv(fresh) });
+      }
+    }
+
+    // No completed payment found
+    res.json({ success: true, changed: false, advertiser: safeAdv(adv) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -575,6 +611,17 @@ function safeAdv(a) {
 
 app.get('/advertise',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
 app.get('/directory',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'directory.html')));
+
+// ── LEGAL PAGES (clean URLs + the .html versions both work via static middleware) ──
+const _legal = (file) => (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', file));
+app.get('/privacy',                 _legal('privacy.html'));
+app.get('/terms',                   _legal('terms.html'));
+app.get('/affiliate-disclosure',    _legal('affiliate-disclosure.html'));
+app.get('/cookies',                 _legal('cookies.html'));
+app.get('/community-guidelines',    _legal('community-guidelines.html'));
+app.get('/dmca',                    _legal('dmca.html'));
+app.get('/accessibility',           _legal('accessibility.html'));
+app.get('/contact',                 _legal('contact.html'));
 
 // ── LISTING AUTH ──
 function requireListing(req, res, next) {
