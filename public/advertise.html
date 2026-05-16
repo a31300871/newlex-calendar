@@ -967,6 +967,10 @@ function renderAuthForm(tab) {
       <div class="field"><label>Tagline</label><input type="text" id="aTag" placeholder="Short description shown under your business name"></div>
       <div class="field"><label>Business Phone</label><input type="tel" id="aPhone" placeholder="(740) 555-1234"></div>
       <div class="field"><label>Website URL</label><input type="text" id="aUrl" placeholder="https://yourbusiness.com"></div>
+      <div class="field"><label>🎯 Target Zipcode <span class="req">*</span></label><input type="text" id="aZip" placeholder="43764" maxlength="5" inputmode="numeric" style="font-size:16px;letter-spacing:.05em"></div>
+      <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:9px 13px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5">
+        <strong style="color:var(--amber-dk)">Where will my ad show?</strong> Only to visitors browsing your target zipcode. Buying coverage for a second zipcode = a second subscription. Need state-wide coverage? Contact us after signup.
+      </div>
       <div class="form-actions">
         <button class="btn-amber" onclick="doRegister()">Register My Business →</button>
       </div>
@@ -983,6 +987,8 @@ function renderAuthForm(tab) {
 
 async function doRegister() {
   try {
+    const zip = (document.getElementById('aZip')?.value || '').trim();
+    if (!zip || zip.length !== 5) { document.getElementById('authErr').textContent = 'A valid 5-digit target zipcode is required.'; return; }
     const payload = {
       name: document.getElementById('aName').value.trim(),
       email: document.getElementById('aEmail').value.trim(),
@@ -991,6 +997,7 @@ async function doRegister() {
       tagline: document.getElementById('aTag').value.trim(),
       phone: document.getElementById('aPhone')?.value.trim() || '',
       url: document.getElementById('aUrl').value.trim(),
+      zipcode: zip,
     };
     const { token, advertiser: adv } = await api('/api/advertiser/register', { method:'POST', body:JSON.stringify(payload) });
     setSession(token, adv);
@@ -1358,7 +1365,8 @@ function cookieConsent(action){
 // ── Shared sponsor bar loader ──
 async function loadSharedSponsorBar(){
   try {
-    const sponsors = await fetch('/api/display/sponsors').then(r=>r.json()).catch(()=>[]);
+    const z = localStorage.getItem('nlcc_zipcode') || '';
+    const sponsors = await fetch('/api/display/sponsors?zipcode=' + encodeURIComponent(z)).then(r=>r.json()).catch(()=>[]);
     const wrap = document.getElementById('sponCards');
     if (!wrap) return;
     let html = '';
