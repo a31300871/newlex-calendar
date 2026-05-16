@@ -79,15 +79,15 @@ body{font-family:var(--font-body);background:var(--cream);
   background-attachment:fixed;color:var(--text);line-height:1.5}
 input,select,button{font-family:var(--font-body);font-size:15px}
 input,select{width:100%;padding:10px 14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
-input:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(186,117,23,.12)}
+input:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 4px 14px rgba(99,102,241,.10)}
 input::placeholder{color:var(--text3)}
 button{cursor:pointer;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);padding:9px 18px;transition:background .15s,border-color .15s;font-size:15px;font-weight:500}
 button:hover{background:var(--surface2)}
 button:active{opacity:.8}
 .btn-amber{background:var(--amber);color:#fff;border-color:var(--amber);font-weight:700;box-shadow:var(--glow-sm);transition:all .18s}
 .btn-amber:hover{background:var(--amber-dk)}
-.btn-navy{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
-.btn-navy:hover{background:var(--navy2)}
+.btn-navy{background:var(--gradient);color:#fff;border-color:transparent;font-weight:700;box-shadow:0 2px 6px rgba(99,102,241,.20)}
+.btn-navy:hover{filter:brightness(1.08);box-shadow:0 4px 12px rgba(99,102,241,.30);transform:translateY(-1px)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text2)}
 .btn-ghost:hover{background:var(--surface2);border-color:var(--border)}
 .btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#F09595;font-weight:600}
@@ -204,15 +204,26 @@ nav::after{
 .benefit-text{font-size:14px;color:var(--text2);line-height:1.5}
 
 /* Sponsor preview */
-.preview-bar{background:var(--navy);border-radius:var(--r-lg);padding:16px 20px;display:flex;align-items:center;gap:12px;margin:20px 0}
-.preview-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);white-space:nowrap}
-.preview-card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:10px 16px;min-width:180px}
-.preview-card .p-name{font-size:14px;font-weight:700;color:#fff}
-.preview-card .p-tag{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
-.preview-card .p-url{font-size:11px;color:#EF9F27;font-weight:600;margin-top:3px;display:block}
+.preview-bar{
+  position:relative;
+  background:rgba(255,255,255,0.94);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;margin:20px 0;
+  overflow:hidden;
+  box-shadow:0 4px 16px rgba(99,102,241,.10),0 1px 3px rgba(15,23,42,.04);
+}
+.preview-bar::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3)}
+.preview-label{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;white-space:nowrap;position:relative;z-index:1}
+.preview-card{background:var(--surface);border:1.5px solid var(--border-md);border-radius:10px;padding:10px 16px;min-width:180px;position:relative;overflow:hidden;z-index:1}
+.preview-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gradient);border-radius:10px 0 0 10px}
+.preview-card .p-name{font-size:14px;font-weight:800;color:var(--text)}
+.preview-card .p-tag{font-size:11px;color:var(--text2);margin-top:2px;font-weight:500}
+.preview-card .p-url{font-size:11px;color:var(--amber-dk);font-weight:700;margin-top:3px;display:block}
 
 /* Pricing */
-.pricing-card{background:var(--surface);border:2px solid var(--amber);border-radius:var(--r-lg);padding:36px 32px;max-width:400px;margin:0 auto;text-align:center;box-shadow:0 8px 32px rgba(186,117,23,.12)}
+.pricing-card{background:var(--surface);border:2px solid var(--amber);border-radius:var(--r-lg);padding:36px 32px;max-width:400px;margin:0 auto;text-align:center;box-shadow:0 0 0 4px rgba(99,102,241,.08),0 8px 32px rgba(99,102,241,.18),0 4px 12px rgba(236,72,153,.10);position:relative;overflow:hidden}
+.pricing-card::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.4)}
 .price-amount{font-family:var(--font-head);font-size:56px;font-weight:700;color:var(--amber);line-height:1}
 .price-period{font-size:18px;color:var(--text2)}
 .price-features{list-style:none;margin:24px 0;text-align:left}
@@ -243,11 +254,21 @@ nav::after{
 .status-pill.cancelled{background:var(--surface2);color:var(--text3)}
 .dash-section{margin-bottom:24px}
 .dash-label{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
-.live-preview{background:var(--navy);border-radius:var(--r-lg);padding:14px 18px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.lp-label{font-size:10px;color:rgba(255,255,255,.4);font-weight:700;letter-spacing:.08em;text-transform:uppercase;flex-shrink:0}
-.lp-card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:8px 14px;flex:1}
-.lp-name{font-size:14px;font-weight:700;color:#fff}
-.lp-tag{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.live-preview{
+  position:relative;
+  background:rgba(255,255,255,0.94);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:14px 18px;display:flex;align-items:center;gap:10px;margin-bottom:10px;
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(99,102,241,.06);
+}
+.live-preview::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--gradient);box-shadow:0 0 14px rgba(99,102,241,.45),0 0 24px rgba(236,72,153,.3)}
+.lp-label{font-size:10px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;flex-shrink:0;position:relative;z-index:1}
+.lp-card{background:var(--surface);border:1.5px solid var(--border-md);border-radius:8px;padding:8px 14px;flex:1;position:relative;overflow:hidden;z-index:1}
+.lp-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gradient);border-radius:8px 0 0 8px}
+.lp-name{font-size:14px;font-weight:800;color:var(--text)}
+.lp-tag{font-size:11px;color:var(--text2);margin-top:2px;font-weight:500}
 .lp-url{font-size:11px;color:#EF9F27;font-weight:600;margin-top:2px}
 .divider{border:none;border-top:1px solid var(--border);margin:20px 0}
 
@@ -377,7 +398,7 @@ nav::after{
         <span class="p-url">Visit Website →</span>
       </div>
       <div class="preview-card" style="opacity:.4;border-style:dashed">
-        <div class="p-name" style="color:rgba(255,255,255,.5)">Another Sponsor</div>
+        <div class="p-name" style="color:var(--text3)">Another Sponsor</div>
         <div class="p-tag">...</div>
       </div>
     </div>
@@ -442,9 +463,7 @@ nav::after{
 <div style="background:var(--surface2);border-top:1px solid var(--border);padding:20px 24px;text-align:center">
   <p style="font-size:13px;color:var(--text3);max-width:500px;margin:0 auto">This portal is for <strong>businesses purchasing ad space only</strong>. If you are a community member looking to post events, <a href="/" style="color:var(--amber);text-decoration:none;font-weight:600">go back to the calendar</a> and register there.</p>
 </div>
-<footer style="background:var(--navy);color:rgba(255,255,255,.5);text-align:center;font-size:13px;padding:20px">
-  Near and Far Events · <a href="/" style="color:var(--amber-mid);text-decoration:none">Back to Calendar</a> · <a href="mailto:hello@nearandfarevents.com" style="color:var(--amber-mid);text-decoration:none">hello@nearandfarevents.com</a>
-</footer>
+
 
 <script>
 const API = '';
@@ -529,9 +548,9 @@ function renderNav() {
   const el = document.getElementById('navUser');
   if (advertiser) {
     el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:100px;padding:5px 6px 5px 14px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:100px;padding:5px 6px 5px 14px;box-shadow:0 2px 8px rgba(99,102,241,.08)">
         <span style="font-size:13px;color:#fff;font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(advertiser.business_name)}</span>
-        <button onclick="doLogout()" style="font-size:11px;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.85);cursor:pointer;border-radius:100px;font-weight:600">Log out</button>
+        <button onclick="doLogout()" style="font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border-md);color:var(--text2);cursor:pointer;border-radius:100px;font-weight:600">Log out</button>
       </div>`;
   } else {
     el.innerHTML = `
