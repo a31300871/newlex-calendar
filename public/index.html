@@ -510,6 +510,105 @@ button:active{opacity:.8}
   .hdr-title{font-size:13px}
   #addEventBtn{font-size:11px;padding:6px 9px}
 }
+
+
+/* ── DARK MODE — toggleable via [data-theme="dark"] on documentElement ── */
+[data-theme="dark"]{
+  --cream:#0F172A;
+  --surface:#1E293B;
+  --surface2:#334155;
+  --text:#F1F5F9;
+  --text2:#CBD5E1;
+  --text3:#94A3B8;
+  --border:#334155;
+  --border-md:#475569;
+  --amber-lt:rgba(99,102,241,.18);
+}
+[data-theme="dark"] body{
+  background-image:
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.18), transparent 50%),
+    radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.14), transparent 50%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.10), transparent 50%) !important;
+}
+[data-theme="dark"] nav{
+  background:rgba(15,23,42,0.85) !important;
+  border-bottom-color:var(--border) !important;
+}
+[data-theme="dark"] .nav-brand,
+[data-theme="dark"] .user-name{
+  color:var(--text) !important;
+}
+[data-theme="dark"] .ev-row,
+[data-theme="dark"] .event-card,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .spon-card,
+[data-theme="dark"] .preview-card{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] input[type=text],
+[data-theme="dark"] input[type=email],
+[data-theme="dark"] input[type=password],
+[data-theme="dark"] input[type=tel],
+[data-theme="dark"] input[type=url],
+[data-theme="dark"] input[type=number],
+[data-theme="dark"] input[type=date],
+[data-theme="dark"] input[type=time],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .fp,
+[data-theme="dark"] .search-wrap,
+[data-theme="dark"] .ft-mark,
+[data-theme="dark"] footer{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] footer a{color:var(--text2) !important}
+[data-theme="dark"] .btn-ghost{
+  background:var(--surface2) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] #sponsorBar{
+  background:rgba(15,23,42,0.92) !important;
+}
+[data-theme="dark"] #cookieBanner{
+  background:rgba(30,41,59,0.97) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] .draft-banner{
+  background:linear-gradient(135deg,#78350F,#92400E) !important;
+  color:#FDE68A !important;
+}
+.theme-toggle{
+  background:var(--surface);border:1.5px solid var(--border-md);
+  border-radius:100px;padding:6px 12px;cursor:pointer;
+  font-size:13px;font-weight:700;color:var(--text2);
+  font-family:var(--font-body);transition:all .2s;
+  margin-right:6px;display:inline-flex;align-items:center;gap:6px;
+}
+.theme-toggle:hover{
+  background:var(--amber-lt);color:var(--amber-dk);
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(99,102,241,.10);
+}
+[data-theme="dark"] .theme-toggle{color:var(--text2)}
+
+/* ── TIME PICKER STYLING ── */
+.time-picker-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.time-picker-row select{padding:7px 8px;font-size:14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);color:var(--text);min-width:62px;font-family:var(--font-body)}
+.time-picker-row .tpsep{font-weight:800;color:var(--text2);font-size:16px}
+.time-picker-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;min-width:42px;display:inline-block}
+.time-pickers-wrap{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-bottom:11px}
+.time-checkbox-row{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;color:var(--text)}
+.time-checkbox-row label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600}
+
+
 </style>
 
 <!-- Google Analytics 4 (GA4) — Replace G-XXXXXXXXXX with your own Measurement ID -->
@@ -684,6 +783,107 @@ function clientZipToState(zip){
   return null;
 }
 
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (label) label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('nf_theme', next);
+  applyTheme(next);
+}
+// Apply theme ASAP (before init runs) to avoid flash
+(function(){
+  try {
+    const saved = localStorage.getItem('nf_theme');
+    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  } catch(_) {}
+  document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('nf_theme') || 'light';
+    applyTheme(saved);
+  });
+})();
+
+// ── TIME PICKER HELPERS ──
+function buildTimePickerHTML(prefix, startTime, endTime, allDay){
+  const hours = Array.from({length:12}, (_,i) => i+1);
+  const mins = ['00','15','30','45'];
+  function parse(t24){
+    if (!t24 || !/^\d{1,2}:\d{2}$/.test(t24)) return {h:'',m:'',ap:''};
+    const [h, m] = t24.split(':').map(n => parseInt(n,10));
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return {h:h12, m:String(m).padStart(2,'0'), ap};
+  }
+  const s = parse(startTime), e = parse(endTime);
+  const tbd = !startTime && !endTime && !allDay;
+  function picker(idPrefix, sel){
+    return `
+      <select id="${idPrefix}H">
+        <option value="">--</option>
+        ${hours.map(h => `<option value="${h}" ${sel.h===h?'selected':''}>${h}</option>`).join('')}
+      </select>
+      <span class="tpsep">:</span>
+      <select id="${idPrefix}M">
+        <option value="">--</option>
+        ${mins.map(m => `<option value="${m}" ${sel.m===m?'selected':''}>${m}</option>`).join('')}
+      </select>
+      <select id="${idPrefix}AP">
+        <option value="">--</option>
+        <option value="AM" ${sel.ap==='AM'?'selected':''}>AM</option>
+        <option value="PM" ${sel.ap==='PM'?'selected':''}>PM</option>
+      </select>`;
+  }
+  return `
+    <div class="time-pickers-wrap">
+      <div class="time-checkbox-row">
+        <label><input type="checkbox" id="${prefix}AllDay" ${allDay?'checked':''} onchange="onTimeMode('${prefix}')"> All day</label>
+        <label><input type="checkbox" id="${prefix}TBD" ${tbd?'checked':''} onchange="onTimeMode('${prefix}','tbd')"> Time TBD</label>
+      </div>
+      <div id="${prefix}TimeFields" style="${(allDay||tbd)?'display:none':''}">
+        <div class="time-picker-row" style="margin-bottom:8px">
+          <span class="time-picker-label">Start</span>
+          ${picker(prefix+'Start', s)}
+        </div>
+        <div class="time-picker-row">
+          <span class="time-picker-label">End</span>
+          ${picker(prefix+'End', e)}
+        </div>
+      </div>
+    </div>`;
+}
+function onTimeMode(prefix, which){
+  const allDay = document.getElementById(prefix+'AllDay');
+  const tbd = document.getElementById(prefix+'TBD');
+  if (which === 'tbd' && tbd && tbd.checked && allDay) allDay.checked = false;
+  if (allDay && allDay.checked && tbd) tbd.checked = false;
+  const fields = document.getElementById(prefix+'TimeFields');
+  if (fields) fields.style.display = (allDay?.checked || tbd?.checked) ? 'none' : 'block';
+}
+function readTimePicker(prefix){
+  const allDay = document.getElementById(prefix+'AllDay')?.checked ? 1 : 0;
+  const tbd = document.getElementById(prefix+'TBD')?.checked;
+  if (allDay) return { start_time:'', end_time:'', all_day:1 };
+  if (tbd) return { start_time:'', end_time:'', all_day:0 };
+  function read(idPrefix){
+    const h = document.getElementById(idPrefix+'H')?.value;
+    const m = document.getElementById(idPrefix+'M')?.value;
+    const ap = document.getElementById(idPrefix+'AP')?.value;
+    if (!h || !m || !ap) return '';
+    let h24 = parseInt(h,10);
+    if (ap === 'PM' && h24 !== 12) h24 += 12;
+    if (ap === 'AM' && h24 === 12) h24 = 0;
+    return String(h24).padStart(2,'0') + ':' + m;
+  }
+  return { start_time: read(prefix+'Start'), end_time: read(prefix+'End'), all_day:0 };
+}
+
+
 async function init(){
   // Check for magic-link URL params first (email verification / password reset / event verify / event manage)
   await handleMagicLinkUrls();
@@ -783,7 +983,9 @@ async function openManageEventModal(token){
       <div class="field"><label>Location <span class="req">*</span></label><input type="text" id="mgLoc" value="${(ev.location||'').replace(/"/g,'&quot;')}"></div>
       <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="mgZip" value="${ev.zipcode||''}" maxlength="5"></div>
       <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="mgDate" value="${ev.date||''}"></div>
-      <div class="field"><label>Time</label><input type="text" id="mgTime" value="${(ev.time||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Time</label>
+        ${buildTimePickerHTML('mg', ev.start_time||'', ev.end_time||'', ev.all_day||0)}
+      </div>
       <div class="field"><label>Price</label><input type="text" id="mgPrice" value="${(ev.price||'').replace(/"/g,'&quot;')}"></div>
       <div class="field"><label>Category</label>
         <select id="mgCat">
@@ -812,7 +1014,7 @@ async function doSaveGuestEvent(token){
       location: document.getElementById('mgLoc').value,
       zipcode: document.getElementById('mgZip').value,
       date: document.getElementById('mgDate').value,
-      time: document.getElementById('mgTime').value,
+      time: '', start_time: readTimePicker('mg').start_time, end_time: readTimePicker('mg').end_time, all_day: readTimePicker('mg').all_day,
       price: document.getElementById('mgPrice').value,
       cat: document.getElementById('mgCat').value,
       contact: document.getElementById('mgContact').value,
@@ -1099,6 +1301,7 @@ function renderAuth(){
         ${authUser.is_admin ? `
           <button onclick="openApprovalsPanel()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:600">📋 <span id="pendingCountBadge"></span>Approvals & Local Insiders</button>
           <button onclick="openBulkRemove()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">👤 Bulk Remove by User</button>
+          <button onclick="openManualAdvertiser()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📢 Add Business Ad</button>
           <button onclick="openRemovedItemsLog()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📜 Removed Items Log</button>
           <div style="height:1px;background:var(--border)"></div>
         ` : ''}
@@ -1208,7 +1411,9 @@ function openGuestEventModal(){
     <div class="field"><label>Location <span class="req">*</span></label><input type="text" id="guEvLoc" placeholder="Venue or address"></div>
     <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="guEvZip" placeholder="43764" inputmode="numeric" maxlength="5"></div>
     <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="guEvDate"></div>
-    <div class="field"><label>Time</label><input type="text" id="guEvTime" placeholder="7:00 PM"></div>
+    <div class="field"><label>Time</label>
+      ${buildTimePickerHTML('gu', '', '', 0)}
+    </div>
     <div class="field"><label>Price</label><input type="text" id="guEvPrice" placeholder="Free"></div>
     <div class="field"><label>Category</label>
       <select id="guEvCat">
@@ -1248,7 +1453,7 @@ async function doGuestSubmit(){
     const r = await api('/api/events/guest', { method:'POST', body: JSON.stringify({
       submitter_name: nm, submitter_email: em, submitter_phone: ph,
       name: evNm, location: evLoc, zipcode: evZip, date: evDate,
-      time: document.getElementById('guEvTime').value,
+      time: '', start_time: readTimePicker('gu').start_time, end_time: readTimePicker('gu').end_time, all_day: readTimePicker('gu').all_day,
       price: document.getElementById('guEvPrice').value,
       cat: document.getElementById('guEvCat').value,
       contact: document.getElementById('guEvContact').value,
@@ -1419,6 +1624,49 @@ async function downloadMyData(){
 
 
 // ── ADMIN: Bulk Remove by User ──
+
+// ── ADMIN: Manually add an advertisement ──
+function openManualAdvertiser(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">📢 Add Business Advertisement</div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text2);line-height:1.5">
+      Manually add an advertisement (no Stripe required). Status will be set to <strong>approved</strong> immediately. Useful for trades, sponsorships, or in-kind ads.
+    </div>
+    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="maBn" placeholder="Jim's Garage"></div>
+    <div class="field"><label>Tagline (short, ≤80 chars)</label><input type="text" id="maTag" placeholder="Honest auto repair since 1995" maxlength="80"></div>
+    <div class="field"><label>Website URL</label><input type="url" id="maUrl" placeholder="https://example.com"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="maPh" placeholder="(740) 555-1234"></div>
+    <div class="field"><label>Ad Tier</label>
+      <select id="maTier">
+        <option value="basic">Basic — Sponsor Bar only ($25/mo equivalent)</option>
+        <option value="premium">Premium — Event Popup + Directory Featured ($50/mo equivalent)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="doManualAdvertiser()">Add Advertisement</button>
+    </div>
+    <div class="err-msg" id="maErr"></div>`;
+  openModal('evModal');
+}
+async function doManualAdvertiser(){
+  const business_name = document.getElementById('maBn').value.trim();
+  if (!business_name) { document.getElementById('maErr').textContent = 'Business name is required.'; return; }
+  try {
+    await api('/api/admin/advertisers/manual', { method: 'POST', body: JSON.stringify({
+      business_name,
+      tagline: document.getElementById('maTag').value.trim(),
+      url: document.getElementById('maUrl').value.trim(),
+      phone: document.getElementById('maPh').value.trim(),
+      tier: document.getElementById('maTier').value
+    })});
+    showMessageModal('✓ Advertisement Added', `"${business_name}" is now live. It will appear in the sponsor bar${document.getElementById('maTier').value==='premium' ? ' AND in event popups + directory featured':''}.`, 'success');
+    await loadSponsors();
+  } catch(e) { document.getElementById('maErr').textContent = e.message; }
+}
+
+
 function openBulkRemove(){
   closeAcctMenu();
   document.getElementById('evModalContent').innerHTML = `
@@ -1844,9 +2092,9 @@ function openEventModal(ev){
     <div class="field"><label>Event Name <span class="req">*</span></label><input type="text" id="fNm" value="${ev?esc(ev.name):''}" placeholder="Name of the event" oninput="checkDuplicate()"></div>
     <div id="dupWarn" style="display:none;font-size:13px;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:6px;padding:8px 12px;margin-bottom:8px">⚠️ <span id="dupWarnText"></span></div>
     <div class="field"><label>Location / Address <span class="req">*</span></label><input type="text" id="fLc" value="${ev?esc(ev.location):''}" placeholder="Where is it?"></div>
-    <div class="field frow">
-      <div><label>Date <span class="req">*</span></label><input type="date" id="fDt" value="${ev?ev.date:today}" onchange="checkDuplicate()"></div>
-      <div><label>Time</label><input type="text" id="fTm" value="${ev&&ev.time!=='TBD'?esc(ev.time):''}" placeholder="e.g. 7:00 PM"></div>
+    <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="fDt" value="${ev?ev.date:today}" onchange="checkDuplicate()"></div>
+    <div class="field"><label>Time</label>
+      ${buildTimePickerHTML('f', ev?ev.start_time||'':'', ev?ev.end_time||'':'', ev?ev.all_day||0:0)}
     </div>
     <div class="field frow">
       <div><label>Price</label><input type="text" id="fPr" value="${ev?esc(ev.price):''}" placeholder="Free or $5"></div>
@@ -1924,7 +2172,8 @@ function renderBulkInModal(){
     <div class="err-msg" id="impErr"></div><div class="ok-msg" id="impOk"></div>`;
 }
 async function doSubmitEvent(){
-  const payload={cat:document.getElementById('fCt').value,name:document.getElementById('fNm').value.trim(),location:document.getElementById('fLc').value.trim(),date:document.getElementById('fDt').value,time:document.getElementById('fTm').value.trim()||'TBD',price:document.getElementById('fPr').value.trim()||'Free',contact:document.getElementById('fCo').value.trim()||'-',zipcode:document.getElementById('fZip').value.trim()||'43764',affiliate_url:document.getElementById('fAff').value.trim(),description:document.getElementById('fDesc')?.value.trim()||''};
+  const tp = readTimePicker('f');
+  const payload={cat:document.getElementById('fCt').value,name:document.getElementById('fNm').value.trim(),location:document.getElementById('fLc').value.trim(),date:document.getElementById('fDt').value,start_time:tp.start_time,end_time:tp.end_time,all_day:tp.all_day,price:document.getElementById('fPr').value.trim()||'Free',contact:document.getElementById('fCo').value.trim()||'-',zipcode:document.getElementById('fZip').value.trim()||'43764',affiliate_url:document.getElementById('fAff').value.trim(),description:document.getElementById('fDesc')?.value.trim()||''};
   if(!payload.name||!payload.location||!payload.date){document.getElementById('fErr').textContent='Name, location, and date are required.';return;}
   try{
     if(editingId){const u=await api('/api/events/'+editingId,{method:'PUT',body:JSON.stringify(payload)});allEvs=allEvs.map(e=>e.id===editingId?u:e);document.getElementById('fOk').textContent='✓ Event updated!';}
