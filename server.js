@@ -956,18 +956,22 @@ app.delete('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
 // ── ADMIN: Manually add an advertisement (no Stripe required) ──
 app.post('/api/admin/advertisers/manual', requireAdmin, async (req, res) => {
   try {
-    const { business_name, tagline, url, phone, tier, statewide_state } = req.body || {};
+    const { business_name, tagline, url, phone, tier, zipcode, statewide_state } = req.body || {};
     if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const validTier = (tier === 'premium' || tier === 'featured') ? tier : 'basic';
+    const zipClean = (zipcode || '').toString().trim();
+    const stateClean = (statewide_state || '').toString().trim().toUpperCase();
+    if (!zipClean && !stateClean) return res.status(400).json({ error: 'Provide a target zipcode or a statewide state code — advertisers must target a specific area.' });
+    if (stateClean && stateClean.length !== 2) return res.status(400).json({ error: 'State code must be 2 letters (e.g., OH).' });
     const db = await getDb();
     // Create a placeholder email + unusable password so the advertisers row is valid
     const fakeEmail = `manual-${Date.now()}-${Math.random().toString(36).slice(2,8)}@nearandfarevents.local`;
     const unusableHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
     const r = await db.run(
-      `INSERT INTO advertisers (name, email, password_hash, business_name, tagline, url, status, tier, phone, email_verified)
-       VALUES (?,?,?,?,?,?,'active',?,?,1)`,
+      `INSERT INTO advertisers (name, email, password_hash, business_name, tagline, url, status, tier, phone, email_verified, zipcode, statewide_state)
+       VALUES (?,?,?,?,?,?,'active',?,?,1,?,?)`,
       [(business_name||'').trim() + ' (manual)', fakeEmail, unusableHash, business_name.trim(),
-       (tagline||'').trim(), (url||'').trim(), validTier, (phone||'').trim()]
+       (tagline||'').trim(), (url||'').trim(), validTier, (phone||'').trim(), zipClean, stateClean]
     );
     res.status(201).json({ success: true, id: r.lastID });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1098,30 +1102,69 @@ app.delete('/api/sponsors/:id', requireAdmin, async (req, res) => {
 });
 
 // ── COMBINED DISPLAY SPONSORS (manual + active advertisers) ──
-// ── BANNER ADS (sponsor bar): basic-tier advertisers + manual sponsors. Premium tier does NOT appear here. ──
+// ── BANNER ADS (sponsor bar): basic-tier advertisers + manual sponsors, zip-filtered. ──
 app.get('/api/display/sponsors', async (req, res) => {
   try {
+    const zip = (req.query.zipcode || '').toString().trim();
+    const state = zipToState(zip);
     const db = await getDb();
+    // Manual sponsors: always shown (admin-controlled, not zip-bound)
     const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
-    const banner = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' ORDER BY id");
+    // Banner advertisers: must match this zip OR cover the state-wide
+    let banner = [];
+    if (zip) {
+      banner = await db.all(
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' AND (zipcode=? OR (statewide_state!='' AND statewide_state=?)) ORDER BY id",
+        [zip, state || '']
+      );
+    } else {
+      // No zip provided — only show advertisers that haven't set a zip yet (legacy) or admin manual ads
+      banner = await db.all(
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' AND zipcode='' ORDER BY id"
+      );
+    }
     res.json([...manual, ...banner]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── FEATURED DIRECTORY ADS: featured-tier advertisers only (shown on directory page). ──
+// ── FEATURED DIRECTORY ADS: featured-tier advertisers, zip-filtered. ──
 app.get('/api/display/featured', async (req, res) => {
   try {
+    const zip = (req.query.zipcode || '').toString().trim();
+    const state = zipToState(zip);
     const db = await getDb();
-    const rows = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='featured' ORDER BY id");
+    let rows = [];
+    if (zip) {
+      rows = await db.all(
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='featured' AND (zipcode=? OR (statewide_state!='' AND statewide_state=?)) ORDER BY id",
+        [zip, state || '']
+      );
+    } else {
+      rows = await db.all(
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='featured' AND zipcode='' ORDER BY id"
+      );
+    }
     res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── POPUP ADS (in-event sponsored card): premium-tier advertisers only. ──
+// ── POPUP ADS (in-event sponsored card): premium-tier advertisers, zip-filtered. ──
 app.get('/api/display/popup-ads', async (req, res) => {
   try {
+    const zip = (req.query.zipcode || '').toString().trim();
+    const state = zipToState(zip);
     const db = await getDb();
-    const popup = await db.all("SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='premium' ORDER BY id");
+    let popup = [];
+    if (zip) {
+      popup = await db.all(
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='premium' AND (zipcode=? OR (statewide_state!='' AND statewide_state=?)) ORDER BY id",
+        [zip, state || '']
+      );
+    } else {
+      popup = await db.all(
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='premium' AND zipcode='' ORDER BY id"
+      );
+    }
     res.json(popup);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1129,10 +1172,12 @@ app.get('/api/display/popup-ads', async (req, res) => {
 // ── ADVERTISER AUTH ──
 app.post('/api/advertiser/register', async (req, res) => {
   try {
-    const { name, email, password, business_name, tagline, url, phone } = req.body || {};
+    const { name, email, password, business_name, tagline, url, phone, zipcode } = req.body || {};
     if (!name?.trim() || !email?.trim() || !password || !business_name?.trim())
       return res.status(400).json({ error: 'Name, email, password, and business name are required.' });
     if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    const zipClean = (zipcode || '').toString().trim();
+    if (!zipClean || zipClean.length !== 5) return res.status(400).json({ error: 'A 5-digit target zipcode is required so we know where to show your ad.' });
     const db = await getDb();
     if (await db.get('SELECT id FROM advertisers WHERE email=?', [email.toLowerCase()]))
       return res.status(409).json({ error: 'That email is already registered.' });
@@ -1140,8 +1185,8 @@ app.post('/api/advertiser/register', async (req, res) => {
     const activeCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active'")).c;
     const hash = bcrypt.hashSync(password, 10);
     const r = await db.run(
-      'INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url,phone) VALUES (?,?,?,?,?,?,?)',
-      [name.trim(), email.toLowerCase(), hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'']
+      'INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url,phone,zipcode) VALUES (?,?,?,?,?,?,?,?)',
+      [name.trim(), email.toLowerCase(), hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'', zipClean]
     );
     const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [r.lastID]);
     const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
@@ -1273,7 +1318,7 @@ app.post('/api/advertiser/refresh-status', requireAdvertiser, async (req, res) =
 app.get('/api/admin/advertisers', requireAdmin, async (req, res) => {
   try {
     const db = await getDb();
-    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,phone,tier,status,stripe_customer_id,stripe_subscription_id,created_at FROM advertisers ORDER BY created_at DESC');
+    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,phone,tier,status,zipcode,statewide_state,stripe_customer_id,stripe_subscription_id,created_at FROM advertisers ORDER BY created_at DESC');
     res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1351,24 +1396,30 @@ app.get('/api/listings', async (req, res) => {
     if (auth && auth.startsWith('Bearer ')) {
       try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; } catch(_) {}
     }
-    const zipcode = (req.query.zipcode||'').toString().trim();
-    const rows = zipcode
-      ? await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,created_at FROM listings WHERE status='active' AND zipcode=? ORDER BY business_name ASC", [zipcode])
-      : await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,created_at FROM listings WHERE status='active' ORDER BY business_name ASC");
+    // Base query: zip-matched listings (or all if no zip provided)
+    let rows = _zipcodeParam
+      ? await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,statewide_state,created_at FROM listings WHERE status='active' AND zipcode=? ORDER BY business_name ASC", [_zipcodeParam])
+      : await db.all("SELECT id,business_name,category,phone,website,address,description,zipcode,statewide_state,created_at FROM listings WHERE status='active' ORDER BY business_name ASC");
+    // Merge in statewide listings for this zip's state (BEFORE auth filter so non-admins see them too)
+    if (_zipcodeParam && _zipState) {
+      try {
+        const stateRows = await db.all(
+          "SELECT id,business_name,category,phone,website,address,description,zipcode,statewide_state,created_at FROM listings WHERE statewide_state=? AND status='active' AND zipcode != ?",
+          [_zipState, _zipcodeParam]
+        );
+        if (stateRows && stateRows.length) {
+          // De-dupe by id (in case any overlap)
+          const ids = new Set(rows.map(r => r.id));
+          for (const sr of stateRows) if (!ids.has(sr.id)) rows.push(sr);
+        }
+      } catch(_) {}
+    }
     if (!isAdmin) {
       const enabled = await getEnabledStates(db);
-      const filtered = rows.filter(r => {
+      rows = rows.filter(r => {
         const st = zipToState(r.zipcode);
         return st && enabled.includes(st);
       });
-      return res.json(filtered);
-    }
-    // Merge in statewide listings for this zip's state (if any)
-    if (_zipState) {
-      try {
-        const stateRows = await db.all("SELECT * FROM listings WHERE statewide_state=? AND status='approved' AND id NOT IN (SELECT id FROM listings WHERE zipcode=?)", [_zipState, _zipcodeParam]);
-        if (stateRows && stateRows.length) rows = rows.concat(stateRows);
-      } catch(_) {}
     }
     res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
