@@ -97,6 +97,46 @@ async function getDb() {
   try { await _db.run("ALTER TABLE events ADD COLUMN affiliate_url TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE listings ADD COLUMN zipcode TEXT NOT NULL DEFAULT '43764'"); } catch(_) {}
   try { await _db.run("ALTER TABLE users ADD COLUMN home_zipcode TEXT DEFAULT '43764'"); } catch(_) {}
+
+  // ── Phase A: Email verification + password reset + account deletion (CCPA/legal compliance) ──
+  try { await _db.run("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+  try { await _db.run("ALTER TABLE users ADD COLUMN verify_token_hash TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE users ADD COLUMN verify_expires TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE users ADD COLUMN reset_token_hash TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE users ADD COLUMN reset_expires TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE users ADD COLUMN last_verify_sent_at TEXT DEFAULT ''"); } catch(_) {}
+  // Mark all existing users as verified (so they don't get locked out by this migration)
+  try { await _db.run("UPDATE users SET email_verified=1 WHERE email_verified=0 AND created_at < datetime('now')"); } catch(_) {}
+
+  // Same for advertisers
+  try { await _db.run("ALTER TABLE advertisers ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+  try { await _db.run("ALTER TABLE advertisers ADD COLUMN reset_token_hash TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE advertisers ADD COLUMN reset_expires TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("UPDATE advertisers SET email_verified=1 WHERE email_verified=0 AND created_at < datetime('now')"); } catch(_) {}
+
+  // ── Phase B: Anonymous (guest) event submission with email verification + magic edit links ──
+  try { await _db.run("ALTER TABLE events ADD COLUMN is_anonymous INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN submitter_name TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN submitter_email TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN submitter_phone TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN submitter_verify_token_hash TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN submitter_manage_token_hash TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN submitter_verified_at TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN submitter_verify_expires TEXT DEFAULT ''"); } catch(_) {}
+
+  // Create a sentinel "guest" user that anonymous events reference (foreign key requirement)
+  // Password is unusable (random bytes); this account can't be logged into
+  try {
+    const guestExists = await _db.get("SELECT id FROM users WHERE email='guest@nearandfarevents.system'");
+    if (!guestExists) {
+      const bcrypt = require('bcryptjs');
+      const unusableHash = bcrypt.hashSync(require('crypto').randomBytes(32).toString('hex'), 10);
+      await _db.run(
+        "INSERT INTO users (name,email,password_hash,address,email_verified,is_admin,is_town_crier) VALUES ('[Guest Submissions]','guest@nearandfarevents.system',?,'-',1,0,0)",
+        [unusableHash]
+      );
+    }
+  } catch(e) { console.error('Guest user create:', e.message); }
   try { await _db.run("CREATE INDEX IF NOT EXISTS idx_events_zipcode ON events(zipcode)"); } catch(_) {}
   try { await _db.run("CREATE INDEX IF NOT EXISTS idx_listings_zipcode ON listings(zipcode)"); } catch(_) {}
   // Site settings (admin-controlled key/value pairs)
@@ -110,8 +150,7 @@ async function getDb() {
     if (!existing) await _db.run('INSERT INTO settings (key,value) VALUES (?,?)', ['enabled_states', 'OH']);
   } catch(_) {}
 
-  // Phone as alternate login method (email OR phone required)
-  try { await _db.run("ALTER TABLE users ADD COLUMN phone TEXT"); } catch(_) {}
+  // Phone as alternate login method (email OR phone required)  try { await _db.run("ALTER TABLE users ADD COLUMN phone TEXT"); } catch(_) {}
   try { await _db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL AND phone != ''"); } catch(_) {}
   // Notifications: track when user last checked their notification feed
   try { await _db.run("ALTER TABLE users ADD COLUMN last_seen_events TEXT"); } catch(_) {}
