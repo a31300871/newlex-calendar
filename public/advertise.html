@@ -361,36 +361,215 @@ nav::after{
 .hdr-right{gap:6px !important}
 
 
-/* ── DARK MODE ── */
+/* ── DARK MODE — COMPREHENSIVE COVERAGE ── */
 [data-theme="dark"]{
-  --cream:#0F172A; --surface:#1E293B; --surface2:#334155;
-  --text:#F1F5F9; --text2:#CBD5E1; --text3:#94A3B8;
-  --border:#334155; --border-md:#475569;
-  --amber-lt:rgba(99,102,241,.18);
+  --cream:#0F172A;
+  --surface:#1E293B;
+  --surface2:#334155;
+  --text:#F1F5F9;
+  --text2:#CBD5E1;
+  --text3:#94A3B8;
+  --border:#334155;
+  --border-md:#475569;
+  --amber-lt:rgba(99,102,241,.20);
+  --danger-bg:rgba(220,38,38,.18);
 }
 [data-theme="dark"] body{
+  background-color:var(--cream) !important;
   background-image:
     radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.18), transparent 50%),
     radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.14), transparent 50%),
     radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.10), transparent 50%) !important;
+  color:var(--text) !important;
 }
-[data-theme="dark"] nav{background:rgba(15,23,42,0.85) !important;border-bottom-color:var(--border) !important}
-[data-theme="dark"] .nav-brand,[data-theme="dark"] .user-name{color:var(--text) !important}
-[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{background:var(--surface) !important;color:var(--text) !important;border-color:var(--border-md) !important}
-[data-theme="dark"] .listing-row,[data-theme="dark"] .modal-box,[data-theme="dark"] .featured-wrap,[data-theme="dark"] .adv-card,[data-theme="dark"] .preview-bar,[data-theme="dark"] .preview-card,[data-theme="dark"] .live-preview,[data-theme="dark"] .lp-card,[data-theme="dark"] .portal-card,[data-theme="dark"] .pricing-card,[data-theme="dark"] .popup-preview-shell,[data-theme="dark"] .dir-preview-inner{background:var(--surface) !important;color:var(--text) !important;border-color:var(--border-md) !important}
-[data-theme="dark"] .fp,[data-theme="dark"] .search-wrap,[data-theme="dark"] footer{background:var(--surface) !important;color:var(--text) !important}
+[data-theme="dark"] nav,
+[data-theme="dark"] .nav,
+[data-theme="dark"] .topbar{
+  background:rgba(15,23,42,0.88) !important;
+  border-bottom-color:var(--border) !important;
+  backdrop-filter:blur(20px) !important;
+}
+[data-theme="dark"] .nav-brand,
+[data-theme="dark"] .user-name,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
+[data-theme="dark"] h4, [data-theme="dark"] h5,
+[data-theme="dark"] .modal-title,
+[data-theme="dark"] .ev-detail-grid,
+[data-theme="dark"] label{color:var(--text) !important}
+[data-theme="dark"] p, [data-theme="dark"] li, [data-theme="dark"] td{color:var(--text2) !important}
+[data-theme="dark"] .ev-row,
+[data-theme="dark"] .event-card,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .spon-card,
+[data-theme="dark"] .preview-card,
+[data-theme="dark"] .ad-card,
+[data-theme="dark"] .listing-row,
+[data-theme="dark"] .featured-wrap,
+[data-theme="dark"] .adv-card,
+[data-theme="dark"] .preview-bar,
+[data-theme="dark"] .live-preview,
+[data-theme="dark"] .lp-card,
+[data-theme="dark"] .portal-card,
+[data-theme="dark"] .pricing-card,
+[data-theme="dark"] .popup-preview-shell,
+[data-theme="dark"] .dir-preview-inner{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .ev-row:hover,
+[data-theme="dark"] .event-card:hover{background:var(--surface2) !important}
+[data-theme="dark"] input[type=text],
+[data-theme="dark"] input[type=email],
+[data-theme="dark"] input[type=password],
+[data-theme="dark"] input[type=tel],
+[data-theme="dark"] input[type=url],
+[data-theme="dark"] input[type=number],
+[data-theme="dark"] input[type=date],
+[data-theme="dark"] input[type=time],
+[data-theme="dark"] input[type=search],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder{color:var(--text3) !important;opacity:0.7}
+[data-theme="dark"] .fp,
+[data-theme="dark"] .search-wrap,
+[data-theme="dark"] .ft-mark,
+[data-theme="dark"] footer,
+[data-theme="dark"] .filter-pill,
+[data-theme="dark"] .zip-btn,
+[data-theme="dark"] .all-areas-btn,
+[data-theme="dark"] .add-event-btn,
+[data-theme="dark"] .acct-btn,
+[data-theme="dark"] .signin-btn,
+[data-theme="dark"] .register-btn{
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .filter-pill.active,
+[data-theme="dark"] .filter-pill:hover,
+[data-theme="dark"] .zip-btn:hover,
+[data-theme="dark"] .all-areas-btn:hover{
+  background:var(--amber-lt) !important;
+  border-color:var(--amber) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] footer{
+  background:rgba(15,23,42,0.95) !important;
+  border-top-color:var(--border) !important;
+}
 [data-theme="dark"] footer a{color:var(--text2) !important}
-[data-theme="dark"] #cookieBanner{background:rgba(30,41,59,0.97) !important;color:var(--text) !important}
-[data-theme="dark"] .draft-banner{background:linear-gradient(135deg,#78350F,#92400E) !important;color:#FDE68A !important}
+[data-theme="dark"] footer a:hover{color:var(--text) !important}
+[data-theme="dark"] .btn-ghost{
+  background:var(--surface2) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .btn-ghost:hover{background:var(--surface) !important}
+[data-theme="dark"] #sponsorBar{
+  background:rgba(15,23,42,0.95) !important;
+  border-top-color:var(--border) !important;
+}
+[data-theme="dark"] .spon-card{
+  background:var(--surface) !important;
+  border-color:var(--border-md) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] .spon-name{color:var(--text) !important}
+[data-theme="dark"] .spon-tag{color:var(--text2) !important}
+[data-theme="dark"] .spon-link{color:#A5B4FC !important}
+[data-theme="dark"] #cookieBanner{
+  background:rgba(30,41,59,0.98) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .draft-banner{
+  background:linear-gradient(135deg,#78350F,#92400E) !important;
+  color:#FDE68A !important;
+}
+[data-theme="dark"] .ev-detail-cat{filter:brightness(1.4)}
+/* Account dropdown — use variables instead of hardcoded white */
+[data-theme="dark"] #acctMenu{
+  background:var(--surface) !important;
+  border-color:var(--border-md) !important;
+  color:var(--text) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.50) !important;
+}
+[data-theme="dark"] #acctMenu button{color:var(--text) !important}
+[data-theme="dark"] #acctMenu button:hover{background:var(--surface2) !important}
+/* Modal close button visibility */
+[data-theme="dark"] .modal-close{color:var(--text2) !important}
+[data-theme="dark"] .modal-close:hover{color:var(--text) !important}
+/* Theme toggle button itself */
 .theme-toggle{
-  background:var(--surface);border:1.5px solid var(--border-md);
+  background:var(--surface);
+  border:1.5px solid var(--border-md);
   border-radius:100px;padding:6px 12px;cursor:pointer;
   font-size:13px;font-weight:700;color:var(--text2);
   font-family:var(--font-body);transition:all .2s;
   margin-right:6px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
 }
-.theme-toggle:hover{background:var(--amber-lt);color:var(--amber-dk);border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.10)}
+.theme-toggle:hover{
+  background:var(--amber-lt);color:var(--amber-dk);
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(99,102,241,.10);
+}
+[data-theme="dark"] .theme-toggle:hover{color:var(--text) !important}
+/* Featured business admin delete button */
+.feat-admin-del{
+  position:absolute;top:8px;right:8px;
+  background:rgba(220,38,38,0.10);color:#DC2626;
+  border:1.5px solid #DC2626;
+  padding:5px 9px;border-radius:8px;
+  font-size:11px;font-weight:700;cursor:pointer;
+  font-family:var(--font-body);z-index:5;
+}
+.feat-admin-del:hover{background:#DC2626;color:#fff}
 
+
+
+
+/* ── SHARED SPONSOR BAR (same look as calendar page) ── */
+#sponsorBar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px);
+  border-top:1.5px solid var(--border-md);
+  padding:10px 18px;z-index:100;
+  display:flex;gap:10px;align-items:center;
+  overflow-x:auto;
+  box-shadow:0 -2px 8px rgba(15,23,42,.04);
+}
+#sponsorBar::before{
+  content:'';position:absolute;top:-1px;left:0;right:0;height:2px;
+  background:var(--gradient);opacity:.7;
+}
+#sponCards{display:flex;gap:10px;flex:1;min-width:0}
+.spon-card{
+  flex-shrink:0;min-width:180px;max-width:280px;
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:8px;padding:8px 12px;
+  font-size:12px;line-height:1.35;
+  display:flex;flex-direction:column;gap:2px;
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.spon-card:hover{border-color:var(--amber);box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+.spon-name{font-weight:700;color:var(--text);font-size:13px;line-height:1.2}
+.spon-tag{color:var(--text2);font-size:11px;line-height:1.35}
+.spon-link{color:#6366F1;font-size:11px;font-weight:700;text-decoration:none;margin-top:auto}
+.advertise-card{cursor:pointer;border-style:dashed;border-color:var(--amber)}
+.advertise-card:hover{background:var(--amber-lt)}
+body{padding-bottom:80px !important}
+[data-theme="dark"] #sponsorBar{background:rgba(15,23,42,0.95) !important;border-top-color:var(--border) !important}
+[data-theme="dark"] .spon-card{background:var(--surface) !important;border-color:var(--border-md) !important}
+[data-theme="dark"] .spon-name{color:var(--text) !important}
+[data-theme="dark"] .spon-tag{color:var(--text2) !important}
 
 </style>
 
@@ -413,12 +592,14 @@ function toggleTheme(){
 }
 (function(){
   try {
-    const saved = localStorage.getItem('nf_theme');
+    let saved = localStorage.getItem('nf_theme');
+    if (!saved && localStorage.getItem('nlcc_token')) saved = 'dark';
     if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
   } catch(_) {}
   document.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('nf_theme') || 'light';
-    applyTheme(saved);
+    let saved = localStorage.getItem('nf_theme');
+    if (!saved && localStorage.getItem('nlcc_token')) saved = 'dark';
+    applyTheme(saved || 'light');
   });
 })();
 
@@ -435,7 +616,7 @@ function toggleTheme(){
 <nav>
   <div class="hdr-row1">
     <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.62em;font-weight:500;opacity:.7;letter-spacing:.02em;color:var(--text2)">Discover what's happening, near and far</span></a>
-    <div class="hdr-right"><span class="nav-user" id="navUser"></span></div>
+    <div class="hdr-right"><button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><span class="nav-user" id="navUser"></span></div>
   </div>
   <div class="hdr-row2">
     <a href="/" class="nav-btn" aria-label="Calendar">
@@ -1146,5 +1327,41 @@ function cookieConsent(action){
 }
 </script>
 
+
+
+<!-- SHARED SPONSOR BAR (banner ads) -->
+<div id="sponsorBar">
+  <div id="sponCards"></div>
+</div>
+<script>
+// ── Shared sponsor bar loader ──
+async function loadSharedSponsorBar(){
+  try {
+    const sponsors = await fetch('/api/display/sponsors').then(r=>r.json()).catch(()=>[]);
+    const wrap = document.getElementById('sponCards');
+    if (!wrap) return;
+    let html = '';
+    (sponsors||[]).forEach(s => {
+      const url = s.url ? (s.url.startsWith('http') ? s.url : 'https://' + s.url) : '';
+      html += '<div class="spon-card">' +
+        '<div class="spon-name">' + (s.name||'').replace(/</g,'&lt;') + '</div>' +
+        (s.tagline ? '<div class="spon-tag">' + (s.tagline||'').replace(/</g,'&lt;') + '</div>' : '') +
+        (url ? '<a class="spon-link" href="' + url + '" target="_blank" rel="noopener">Visit &rarr;</a>' : '') +
+      '</div>';
+    });
+    html += '<div class="spon-card advertise-card" onclick="window.location.href=\'/advertise\'">' +
+      '<div class="spon-name" style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">+ Advertise Here</div>' +
+      '<div class="spon-tag">Reach Your Community &mdash; $25/mo</div>' +
+      '<span class="spon-link">Learn more &rarr;</span>' +
+    '</div>';
+    wrap.innerHTML = html;
+  } catch(_) {}
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadSharedSponsorBar);
+} else {
+  loadSharedSponsorBar();
+}
+</script>
 </body>
 </html>
