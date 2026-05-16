@@ -670,11 +670,152 @@ function clientZipToState(zip){
 }
 
 async function init(){
+  // Check for magic-link URL params first (email verification / password reset / event verify / event manage)
+  await handleMagicLinkUrls();
   renderAuth();
   updateFilterPills();
   updateZipDisplay();
   await Promise.all([loadEvents(),loadSponsors()]);
   await refreshPendingBadge();
+}
+
+// ── Magic-link landing-page handlers ──
+async function handleMagicLinkUrls(){
+  const path = window.location.pathname;
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  // Helper to clean URL without reload
+  const cleanUrl = () => { try { history.replaceState(null,'','/'); } catch(_) {} };
+
+  if (path === '/verify' && token) {
+    try {
+      const r = await api('/api/auth/verify/' + encodeURIComponent(token));
+      if (r.token) setSession(r.token, r.user);
+      showMessageModal('✓ Email Verified!', 'Your account is now active. Welcome to Near and Far Events!', 'success');
+    } catch(e) {
+      showMessageModal('Verification Failed', e.message || 'The link may have expired. You can request a new one from the sign-in screen.', 'error');
+    }
+    cleanUrl();
+    return;
+  }
+  if (path === '/reset-password' && token) {
+    showResetPasswordModal(token);
+    return; // don't clean URL until they finish or close
+  }
+  if (path === '/verify-event' && token) {
+    try {
+      const r = await api('/api/events/guest-verify/' + encodeURIComponent(token));
+      if (r.alreadyVerified) {
+        showMessageModal('✓ Already Confirmed', 'This event was already confirmed. Our team is reviewing it.', 'success');
+      } else {
+        showMessageModal('✓ Event Confirmed!', `Thanks! "${r.eventName}" is now in our moderation queue. You'll be notified when it goes live. Keep the email handy — it has your edit/delete link.`, 'success');
+      }
+    } catch(e) {
+      showMessageModal('Confirmation Failed', e.message || 'The link may be invalid or expired.', 'error');
+    }
+    cleanUrl();
+    return;
+  }
+  if (path === '/manage-event' && token) {
+    openManageEventModal(token);
+    return; // don't clean URL
+  }
+}
+
+function showMessageModal(title, message, type='info'){
+  const color = type === 'success' ? '#10B981' : type === 'error' ? '#DC2626' : 'var(--amber)';
+  const bg = type === 'success' ? 'rgba(16,185,129,.08)' : type === 'error' ? 'rgba(220,38,38,.08)' : 'rgba(99,102,241,.06)';
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">${title}</div>
+    <div style="background:${bg};border:1.5px solid ${color};border-radius:var(--r);padding:16px;margin:8px 0 16px;line-height:1.55;color:var(--text);font-size:14px">${message}</div>
+    <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="closeModal('evModal')">Got it</button></div>`;
+  openModal('evModal');
+}
+
+function showResetPasswordModal(token){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">Set a New Password</div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);padding:10px 14px;border-radius:var(--r);font-size:12px;margin-bottom:14px;color:var(--text2);line-height:1.55">
+      Choose a strong password — at least 8 characters with letters and numbers.
+    </div>
+    <div class="field"><label>New Password <span class="req">*</span></label><input type="password" id="rpPw1" autocomplete="new-password"></div>
+    <div class="field"><label>Confirm New Password <span class="req">*</span></label><input type="password" id="rpPw2" autocomplete="new-password"></div>
+    <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doResetPassword('${token.replace(/'/g,'')}')">Save New Password</button></div>
+    <div class="err-msg" id="rpErr"></div>`;
+  openModal('evModal');
+}
+
+async function doResetPassword(token){
+  const pw1 = document.getElementById('rpPw1').value;
+  const pw2 = document.getElementById('rpPw2').value;
+  if(!pw1 || pw1 !== pw2){ document.getElementById('rpErr').textContent = 'Passwords must match.'; return; }
+  try{
+    await api('/api/auth/reset-password', { method:'POST', body: JSON.stringify({ token, new_password: pw1 }) });
+    showMessageModal('✓ Password Updated', 'Your password has been changed. You can now sign in with the new password.', 'success');
+    try { history.replaceState(null,'','/'); } catch(_) {}
+  } catch(e) { document.getElementById('rpErr').textContent = e.message; }
+}
+
+async function openManageEventModal(token){
+  try {
+    const ev = await api('/api/events/manage/' + encodeURIComponent(token));
+    document.getElementById('evModalContent').innerHTML = `
+      <div class="modal-title">🔧 Manage Your Event</div>
+      <div style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(236,72,153,.04));border:1.5px solid var(--border-md);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--text2);line-height:1.55">
+        You can update event details or delete the event. Status: <strong style="color:var(--amber-dk)">${ev.status === 'approved' ? 'Live' : ev.status === 'pending' ? 'Under review' : ev.status}</strong>. Edits will be re-reviewed before going live.
+      </div>
+      <div class="field"><label>Event Name <span class="req">*</span></label><input type="text" id="mgName" value="${(ev.name||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Location <span class="req">*</span></label><input type="text" id="mgLoc" value="${(ev.location||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="mgZip" value="${ev.zipcode||''}" maxlength="5"></div>
+      <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="mgDate" value="${ev.date||''}"></div>
+      <div class="field"><label>Time</label><input type="text" id="mgTime" value="${(ev.time||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Price</label><input type="text" id="mgPrice" value="${(ev.price||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Category</label>
+        <select id="mgCat">
+          ${['community','sports','church','government','education','entertainment','charity','funeral','other'].map(c => `<option value="${c}" ${ev.cat===c?'selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Public Contact</label><input type="text" id="mgContact" value="${(ev.contact||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Ticket / Info Link</label><input type="url" id="mgAff" value="${(ev.affiliate_url||'').replace(/"/g,'&quot;')}"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+        <button onclick="doDeleteGuestEvent('${token.replace(/'/g,'')}')" style="background:transparent;color:#DC2626;border:1.5px solid #DC2626;padding:9px 14px;border-radius:var(--r);font-weight:700;cursor:pointer;font-family:var(--font-body)">🗑 Delete Event</button>
+        <button class="btn-amber" style="flex:1" onclick="doSaveGuestEvent('${token.replace(/'/g,'')}')">Save Changes</button>
+      </div>
+      <div class="err-msg" id="mgErr"></div>
+      <div id="mgOk" style="display:none;font-size:13px;color:#10B981;font-weight:700;margin-top:10px;text-align:center"></div>`;
+    openModal('evModal');
+  } catch(e) {
+    showMessageModal('Manage Link Invalid', e.message || 'This link may have been used to delete the event already.', 'error');
+  }
+}
+
+async function doSaveGuestEvent(token){
+  try{
+    const r = await api('/api/events/manage/' + encodeURIComponent(token), { method:'PUT', body: JSON.stringify({
+      name: document.getElementById('mgName').value,
+      location: document.getElementById('mgLoc').value,
+      zipcode: document.getElementById('mgZip').value,
+      date: document.getElementById('mgDate').value,
+      time: document.getElementById('mgTime').value,
+      price: document.getElementById('mgPrice').value,
+      cat: document.getElementById('mgCat').value,
+      contact: document.getElementById('mgContact').value,
+      affiliate_url: document.getElementById('mgAff').value
+    })});
+    document.getElementById('mgOk').textContent = r.requeued ? '✓ Saved! Sent back for quick review.' : '✓ Saved!';
+    document.getElementById('mgOk').style.display='block';
+    document.getElementById('mgErr').textContent='';
+  } catch(e) { document.getElementById('mgErr').textContent = e.message; }
+}
+
+async function doDeleteGuestEvent(token){
+  if(!confirm('Permanently delete this event? This cannot be undone.')) return;
+  try{
+    await api('/api/events/manage/' + encodeURIComponent(token), { method:'DELETE' });
+    showMessageModal('✓ Event Deleted', 'Your event has been removed.', 'success');
+    try { history.replaceState(null,'','/'); } catch(_) {}
+    await loadEvents();
+  } catch(e) { document.getElementById('mgErr').textContent = e.message; }
 }
 
 function updateZipDisplay(){
@@ -943,6 +1084,7 @@ function renderAuth(){
           <div style="height:1px;background:var(--border)"></div>
         ` : ''}
         <button onclick="openChangePassword()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500">🔑 Change Password</button>
+        <button onclick="downloadMyData()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📥 Download My Data</button>
         ${authUser.is_admin ? '' : `<button onclick="openDeleteAccount()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--danger);font-weight:500;border-top:1px solid var(--border)">🗑 Delete My Account</button>`}
         <button onclick="doLogout();document.getElementById('acctMenu').style.display='none'" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:var(--surface2);border:none;cursor:pointer;color:var(--text);font-weight:600;border-top:1px solid var(--border)">Sign Out</button>
       </div>
@@ -982,11 +1124,23 @@ function openAuthModal(tab='si'){document.getElementById('evModalContent').inner
 function genCaptcha(){captchaA=Math.floor(Math.random()*12)+1;captchaB=Math.floor(Math.random()*12)+1;return`What is ${captchaA} + ${captchaB}?`;}
 function buildAuthForm(tab){
   const cq=genCaptcha();
-  return`<div class="modal-title">Welcome</div>
+  return`<div class="modal-title">Submit an Event</div>
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text2)">
+      <strong style="color:var(--amber-dk)">No account? No problem.</strong> You can submit your event as a guest — we'll just email you a confirmation link and a way to edit or delete it later.
+    </div>
     <div class="auth-tabs">
+      <button class="auth-tab ${tab==='gu'?'on':''}" onclick="switchAuthTab('gu')">Guest</button>
       <button class="auth-tab ${tab==='si'?'on':''}" onclick="switchAuthTab('si')">Sign In</button>
       <button class="auth-tab ${tab==='su'?'on':''}" onclick="switchAuthTab('su')">Register</button>
     </div>
+
+    <!-- GUEST TAB -->
+    <div id="guPanel" style="display:${tab==='gu'?'block':'none'}">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.55">Quick & easy — just enter your event details and email. You'll get a confirmation link plus a magic edit/delete link.</div>
+      <button class="btn-amber" style="width:100%;font-size:15px;padding:11px 0" onclick="openGuestEventModal()">📅 Submit Event as Guest →</button>
+    </div>
+
+    <!-- SIGN IN TAB -->
     <div id="siPanel" style="display:${tab==='si'?'block':'none'}">
       <div class="field"><label>Email or Phone</label><input type="text" id="liEm" placeholder="your@email.com or (740) 555-1234" autocomplete="username"></div>
       <div class="field"><label>Password</label><input type="password" id="liPw" autocomplete="current-password"></div>
@@ -998,7 +1152,12 @@ function buildAuthForm(tab){
         <a href="#" onclick="showForgotUsername();return false" style="color:var(--blue);text-decoration:none;font-weight:600">Forgot login?</a>
       </div>
     </div>
+
+    <!-- REGISTER TAB -->
     <div id="suPanel" style="display:${tab==='su'?'block':'none'}">
+      <div style="background:var(--surface2);border:1.5px solid var(--border-md);padding:8px 12px;border-radius:var(--r);font-size:12px;margin-bottom:11px;color:var(--text2);line-height:1.55">
+        Creating an account is optional — it lets you manage multiple events, get notifications, and become a Town Crier. <strong>Just submitting once?</strong> <a href="#" onclick="switchAuthTab('gu');return false" style="color:var(--amber-dk);font-weight:700">Use Guest mode →</a>
+      </div>
       <div class="field"><label>Full Name <span class="req">*</span></label><input type="text" id="rgNm"></div>
       <div style="background:var(--amber-lt);border:1.5px solid var(--amber);color:var(--amber-dk);padding:8px 12px;border-radius:var(--r);font-size:12px;margin-bottom:11px;font-weight:600">
         💡 Provide either email OR phone (or both). At least one is required.
@@ -1006,19 +1165,132 @@ function buildAuthForm(tab){
       <div class="field"><label>Email</label><input type="email" id="rgEm" autocomplete="username" placeholder="your@email.com"></div>
       <div class="field"><label>Cell Phone</label><input type="tel" id="rgPh" autocomplete="tel" placeholder="(740) 555-1234" inputmode="tel"></div>
       <div class="field"><label>Address <span class="req">*</span></label><input type="text" id="rgAddr" placeholder="Street, City, State"></div>
-      <div class="field"><label>Password (6+ chars) <span class="req">*</span></label><input type="password" id="rgPw" autocomplete="new-password"></div>
+      <div class="field"><label>Password (8+ chars, letters + numbers) <span class="req">*</span></label><input type="password" id="rgPw" autocomplete="new-password"></div>
       <div class="captcha-box"><span class="captcha-q">🤖 ${cq}</span><input type="number" id="rgCap" placeholder="?" inputmode="numeric"></div>
       <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doRegister()">Create Account</button></div>
       <div class="err-msg" id="rgErr"></div>
     </div>`;
 }
 function switchAuthTab(t){document.getElementById('evModalContent').innerHTML=buildAuthForm(t);}
+
+// ── GUEST EVENT SUBMISSION ──
+function openGuestEventModal(){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">📅 Submit Event as Guest</div>
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(236,72,153,.04));border:1.5px solid var(--border-md);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.5;color:var(--text2)">
+      We'll email you a confirmation link so we know the submission is real. Once confirmed, our team reviews quickly. You'll also get a magic link to edit or delete this event later — keep that email safe!
+    </div>
+    <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="guName" placeholder="Jane Smith"></div>
+    <div class="field"><label>Your Email <span class="req">*</span></label><input type="email" id="guEmail" placeholder="your@email.com" autocomplete="email"></div>
+    <div class="field"><label>Your Phone (optional)</label><input type="tel" id="guPhone" placeholder="(740) 555-1234" autocomplete="tel"></div>
+    <hr style="margin:14px 0;border:none;border-top:1px solid var(--border)">
+    <div class="modal-title" style="font-size:15px;margin-bottom:10px;font-weight:700;color:var(--text)">Event Details</div>
+    <div class="field"><label>Event Name <span class="req">*</span></label><input type="text" id="guEvName"></div>
+    <div class="field"><label>Location <span class="req">*</span></label><input type="text" id="guEvLoc" placeholder="Venue or address"></div>
+    <div class="field"><label>Zipcode <span class="req">*</span></label><input type="text" id="guEvZip" placeholder="43764" inputmode="numeric" maxlength="5"></div>
+    <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="guEvDate"></div>
+    <div class="field"><label>Time</label><input type="text" id="guEvTime" placeholder="7:00 PM"></div>
+    <div class="field"><label>Price</label><input type="text" id="guEvPrice" placeholder="Free"></div>
+    <div class="field"><label>Category</label>
+      <select id="guEvCat">
+        <option value="community">Community</option>
+        <option value="sports">Sports</option>
+        <option value="church">Church</option>
+        <option value="government">Government</option>
+        <option value="education">Education</option>
+        <option value="entertainment">Entertainment</option>
+        <option value="charity">Charity</option>
+        <option value="funeral">Funeral</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Public Contact (phone or email)</label><input type="text" id="guEvContact" placeholder="for people who want more info"></div>
+    <div class="field"><label>Ticket / Info Link (optional)</label><input type="url" id="guEvAff" placeholder="https://..."></div>
+    <div class="modal-actions">
+      <button onclick="switchAuthTab('gu')" style="background:var(--surface2);color:var(--text2);border:1.5px solid var(--border-md);padding:9px 14px;border-radius:var(--r);font-weight:700;cursor:pointer">← Back</button>
+      <button class="btn-amber" style="flex:1" onclick="doGuestSubmit()">Submit Event</button>
+    </div>
+    <div class="err-msg" id="guErr"></div>`;
+}
+
+async function doGuestSubmit(){
+  const nm = document.getElementById('guName').value.trim();
+  const em = document.getElementById('guEmail').value.trim();
+  const ph = document.getElementById('guPhone').value.trim();
+  const evNm = document.getElementById('guEvName').value.trim();
+  const evLoc = document.getElementById('guEvLoc').value.trim();
+  const evZip = document.getElementById('guEvZip').value.trim();
+  const evDate = document.getElementById('guEvDate').value;
+  if(!nm||!em||!evNm||!evLoc||!evZip||!evDate){
+    document.getElementById('guErr').textContent='Please fill out all required fields.';return;
+  }
+  try{
+    const r = await api('/api/events/guest', { method:'POST', body: JSON.stringify({
+      submitter_name: nm, submitter_email: em, submitter_phone: ph,
+      name: evNm, location: evLoc, zipcode: evZip, date: evDate,
+      time: document.getElementById('guEvTime').value,
+      price: document.getElementById('guEvPrice').value,
+      cat: document.getElementById('guEvCat').value,
+      contact: document.getElementById('guEvContact').value,
+      affiliate_url: document.getElementById('guEvAff').value
+    })});
+    showGuestSuccess(r.email);
+  } catch(e){ document.getElementById('guErr').textContent = e.message; }
+}
+
+function showGuestSuccess(email){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:28px">✉️</span> Check Your Email
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(99,102,241,.06));border:1.5px solid #10B981;border-radius:var(--r);padding:18px;margin:8px 0 16px">
+      <p style="margin:0 0 10px;font-size:15px;color:var(--text);line-height:1.55">We sent a confirmation link to:</p>
+      <p style="margin:0 0 10px;font-size:17px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;word-break:break-all">${email}</p>
+      <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.55">Click the link in that email to confirm — then your event will go into the moderation queue for quick review. The email also contains a <strong>magic link</strong> to edit or delete your event later (keep it safe!).</p>
+    </div>
+    <p style="font-size:12px;color:var(--text3);text-align:center;line-height:1.55">Didn't receive it within a few minutes? Check your spam folder, or contact <a href="mailto:hello@nearandfarevents.com" style="color:var(--amber-dk);font-weight:700">hello@nearandfarevents.com</a>.</p>
+    <div class="modal-actions" style="margin-top:14px"><button class="btn-amber" style="flex:1" onclick="closeModal('evModal')">Got it</button></div>`;
+}
+
 async function doLogin(){
   try{
-    const {token:tk,user}=await api('/api/auth/login',{method:'POST',body:JSON.stringify({identifier:document.getElementById('liEm').value,password:document.getElementById('liPw').value})});
-    setSession(tk,user);closeModal('evModal');
-  } catch(e){document.getElementById('liErr').textContent=e.message;}
+    const r = await api('/api/auth/login',{method:'POST',body:JSON.stringify({identifier:document.getElementById('liEm').value,password:document.getElementById('liPw').value})});
+    if(r.needsVerification){
+      // Should not normally happen (login API returns 403 in that case), but as safety
+      showLoginNeedsVerify(r.email || document.getElementById('liEm').value);
+      return;
+    }
+    setSession(r.token, r.user); closeModal('evModal');
+  } catch(e){
+    // 403 with needsVerification flag
+    if(e.message && e.message.toLowerCase().includes('verify')){
+      showLoginNeedsVerify(document.getElementById('liEm').value);
+      return;
+    }
+    document.getElementById('liErr').textContent = e.message;
+  }
 }
+
+function showLoginNeedsVerify(email){
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px"><span style="font-size:28px">✉️</span> Verify Your Email</div>
+    <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:var(--r);padding:14px;margin-bottom:14px;font-size:14px;line-height:1.55;color:#78350F">
+      <strong>Almost there!</strong> Check your inbox for a verification link from Near and Far Events. Once you click it, you can sign in.
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Didn't get the email? You can request a new one:</p>
+    <div class="field"><label>Email</label><input type="email" id="rvEm" value="${(email||'').replace(/"/g,'')}" placeholder="your@email.com"></div>
+    <div class="modal-actions"><button class="btn-amber" style="flex:1" onclick="doResendVerify()">Resend Verification Email</button></div>
+    <div class="err-msg" id="rvErr"></div>
+    <div id="rvOk" style="display:none;font-size:13px;color:#10B981;font-weight:700;margin-top:10px;text-align:center">✓ Sent! Check your inbox.</div>`;
+}
+
+async function doResendVerify(){
+  try{
+    await api('/api/auth/resend-verify',{method:'POST',body:JSON.stringify({email:document.getElementById('rvEm').value})});
+    document.getElementById('rvOk').style.display='block';
+  }catch(e){ document.getElementById('rvErr').textContent = e.message; }
+}
+
 async function doRegister(){
   const cap=parseInt(document.getElementById('rgCap')?.value||'',10);
   if(isNaN(cap)||cap!==captchaA+captchaB){document.getElementById('rgErr').textContent='Please answer the math question correctly.';return;}
@@ -1026,14 +1298,28 @@ async function doRegister(){
   const phone=document.getElementById('rgPh').value.trim();
   if(!email && !phone){document.getElementById('rgErr').textContent='Please provide either an email or a cell phone number.';return;}
   try{
-    const {token:tk,user}=await api('/api/auth/register',{method:'POST',body:JSON.stringify({
+    const r = await api('/api/auth/register',{method:'POST',body:JSON.stringify({
       name:document.getElementById('rgNm').value,
       email:email,
       phone:phone,
       password:document.getElementById('rgPw').value,
       address:document.getElementById('rgAddr').value
     })});
-    setSession(tk,user);closeModal('evModal');
+    if(r.requiresVerification){
+      // Email-based registration — show "check your email" screen
+      document.getElementById('evModalContent').innerHTML = `
+        <div class="modal-title" style="display:flex;align-items:center;gap:10px"><span style="font-size:28px">✉️</span> Check Your Email</div>
+        <div style="background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(99,102,241,.06));border:1.5px solid #10B981;border-radius:var(--r);padding:18px;margin:8px 0 16px">
+          <p style="margin:0 0 10px;font-size:15px;color:var(--text);line-height:1.55">We sent a verification link to:</p>
+          <p style="margin:0 0 10px;font-size:17px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;word-break:break-all">${r.email}</p>
+          <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.55">Click the link in that email to activate your account. The link expires in 24 hours.</p>
+        </div>
+        <p style="font-size:12px;color:var(--text3);text-align:center">Didn't receive it? Check spam, or <a href="#" onclick="showLoginNeedsVerify('${r.email.replace(/'/g,'')}');return false" style="color:var(--amber-dk);font-weight:700">resend</a>.</p>
+        <div class="modal-actions" style="margin-top:14px"><button class="btn-amber" style="flex:1" onclick="closeModal('evModal')">Got it</button></div>`;
+    } else if (r.token) {
+      // Phone-only registration — auto-login
+      setSession(r.token, r.user); closeModal('evModal');
+    }
   }catch(e){document.getElementById('rgErr').textContent=e.message;}
 }
 
@@ -1052,14 +1338,25 @@ function closeAcctMenu(){
 function showForgotPassword(){
   document.getElementById('evModalContent').innerHTML = `
     <div class="modal-title">Forgot Password?</div>
-    <p style="font-size:14px;color:var(--text2);margin-bottom:14px">No worries — to reset your password, please email us with the email address on your account:</p>
-    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;text-align:center;margin-bottom:14px">
-      <a href="mailto:hello@nearandfarevents.com?subject=Password%20Reset%20Request" style="font-size:16px;color:var(--blue);text-decoration:none;font-weight:700">📧 hello@nearandfarevents.com</a>
-    </div>
-    <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.5">Include your full name and we'll verify it's you, then send you a new password to sign in with. We respond within 24 hours.</p>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:14px;line-height:1.55">Enter the email on your account — we'll send you a link to set a new password.</p>
+    <div class="field"><label>Email</label><input type="email" id="fpEm" placeholder="your@email.com" autocomplete="email"></div>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="openAuthModal()">← Back to Sign In</button>
+      <button class="btn-ghost" onclick="openAuthModal()">← Back</button>
+      <button class="btn-amber" style="flex:1" onclick="doForgotPassword()">Send Reset Link</button>
+    </div>
+    <div class="err-msg" id="fpErr"></div>
+    <div id="fpOk" style="display:none;background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(99,102,241,.06));border:1.5px solid #10B981;border-radius:var(--r);padding:14px;margin-top:14px;font-size:13px;color:var(--text);line-height:1.55">
+      <strong style="color:#059669">✓ If an account exists for that email,</strong> we've sent a password reset link. Check your inbox (and spam folder). The link expires in 1 hour.
     </div>`;
+}
+async function doForgotPassword(){
+  const em = document.getElementById('fpEm').value.trim();
+  if(!em){ document.getElementById('fpErr').textContent = 'Please enter your email address.'; return; }
+  try{
+    await api('/api/auth/forgot-password', { method:'POST', body: JSON.stringify({ email: em }) });
+    document.getElementById('fpOk').style.display = 'block';
+    document.getElementById('fpErr').textContent = '';
+  } catch(e) { document.getElementById('fpErr').textContent = e.message; }
 }
 
 function showForgotUsername(){
@@ -1078,6 +1375,25 @@ function showForgotUsername(){
     <div class="modal-actions">
       <button class="btn-ghost" onclick="openAuthModal()">← Back to Sign In</button>
     </div>`;
+}
+
+async function downloadMyData(){
+  closeAcctMenu();
+  try{
+    const token = localStorage.getItem('nlcc_token');
+    const r = await fetch('/api/auth/export', { headers: { 'Authorization': 'Bearer ' + token } });
+    if(!r.ok){ const j = await r.json().catch(()=>({})); throw new Error(j.error || 'Download failed.'); }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const cd = r.headers.get('content-disposition') || '';
+    const m = cd.match(/filename="([^"]+)"/);
+    a.download = m ? m[1] : 'nearandfar-data.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showMessageModal('✓ Download Started', 'Your personal data is downloading as a JSON file. This includes all account info, events you submitted, and listings — everything we have on you.', 'success');
+  } catch(e) { showMessageModal('Download Failed', e.message || 'Please try again.', 'error'); }
 }
 
 function openChangePassword(){
