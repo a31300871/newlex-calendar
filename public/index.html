@@ -512,7 +512,7 @@ button:active{opacity:.8}
 }
 
 
-/* ── DARK MODE — toggleable via [data-theme="dark"] on documentElement ── */
+/* ── DARK MODE — COMPREHENSIVE COVERAGE ── */
 [data-theme="dark"]{
   --cream:#0F172A;
   --surface:#1E293B;
@@ -522,31 +522,54 @@ button:active{opacity:.8}
   --text3:#94A3B8;
   --border:#334155;
   --border-md:#475569;
-  --amber-lt:rgba(99,102,241,.18);
+  --amber-lt:rgba(99,102,241,.20);
+  --danger-bg:rgba(220,38,38,.18);
 }
 [data-theme="dark"] body{
+  background-color:var(--cream) !important;
   background-image:
     radial-gradient(ellipse 800px 600px at 0% 0%, rgba(99,102,241,.18), transparent 50%),
     radial-gradient(ellipse 800px 600px at 100% 30%, rgba(236,72,153,.14), transparent 50%),
     radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(245,158,11,.10), transparent 50%) !important;
-}
-[data-theme="dark"] nav{
-  background:rgba(15,23,42,0.85) !important;
-  border-bottom-color:var(--border) !important;
-}
-[data-theme="dark"] .nav-brand,
-[data-theme="dark"] .user-name{
   color:var(--text) !important;
 }
+[data-theme="dark"] nav,
+[data-theme="dark"] .nav,
+[data-theme="dark"] .topbar{
+  background:rgba(15,23,42,0.88) !important;
+  border-bottom-color:var(--border) !important;
+  backdrop-filter:blur(20px) !important;
+}
+[data-theme="dark"] .nav-brand,
+[data-theme="dark"] .user-name,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
+[data-theme="dark"] h4, [data-theme="dark"] h5,
+[data-theme="dark"] .modal-title,
+[data-theme="dark"] .ev-detail-grid,
+[data-theme="dark"] label{color:var(--text) !important}
+[data-theme="dark"] p, [data-theme="dark"] li, [data-theme="dark"] td{color:var(--text2) !important}
 [data-theme="dark"] .ev-row,
 [data-theme="dark"] .event-card,
 [data-theme="dark"] .modal-box,
 [data-theme="dark"] .spon-card,
-[data-theme="dark"] .preview-card{
+[data-theme="dark"] .preview-card,
+[data-theme="dark"] .ad-card,
+[data-theme="dark"] .listing-row,
+[data-theme="dark"] .featured-wrap,
+[data-theme="dark"] .adv-card,
+[data-theme="dark"] .preview-bar,
+[data-theme="dark"] .live-preview,
+[data-theme="dark"] .lp-card,
+[data-theme="dark"] .portal-card,
+[data-theme="dark"] .pricing-card,
+[data-theme="dark"] .popup-preview-shell,
+[data-theme="dark"] .dir-preview-inner{
   background:var(--surface) !important;
   color:var(--text) !important;
   border-color:var(--border-md) !important;
 }
+[data-theme="dark"] .ev-row:hover,
+[data-theme="dark"] .event-card:hover{background:var(--surface2) !important}
 [data-theme="dark"] input[type=text],
 [data-theme="dark"] input[type=email],
 [data-theme="dark"] input[type=password],
@@ -555,58 +578,109 @@ button:active{opacity:.8}
 [data-theme="dark"] input[type=number],
 [data-theme="dark"] input[type=date],
 [data-theme="dark"] input[type=time],
+[data-theme="dark"] input[type=search],
 [data-theme="dark"] select,
 [data-theme="dark"] textarea{
   background:var(--surface) !important;
   color:var(--text) !important;
   border-color:var(--border-md) !important;
 }
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder{color:var(--text3) !important;opacity:0.7}
 [data-theme="dark"] .fp,
 [data-theme="dark"] .search-wrap,
 [data-theme="dark"] .ft-mark,
-[data-theme="dark"] footer{
+[data-theme="dark"] footer,
+[data-theme="dark"] .filter-pill,
+[data-theme="dark"] .zip-btn,
+[data-theme="dark"] .all-areas-btn,
+[data-theme="dark"] .add-event-btn,
+[data-theme="dark"] .acct-btn,
+[data-theme="dark"] .signin-btn,
+[data-theme="dark"] .register-btn{
   background:var(--surface) !important;
   color:var(--text) !important;
+  border-color:var(--border-md) !important;
+}
+[data-theme="dark"] .filter-pill.active,
+[data-theme="dark"] .filter-pill:hover,
+[data-theme="dark"] .zip-btn:hover,
+[data-theme="dark"] .all-areas-btn:hover{
+  background:var(--amber-lt) !important;
+  border-color:var(--amber) !important;
+  color:var(--text) !important;
+}
+[data-theme="dark"] footer{
+  background:rgba(15,23,42,0.95) !important;
+  border-top-color:var(--border) !important;
 }
 [data-theme="dark"] footer a{color:var(--text2) !important}
+[data-theme="dark"] footer a:hover{color:var(--text) !important}
 [data-theme="dark"] .btn-ghost{
   background:var(--surface2) !important;
   color:var(--text) !important;
   border-color:var(--border-md) !important;
 }
+[data-theme="dark"] .btn-ghost:hover{background:var(--surface) !important}
 [data-theme="dark"] #sponsorBar{
-  background:rgba(15,23,42,0.92) !important;
+  background:rgba(15,23,42,0.95) !important;
+  border-top-color:var(--border) !important;
 }
-[data-theme="dark"] #cookieBanner{
-  background:rgba(30,41,59,0.97) !important;
+[data-theme="dark"] .spon-card{
+  background:var(--surface) !important;
+  border-color:var(--border-md) !important;
   color:var(--text) !important;
+}
+[data-theme="dark"] .spon-name{color:var(--text) !important}
+[data-theme="dark"] .spon-tag{color:var(--text2) !important}
+[data-theme="dark"] .spon-link{color:#A5B4FC !important}
+[data-theme="dark"] #cookieBanner{
+  background:rgba(30,41,59,0.98) !important;
+  color:var(--text) !important;
+  border-color:var(--border-md) !important;
 }
 [data-theme="dark"] .draft-banner{
   background:linear-gradient(135deg,#78350F,#92400E) !important;
   color:#FDE68A !important;
 }
+[data-theme="dark"] .ev-detail-cat{filter:brightness(1.4)}
+/* Account dropdown — use variables instead of hardcoded white */
+[data-theme="dark"] #acctMenu{
+  background:var(--surface) !important;
+  border-color:var(--border-md) !important;
+  color:var(--text) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.50) !important;
+}
+[data-theme="dark"] #acctMenu button{color:var(--text) !important}
+[data-theme="dark"] #acctMenu button:hover{background:var(--surface2) !important}
+/* Modal close button visibility */
+[data-theme="dark"] .modal-close{color:var(--text2) !important}
+[data-theme="dark"] .modal-close:hover{color:var(--text) !important}
+/* Theme toggle button itself */
 .theme-toggle{
-  background:var(--surface);border:1.5px solid var(--border-md);
+  background:var(--surface);
+  border:1.5px solid var(--border-md);
   border-radius:100px;padding:6px 12px;cursor:pointer;
   font-size:13px;font-weight:700;color:var(--text2);
   font-family:var(--font-body);transition:all .2s;
-  margin-right:6px;display:inline-flex;align-items:center;gap:6px;
+  margin-right:6px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
 }
 .theme-toggle:hover{
   background:var(--amber-lt);color:var(--amber-dk);
   border-color:var(--amber);
   box-shadow:0 0 0 3px rgba(99,102,241,.10);
 }
-[data-theme="dark"] .theme-toggle{color:var(--text2)}
-
-/* ── TIME PICKER STYLING ── */
-.time-picker-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto}
-.time-picker-row select{padding:7px 6px;font-size:14px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);color:var(--text);width:auto;min-width:54px;flex-shrink:0;font-family:var(--font-body)}
-.time-picker-row .tpsep{font-weight:800;color:var(--text2);font-size:16px}
-.time-picker-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;min-width:42px;display:inline-block}
-.time-pickers-wrap{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-bottom:11px}
-.time-checkbox-row{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;color:var(--text)}
-.time-checkbox-row label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600}
+[data-theme="dark"] .theme-toggle:hover{color:var(--text) !important}
+/* Featured business admin delete button */
+.feat-admin-del{
+  position:absolute;top:8px;right:8px;
+  background:rgba(220,38,38,0.10);color:#DC2626;
+  border:1.5px solid #DC2626;
+  padding:5px 9px;border-radius:8px;
+  font-size:11px;font-weight:700;cursor:pointer;
+  font-family:var(--font-body);z-index:5;
+}
+.feat-admin-del:hover{background:#DC2626;color:#fff}
 
 
 </style>
@@ -799,13 +873,17 @@ function toggleTheme(){
 }
 // Apply theme ASAP (before init runs) to avoid flash
 (function(){
+  // Apply saved theme ASAP — but for logged-in users with no preference, default to DARK
   try {
-    const saved = localStorage.getItem('nf_theme');
+    let saved = localStorage.getItem('nf_theme');
+    // If signed in (token present) and no theme preference set, default to dark
+    if (!saved && localStorage.getItem('nlcc_token')) saved = 'dark';
     if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
   } catch(_) {}
   document.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('nf_theme') || 'light';
-    applyTheme(saved);
+    let saved = localStorage.getItem('nf_theme');
+    if (!saved && localStorage.getItem('nlcc_token')) saved = 'dark';
+    applyTheme(saved || 'light');
   });
 })();
 
@@ -1299,7 +1377,7 @@ function renderAuth(){
       <div class="avatar">${esc(ini)}</div>
       <span class="user-name">${esc(authUser.name)}${authUser.is_admin?' <span title="Admin" style="color:var(--amber);font-size:13px">★</span>':authUser.is_town_crier?' <span title="Local Insider — your posts go live immediately" style="font-size:11px">🔔</span>':''}</span>${authUser.is_admin?'<span id="topPendingPill" onclick="openApprovalsPanel()" style="display:none;margin-left:8px;background:#DC2626;color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px;cursor:pointer;line-height:1;box-shadow:0 2px 6px rgba(220,38,38,.30);transition:all .15s" title="Pending approvals — click to review"></span>':''}
       <button class="sign-out-btn" onclick="toggleAcctMenu(event)" style="padding-right:6px" title="Account menu">▾</button>
-      <div id="acctMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:200px;z-index:1000;color:var(--text);font-family:var(--font-body);overflow:hidden">
+      <div id="acctMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:220px;z-index:1000;color:var(--text);font-family:var(--font-body);overflow:hidden">
         ${authUser.is_admin ? `
           <button onclick="openApprovalsPanel()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:600">📋 <span id="pendingCountBadge"></span>Approvals & Local Insiders</button>
           <button onclick="openBulkRemove()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">👤 Bulk Remove by User</button>
@@ -1326,7 +1404,7 @@ function renderAuth(){
   document.getElementById('addSponsorBarBtn').style.display=isAdm?'':'none';
   renderSponsors();
 }
-function setSession(tk,user){token=tk;authUser=user;localStorage.setItem('nlcc_token',tk);localStorage.setItem('nlcc_user',JSON.stringify(user));renderAuth();renderEvents();}
+function setSession(tk,user){token=tk;authUser=user;localStorage.setItem('nlcc_token',tk);localStorage.setItem('nlcc_user',JSON.stringify(user));if(!localStorage.getItem('nf_theme'))applyTheme('dark');renderAuth();renderEvents();refreshPendingBadge();}
 function doLogout(){
   token=null;authUser=null;
   localStorage.removeItem('nlcc_token');
