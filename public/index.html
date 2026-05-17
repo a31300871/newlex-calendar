@@ -2521,7 +2521,7 @@ function renderSponsors(){
   if(allSponsors.length){
     html+=allSponsors.map(s=>`
       <div class="spon-card">
-        ${isAdm?`<div class="spon-admin"><button class="s-edit-btn" onclick="openSponsorModal(${s.id})">edit</button><button class="s-del-btn" onclick="deleteSponsor(${s.id})">del</button></div>`:''}
+        ${isAdm?`<div class="spon-admin"><button class="s-edit-btn" onclick="openSponsorModal(${s.id})">edit</button><button class="s-del-btn" onclick="deleteSponsor(${s.id})">del</button></div>${s.zipcode || s.statewide_state ? `<div style="font-size:9px;color:var(--amber-dk);font-weight:700;margin-top:2px;letter-spacing:.05em;text-transform:uppercase">${s.statewide_state ? 'STATE-WIDE: '+esc(s.statewide_state) : 'ZIP '+esc(s.zipcode)}</div>`:''}`:''}
         <div class="spon-name">${esc(s.name)}</div>
         ${s.tagline?`<div class="spon-tag">${esc(s.tagline)}</div>`:''}
         ${s.url?`<a class="spon-link" href="${esc(s.url)}" target="_blank" rel="noopener">Visit →</a>`:''}
@@ -2559,6 +2559,11 @@ function openSponsorModal(id){
     <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="spNm" value="${sp?esc(sp.name):''}" placeholder="Business or organization name"></div>
     <div class="field"><label>Tagline</label><input type="text" id="spTg" value="${sp?esc(sp.tagline||''):''}" placeholder="Short description or slogan"></div>
     <div class="field"><label>Website URL</label><input type="text" id="spUrl" value="${sp?esc(sp.url||''):''}" placeholder="https://..."></div>
+    <div class="field"><label>🎯 Target Zipcode <span class="req">*</span></label><input type="text" id="spZip" value="${sp?esc(sp.zipcode||''):''}" placeholder="43764" maxlength="5" inputmode="numeric"></div>
+    <div class="field"><label>OR State-wide (2-letter code)</label><input type="text" id="spState" value="${sp?esc(sp.statewide_state||''):''}" placeholder="OH (leave blank for zip-specific)" maxlength="2" style="text-transform:uppercase"></div>
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:9px 13px;margin-bottom:11px;font-size:12px;color:var(--text2);line-height:1.55">
+      <strong style="color:var(--amber-dk)">Where will this sponsor show?</strong> Only to users viewing the target zipcode. Set state-wide to show in every zip of that state. One sponsor row = one area.
+    </div>
     <div class="modal-actions">
       <button class="btn-amber" onclick="doSponsorSubmit(${id||0})">${sp?'Save Changes':'Add Sponsor'}</button>
       <button class="btn-ghost" onclick="closeModal('spModal')">Cancel</button>
@@ -2567,8 +2572,15 @@ function openSponsorModal(id){
   openModal('spModal');
 }
 async function doSponsorSubmit(id){
-  const payload={name:document.getElementById('spNm').value.trim(),tagline:document.getElementById('spTg').value.trim(),url:document.getElementById('spUrl').value.trim()};
+  const payload={
+    name:document.getElementById('spNm').value.trim(),
+    tagline:document.getElementById('spTg').value.trim(),
+    url:document.getElementById('spUrl').value.trim(),
+    zipcode:document.getElementById('spZip').value.trim(),
+    statewide_state:document.getElementById('spState').value.trim().toUpperCase()
+  };
   if(!payload.name){document.getElementById('spErr').textContent='Business name is required.';return;}
+  if(!payload.zipcode && !payload.statewide_state){document.getElementById('spErr').textContent='Target zipcode OR state-wide code is required.';return;}
   try{
     if(id){const u=await api('/api/sponsors/'+id,{method:'PUT',body:JSON.stringify(payload)});allSponsors=allSponsors.map(s=>s.id===id?u:s);}
     else{const n=await api('/api/sponsors',{method:'POST',body:JSON.stringify(payload)});allSponsors.push(n);}
