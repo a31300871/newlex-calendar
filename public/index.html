@@ -965,13 +965,13 @@ function readTimePicker(prefix){
 
 
 async function init(){
-  // Check for magic-link URL params first (email verification / password reset / event verify / event manage)
-  await handleMagicLinkUrls();
-  renderAuth();
-  updateFilterPills();
-  updateZipDisplay();
-  await Promise.all([loadEvents(),loadSponsors()]);
-  await refreshPendingBadge();
+  // Each step wrapped — if one throws (bad endpoint, stale data, etc.) the others still run
+  try { await handleMagicLinkUrls(); } catch(e){ console.error('Magic-link handler:', e); }
+  try { renderAuth(); } catch(e){ console.error('renderAuth:', e); }
+  try { updateFilterPills(); } catch(e){ console.error('filter pills:', e); }
+  try { updateZipDisplay(); } catch(e){ console.error('zip display:', e); }
+  try { await Promise.all([loadEvents(),loadSponsors()]); } catch(e){ console.error('load events/sponsors:', e); }
+  try { await refreshPendingBadge(); } catch(e){ console.error('pending badge:', e); }
 }
 
 // ── Magic-link landing-page handlers ──
@@ -2597,15 +2597,23 @@ function clearFilters(){activeFilters.clear();updateFilterPills();renderEvents()
 function renderSponsors(){
   const isAdm=authUser&&authUser.is_admin;
   const cards=document.getElementById('sponCards');
+  if(!cards) return;
   let html='';
   if(allSponsors.length){
-    html+=allSponsors.map(s=>`
-      <div class="spon-card">
-        ${isAdm?`<div class="spon-admin"><button class="s-edit-btn" onclick="openSponsorModal(${s.id})">edit</button><button class="s-del-btn" onclick="deleteSponsor(${s.id})">del</button></div>${s.zipcode || s.statewide_state ? `<div style="font-size:9px;color:var(--amber-dk);font-weight:700;margin-top:2px;letter-spacing:.05em;text-transform:uppercase">${s.statewide_state ? 'STATE-WIDE: '+esc(s.statewide_state) : 'ZIP '+esc(s.zipcode)}</div>`:''}`:''}
-        <div class="spon-name">${esc(s.name)}</div>
-        ${s.tagline?`<div class="spon-tag">${esc(s.tagline)}</div>`:''}
-        ${s.url?`<a class="spon-link" href="${esc(s.url)}" target="_blank" rel="noopener">Visit →</a>`:''}
-      </div>`).join('');
+    html+=allSponsors.map(s=>{
+      let adminPart = '';
+      if (isAdm) {
+        let badge = '';
+        if (s.statewide_state) badge = '<div style="font-size:9px;color:var(--amber-dk);font-weight:700;margin-top:2px;letter-spacing:.05em;text-transform:uppercase">STATE-WIDE: ' + esc(s.statewide_state) + '</div>';
+        else if (s.zipcode)    badge = '<div style="font-size:9px;color:var(--amber-dk);font-weight:700;margin-top:2px;letter-spacing:.05em;text-transform:uppercase">ZIP ' + esc(s.zipcode) + '</div>';
+        adminPart = '<div class="spon-admin"><button class="s-edit-btn" onclick="openSponsorModal(' + s.id + ')">edit</button><button class="s-del-btn" onclick="deleteSponsor(' + s.id + ')">del</button></div>' + badge;
+      }
+      return '<div class="spon-card">' + adminPart +
+        '<div class="spon-name">' + esc(s.name) + '</div>' +
+        (s.tagline ? '<div class="spon-tag">' + esc(s.tagline) + '</div>' : '') +
+        (s.url ? '<a class="spon-link" href="' + esc(s.url) + '" target="_blank" rel="noopener">Visit →</a>' : '') +
+        '</div>';
+    }).join('');
   }
   // Always show a polished "Advertise" card at the end
   html+=`<div class="spon-card advertise-card" onclick="showAdvertiseInfo()">
