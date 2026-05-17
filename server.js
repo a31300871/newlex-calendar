@@ -20,6 +20,83 @@ const SITE_URL = process.env.SITE_URL || 'https://www.nearandfarevents.com';
 
 const stripe = STRIPE_SECRET ? require('stripe')(STRIPE_SECRET) : null;
 
+// ============================================================
+// RATE LIMITING — in-memory windowed counters (resets on restart, acceptable for spam guard)
+// ============================================================
+const _rateLimits = new Map(); // key -> { count, resetAt }
+function rateLimitCheck(key, limit, windowMs) {
+  const now = Date.now();
+  const rec = _rateLimits.get(key);
+  if (!rec || rec.resetAt < now) {
+    _rateLimits.set(key, { count: 1, resetAt: now + windowMs });
+    return { ok: true, remaining: limit - 1 };
+  }
+  if (rec.count >= limit) return { ok: false, remaining: 0, resetIn: rec.resetAt - now };
+  rec.count++;
+  return { ok: true, remaining: limit - rec.count };
+}
+// Cleanup expired entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of _rateLimits) if (v.resetAt < now) _rateLimits.delete(k);
+}, 10 * 60 * 1000);
+
+function getClientIp(req) {
+  return (req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown').slice(0, 100);
+}
+
+function spamGuardEvent(req, res, next) {
+  // Signed-in users bypass IP/email rate limits (they're already accountable via account)
+  if (req.user) return next();
+  const ip = getClientIp(req);
+  const emailRaw = (req.body?.guest_email || req.body?.email || '').toLowerCase().trim();
+
+  // 5 submissions per IP per hour
+  const ipCheck = rateLimitCheck('evIp:' + ip, 5, 60 * 60 * 1000);
+  if (!ipCheck.ok) return res.status(429).json({ error: 'Too many submissions from your network. Please wait an hour or sign in.' });
+
+  // 3 submissions per email per day
+  if (emailRaw) {
+    const emailCheck = rateLimitCheck('evEmail:' + emailRaw, 3, 24 * 60 * 60 * 1000);
+    if (!emailCheck.ok) return res.status(429).json({ error: 'Too many submissions with this email today. Please try again tomorrow or sign in.' });
+  }
+
+  // Content checks: too many URLs, all caps, spam keywords
+  const body = (req.body?.name || '') + ' ' + (req.body?.description || '');
+  const urls = (body.match(/https?:\/\//g) || []).length;
+  if (urls > 2) return res.status(400).json({ error: 'Too many links in submission. Please limit to 1-2 URLs in description.' });
+  const upperRatio = body.length > 20 ? (body.match(/[A-Z]/g) || []).length / body.length : 0;
+  if (upperRatio > 0.7) return res.status(400).json({ error: 'Please use normal capitalization — ALL CAPS submissions are blocked.' });
+  if (/\b(viagra|casino|crypto investment|forex|porn|adult dating)\b/i.test(body)) {
+    return res.status(400).json({ error: 'Submission contains content that does not match this community calendar.' });
+  }
+  next();
+}
+
+function spamGuardSponsorship(req, res, next) {
+  const ip = getClientIp(req);
+  const ipCheck = rateLimitCheck('spIp:' + ip, 3, 60 * 60 * 1000); // 3/hr/IP
+  if (!ipCheck.ok) return res.status(429).json({ error: 'Too many sponsorship attempts from your network. Please wait an hour.' });
+  next();
+}
+
+// ============================================================
+// STATE ZIPCODE COUNTS — used for state-wide pricing
+// ============================================================
+const STATE_ZIP_COUNTS = {
+  'AL':645,'AK':240,'AZ':565,'AR':590,'CA':1798,'CO':530,'CT':425,'DE':85,'DC':25,
+  'FL':1490,'GA':740,'HI':130,'ID':290,'IL':1380,'IN':770,'IA':935,'KS':700,
+  'KY':770,'LA':510,'ME':430,'MD':470,'MA':660,'MI':1100,'MN':880,'MS':410,
+  'MO':1020,'MT':360,'NE':580,'NV':175,'NH':285,'NJ':600,'NM':405,'NY':1750,
+  'NC':815,'ND':380,'OH':1196,'OK':645,'OR':415,'PA':1750,'RI':90,'SC':410,
+  'SD':380,'TN':615,'TX':1820,'UT':285,'VT':255,'VA':870,'WA':580,'WV':720,
+  'WI':770,'WY':175
+};
+function calcStateWidePriceCents(state) {
+  const count = STATE_ZIP_COUNTS[(state||'').toUpperCase()] || 0;
+  return count > 0 ? Math.round(count * 30 * 0.70 * 100) : 0;
+}
+
 
 // Capture raw body for ALL requests before any other middleware
 app.use((req, res, next) => {
@@ -697,7 +774,7 @@ app.post('/api/events', requireAuth, async (req, res) => {
 // clicking the link activates the event into the moderation queue.
 // Also receives a magic edit/delete link for that event.
 // ──────────────────────────────────────────────────────────
-app.post('/api/events/guest', async (req, res) => {
+app.post('/api/events/guest', spamGuardEvent, async (req, res) => {
   try {
     const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description, submitter_name, submitter_email, submitter_phone } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Event name, location, and date are required.' });
