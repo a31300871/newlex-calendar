@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5">
+<meta name="description" content="How to use Near and Far Events — your community calendar, business directory, and supporter sponsorships.">
+<title>How to Use · Near and Far Events</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='100' y1='0' y2='100' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%236366F1'/%3E%3Cstop offset='.5' stop-color='%23EC4899'/%3E%3Cstop offset='1' stop-color='%23F59E0B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M50 8 60 35 90 38 67 56 75 87 50 70 25 87 33 56 10 38 40 35z'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #FAFAF9; --surface: #FFFFFF; --surface2: #F5F5F4;
+  --text: #1C1917; --text2: #57534E; --text3: #78716C;
+  --border: #E7E5E4; --border-md: #D6D3D1;
+  --amber: #F59E0B; --amber-lt: #FEF3C7; --amber-dk: #92400E;
+  --gradient: linear-gradient(135deg, #6366F1, #EC4899, #F59E0B);
+  --font-head: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --r: 10px;
+}
+[data-theme="dark"] {
+  --bg: #1C1917; --surface: #292524; --surface2: #1C1917;
+  --text: #FAFAF9; --text2: #D6D3D1; --text3: #A8A29E;
+  --border: #44403C; --border-md: #57534E;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--amber-dk); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+
+/* Header (matches site) */
+.site-header { background: var(--surface); border-bottom: 1.5px solid var(--border); padding: 14px 20px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); }
+.hdr-wrap { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.logo { font-family: var(--font-head); font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.logo .grad { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.hdr-right { display: flex; align-items: center; gap: 8px; }
+.hdr-nav-link { font-size: 13px; color: var(--text2); padding: 6px 12px; border-radius: 100px; border: 1.5px solid transparent; transition: all .15s; }
+.hdr-nav-link:hover { background: var(--surface2); color: var(--text); }
+.hdr-nav-link.active { background: var(--amber-lt); color: var(--amber-dk); border-color: var(--amber); }
+.theme-toggle { background: var(--surface2); border: 1.5px solid var(--border-md); color: var(--text); padding: 6px 12px; border-radius: 100px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: var(--font-body); display: inline-flex; align-items: center; gap: 4px; }
+
+/* Hero */
+.hero { max-width: 800px; margin: 0 auto; padding: 60px 24px 40px; text-align: center; }
+.hero h1 { font-family: var(--font-head); font-size: clamp(32px, 5vw, 48px); font-weight: 800; line-height: 1.15; letter-spacing: -.015em; margin-bottom: 14px; }
+.hero h1 .grad { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { font-size: 18px; color: var(--text2); max-width: 600px; margin: 0 auto; }
+
+/* Content */
+.content { max-width: 760px; margin: 0 auto; padding: 0 24px 80px; }
+.toc { background: var(--surface); border: 1.5px solid var(--border); border-left: 3px solid var(--amber); border-radius: var(--r); padding: 18px 22px; margin-bottom: 36px; }
+.toc h3 { font-family: var(--font-head); font-size: 16px; margin-bottom: 10px; color: var(--text); font-weight: 700; }
+.toc ol { list-style: none; padding: 0; counter-reset: tocnum; }
+.toc li { counter-increment: tocnum; padding: 4px 0; font-size: 14px; }
+.toc li::before { content: counter(tocnum) "."; color: var(--amber-dk); font-weight: 700; margin-right: 8px; }
+.toc a { color: var(--text); font-weight: 500; }
+
+.step { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r); padding: 24px 28px; margin-bottom: 18px; }
+.step h2 { font-family: var(--font-head); font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; line-height: 1.2; }
+.step h2 .num { background: var(--gradient); color: #fff; font-family: var(--font-body); font-size: 14px; font-weight: 800; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.step p { color: var(--text2); margin-bottom: 12px; }
+.step p:last-child { margin-bottom: 0; }
+.step ul, .step ol { padding-left: 22px; margin: 8px 0 12px; color: var(--text2); }
+.step li { margin-bottom: 6px; }
+.step strong { color: var(--text); }
+.step .tip { background: linear-gradient(135deg, rgba(99,102,241,.05), rgba(245,158,11,.08)); border-left: 3px solid var(--amber); padding: 12px 14px; border-radius: var(--r); margin: 14px 0; font-size: 14px; color: var(--text); }
+.step .tip strong { color: var(--amber-dk); }
+.step .pill { display: inline-block; background: var(--surface2); border: 1.5px solid var(--border-md); padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 700; color: var(--text2); margin: 0 2px; }
+.step .keycap { display: inline-block; background: var(--surface2); border: 1.5px solid var(--border-md); border-bottom-width: 2.5px; padding: 1px 7px; border-radius: 4px; font-family: Menlo, monospace; font-size: 11px; color: var(--text); }
+
+footer { text-align: center; padding: 32px 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text3); line-height: 1.65; }
+footer a { color: var(--amber-dk); }
+
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
+.cta-btn { display: inline-flex; align-items: center; gap: 6px; padding: 12px 22px; border-radius: 100px; font-weight: 700; font-size: 14px; transition: all .15s; }
+.cta-amber { background: var(--gradient); color: #fff; box-shadow: 0 4px 14px rgba(236,72,153,.25); }
+.cta-amber:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(236,72,153,.35); text-decoration: none; }
+.cta-ghost { background: var(--surface); border: 1.5px solid var(--border-md); color: var(--text); }
+.cta-ghost:hover { background: var(--surface2); text-decoration: none; }
+
+@media (max-width: 600px) {
+  .step { padding: 20px 18px; }
+  .step h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="site-header">
+  <div class="hdr-wrap">
+    <a href="/" class="logo">Near and Far <span class="grad">Events</span></a>
+    <nav class="hdr-right">
+      <a href="/" class="hdr-nav-link">Calendar</a>
+      <a href="/directory" class="hdr-nav-link">Directory</a>
+      <a href="/advertise" class="hdr-nav-link">Advertise</a>
+      <a href="/help" class="hdr-nav-link active">Help</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
+    </nav>
+  </div>
+</header>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <h1>How to Use <span class="grad">Near and Far Events</span></h1>
+  <p>A quick guide to finding what's happening in your community — and getting your own event, business, or sponsorship out there.</p>
+</div>
+
+<div class="content">
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="toc">
+    <h3>What you'll find on this page</h3>
+    <ol>
+      <li><a href="#browse">Browsing events near you</a></li>
+      <li><a href="#filter">Filtering by area, date, type, and "Free"</a></li>
+      <li><a href="#search">Using the search bar (with state-wide option)</a></li>
+      <li><a href="#submit">Submitting an event (account or guest)</a></li>
+      <li><a href="#directory">Finding local businesses</a></li>
+      <li><a href="#list">Listing your own business — free</a></li>
+      <li><a href="#advertise">Buying an advertisement</a></li>
+      <li><a href="#sponsor">Sponsoring the calendar</a></li>
+      <li><a href="#account">Accounts, sign-in, and managing your stuff</a></li>
+      <li><a href="#contact">Questions or trouble?</a></li>
+    </ol>
+  </div>
+
+  <!-- BROWSE -->
+  <div class="step" id="browse">
+    <h2><span class="num">1</span> Browsing events near you</h2>
+    <p>When you land on the <strong>Calendar</strong>, you'll see events posted for your area. Each event shows up as one tappable line with the name, location, time, and price. Tap any event to see the full details — description, who posted it, and a button to add it to your own calendar app.</p>
+    <div class="tip"><strong>📱 On mobile?</strong> The whole page is built to work on a phone. The filter pills at the top stay visible while you scroll — no need to scroll back up.</div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="step" id="filter">
+    <h2><span class="num">2</span> Filtering by area, date, type, and "Free"</h2>
+    <p>Three filter pills sit at the top of the calendar:</p>
+    <ul>
+      <li><span class="pill">📍 Area</span> — your zipcode. Tap to change it. You can also click <strong>🗺️ Browse by State / Map</strong> to pick a state and see popular zipcodes there.</li>
+      <li><span class="pill">📅 When</span> — tap to choose Today, This Week, This Month, or All. You can also tap a specific date (or two dates for a range) on the mini-calendar.</li>
+      <li><span class="pill">🏷️ Type</span> — pick one or more event categories (Sports, Government, Community, etc.). Includes a special <strong>🆓 Free events only</strong> filter at the top.</li>
+    </ul>
+    <div class="tip"><strong>💡 Tip:</strong> Filters combine — picking "Free events only" + "Community" shows only free community events. Tap "All types" to clear them.</div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="step" id="search">
+    <h2><span class="num">3</span> Using the search bar (state-wide option)</h2>
+    <p>The search bar matches event names, locations, and categories. Type, press <span class="keycap">Enter</span>, and results filter live.</p>
+    <p>Next to the search bar is a small <strong>🌎 State</strong> checkbox. Tick it to expand your search across every zipcode in your state — useful for finding state fairs, regional festivals, or anything that draws people from far away.</p>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="step" id="submit">
+    <h2><span class="num">4</span> Submitting an event (account or guest)</h2>
+    <p>Tap the big <strong>+ ADD EVENT</strong> button. You have two paths:</p>
+    <ol>
+      <li><strong>Sign in or register</strong> — events you post go live faster, you can edit/delete them later, and your account is yours forever.</li>
+      <li><strong>Submit as a guest</strong> ✨ — no account needed. We'll email you a confirmation link (so we know it's a real submission) and a separate "magic link" to edit or delete your event later. Save that email!</li>
+    </ol>
+    <p>Fill in the event name, date, location, optional time, optional description, and an optional price (with a <strong>Free</strong> quick-fill button). Hit <span class="keycap">Enter</span> or tap Submit Event.</p>
+    <div class="tip"><strong>🌎 Going state-wide?</strong> If your event covers the whole state (state fair, tournament finals), tick the "Make this event state-wide" box. It'll need admin approval before going live in every zip.</div>
+  </div>
+
+  <!-- DIRECTORY -->
+  <div class="step" id="directory">
+    <h2><span class="num">5</span> Finding local businesses</h2>
+    <p>The <a href="/directory">Directory</a> tab shows businesses in your area. The top section is reserved for <strong>⭐ Featured Businesses</strong> (paid spots), followed by all free community listings below.</p>
+    <p>Filter by category (food, retail, services, etc.) or search by name. Each listing has the business name, category, phone, website, and address if provided.</p>
+  </div>
+
+  <!-- LIST -->
+  <div class="step" id="list">
+    <h2><span class="num">6</span> Listing your own business — free</h2>
+    <p>Click the <strong>+ List My Business</strong> button on the Directory page. Free for any local business. You provide:</p>
+    <ul>
+      <li>Business name + category</li>
+      <li>Phone, website, address (any combination)</li>
+      <li>Short description</li>
+      <li>Your zipcode (so it appears in the right area)</li>
+    </ul>
+    <p>That's it. Your business appears in the directory of every visitor who matches your zip.</p>
+  </div>
+
+  <!-- ADVERTISE -->
+  <div class="step" id="advertise">
+    <h2><span class="num">7</span> Buying an advertisement</h2>
+    <p>Three separate ad tiers, billed monthly through Stripe — pick what fits your goal:</p>
+    <ul>
+      <li><strong>📢 Sponsor Bar — $25/mo:</strong> always-visible card pinned at the bottom of every page</li>
+      <li><strong>⭐ Featured Directory — $30/mo:</strong> top placement on the directory page with a gradient-bordered card</li>
+      <li><strong>🎯 Event Popup Ad — $50/mo:</strong> sponsored card inside every event detail popup (limited to 5 spots per area)</li>
+    </ul>
+    <p>Go to the <a href="/advertise">Advertise page</a>, pick your tier, register, and check out via Stripe. Each ad is zipcode-bound — your ad only shows to visitors viewing your target zipcode.</p>
+  </div>
+
+  <!-- SPONSOR -->
+  <div class="step" id="sponsor">
+    <h2><span class="num">8</span> Sponsoring the calendar</h2>
+    <p>Spot the 💛 sponsor card at the top of the events list? That's our calendar sponsor program. For any amount you choose, your name (or business, or tribute, or "anonymous") appears on the calendar for <strong>two weeks</strong> as a thank-you.</p>
+    <p>Pick from five display options:</p>
+    <ul>
+      <li>Completely anonymous</li>
+      <li>First name only</li>
+      <li>First and last name</li>
+      <li>Business name + website/phone</li>
+      <li>In memory / In honor of someone</li>
+    </ul>
+    <div class="tip"><strong>⚖️ Important:</strong> Calendar sponsorships are <strong>paid promotional placements, not tax-deductible donations</strong>. Payments are non-refundable. You must be 18 or older.</div>
+  </div>
+
+  <!-- ACCOUNT -->
+  <div class="step" id="account">
+    <h2><span class="num">9</span> Accounts, sign-in, and managing your stuff</h2>
+    <p>The <strong>Register</strong> or <strong>Sign In</strong> pill is in the top-right of every page. Once signed in:</p>
+    <ul>
+      <li>The pill shows your initials + name</li>
+      <li>Click the down-arrow next to your name to open the account menu</li>
+      <li>From there you can change your password, download your data, or delete your account entirely</li>
+    </ul>
+    <p>Accounts are optional for browsing and event submission, but recommended if you'll be posting regularly.</p>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="step" id="contact">
+    <h2><span class="num">10</span> Questions or trouble?</h2>
+    <p>Email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a> for anything — bug reports, questions, custom advertising arrangements, or just to say hi.</p>
+    <div class="cta-row">
+      <a href="/" class="cta-btn cta-amber">Back to Calendar</a>
+      <a href="/advertise" class="cta-btn cta-ghost">See ad options</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  © 2026 Near and Far Events &nbsp;·&nbsp;
+  <a href="/legal/terms">Terms</a> ·
+  <a href="/legal/privacy">Privacy</a> ·
+  <a href="mailto:hello@nearandfarevents.com">Contact</a>
+</footer>
+
+<script>
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('nf_theme', next); } catch(_) {}
+  document.getElementById('themeIcon').textContent = next === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = next === 'dark' ? 'Light' : 'Dark';
+}
+// Apply saved theme
+(function() {
+  try {
+    const saved = localStorage.getItem('nf_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('themeIcon').textContent = saved === 'dark' ? '☀️' : '🌙';
+    document.getElementById('themeLabel').textContent = saved === 'dark' ? 'Light' : 'Dark';
+  } catch(_) {}
+})();
+// Smooth scroll for TOC links
+document.querySelectorAll('.toc a').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1);
+    const target = document.getElementById(id);
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+</script>
+</body>
+</html>
