@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin Dashboard · Near and Far Events</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='100' y1='0' y2='100' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%236366F1'/%3E%3Cstop offset='.5' stop-color='%23EC4899'/%3E%3Cstop offset='1' stop-color='%23F59E0B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M50 8 60 35 90 38 67 56 75 87 50 70 25 87 33 56 10 38 40 35z'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #FAFAF9; --surface: #FFFFFF; --surface2: #F5F5F4;
+  --text: #1C1917; --text2: #57534E; --text3: #78716C;
+  --border: #E7E5E4; --border-md: #D6D3D1;
+  --amber: #F59E0B; --amber-lt: #FEF3C7; --amber-dk: #92400E;
+  --green: #10B981; --green-lt: #D1FAE5; --green-dk: #065F46;
+  --red: #DC2626; --red-lt: #FEE2E2; --red-dk: #991B1B;
+  --indigo: #6366F1; --pink: #EC4899;
+  --gradient: linear-gradient(135deg, #6366F1, #EC4899, #F59E0B);
+  --font-head: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --r: 10px;
+}
+[data-theme="dark"] {
+  --bg: #1C1917; --surface: #292524; --surface2: #1C1917;
+  --text: #FAFAF9; --text2: #D6D3D1; --text3: #A8A29E;
+  --border: #44403C; --border-md: #57534E;
+  --amber-lt: rgba(245,158,11,.15); --green-lt: rgba(16,185,129,.15); --red-lt: rgba(220,38,38,.15);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.5; }
+a { color: var(--indigo); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+
+/* Header */
+.site-header { background: var(--surface); border-bottom: 1.5px solid var(--border); padding: 14px 20px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); }
+.hdr-wrap { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.logo { font-family: var(--font-head); font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.logo .grad { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.hdr-right { display: flex; align-items: center; gap: 8px; }
+.hdr-nav-link { font-size: 13px; color: var(--text2); padding: 6px 12px; border-radius: 100px; }
+.hdr-nav-link:hover { background: var(--surface2); color: var(--text); text-decoration: none; }
+.theme-toggle { background: var(--surface2); border: 1.5px solid var(--border-md); color: var(--text); padding: 6px 12px; border-radius: 100px; cursor: pointer; font-size: 12px; font-weight: 600; }
+
+/* Page wrap */
+.wrap { max-width: 1280px; margin: 0 auto; padding: 28px 20px 80px; }
+h1 { font-family: var(--font-head); font-size: 32px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; margin-bottom: 4px; }
+h1 .grad { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.sub { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+
+/* Stats strip */
+.stats-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 32px; }
+.stat { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+.stat-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.stat-value { font-family: var(--font-head); font-size: 26px; font-weight: 800; line-height: 1; color: var(--text); }
+.stat-value.urgent { color: var(--red); }
+
+/* Category sections */
+.section { margin-bottom: 32px; }
+.section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.section-head h2 { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--text); }
+.section-head .cat-tag { background: var(--gradient); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 3px 10px; border-radius: 100px; text-transform: uppercase; }
+.section-head .count { color: var(--text3); font-size: 13px; margin-left: auto; }
+
+/* Tile grid */
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r); padding: 16px 18px; transition: all .15s; position: relative; overflow: hidden; }
+.tile.priority-1 { border-left: 4px solid var(--red); }
+.tile.priority-2 { border-left: 4px solid var(--amber); }
+.tile.priority-3 { border-left: 4px solid var(--indigo); }
+.tile.priority-4, .tile.priority-5 { border-left: 4px solid var(--border-md); }
+.tile.completed { opacity: .5; }
+.tile.completed .tile-title { text-decoration: line-through; }
+.tile-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.tile-title { font-family: var(--font-body); font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.35; flex: 1; }
+.tile-count { font-family: var(--font-head); font-size: 28px; font-weight: 800; line-height: 1; color: var(--text); }
+.tile-count.zero { color: var(--text3); }
+.tile-count.alert { color: var(--red); }
+.tile-count.warn { color: var(--amber-dk); }
+.tile-count.good { color: var(--green-dk); }
+.tile-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.tile-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.tile-btn { background: var(--surface2); border: 1.5px solid var(--border-md); color: var(--text); font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 100px; cursor: pointer; font-family: var(--font-body); transition: all .15s; }
+.tile-btn:hover { background: var(--amber-lt); border-color: var(--amber); color: var(--amber-dk); }
+.tile-btn.primary { background: var(--gradient); color: #fff; border: none; }
+.tile-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,.25); }
+.tile-btn.done-toggle { font-size: 11px; padding: 4px 10px; }
+.tile-btn.done-toggle.completed { background: var(--green-lt); border-color: var(--green); color: var(--green-dk); }
+
+/* Modal */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+.modal-bg.on { display: flex; }
+.modal { background: var(--surface); border-radius: 14px; max-width: 560px; width: 100%; padding: 26px 30px; box-shadow: 0 20px 60px rgba(0,0,0,.30); max-height: 90vh; overflow-y: auto; }
+.modal-title { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 6px; line-height: 1.2; }
+.modal-body { font-size: 14px; color: var(--text2); line-height: 1.65; margin-bottom: 16px; white-space: pre-wrap; }
+.modal-body a { color: var(--indigo); word-break: break-all; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.btn-amber { background: var(--gradient); color: #fff; border: none; padding: 10px 18px; border-radius: 100px; font-weight: 700; cursor: pointer; font-size: 13px; font-family: var(--font-body); }
+.btn-ghost { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border-md); padding: 10px 18px; border-radius: 100px; font-weight: 700; cursor: pointer; font-size: 13px; font-family: var(--font-body); }
+textarea.notes { width: 100%; padding: 10px 12px; font-size: 13px; font-family: var(--font-body); border: 1.5px solid var(--border-md); border-radius: var(--r); background: var(--surface); color: var(--text); resize: vertical; }
+
+.loading { text-align: center; padding: 40px; color: var(--text3); }
+.access-denied { text-align: center; padding: 60px 20px; }
+.access-denied h2 { font-family: var(--font-head); font-size: 28px; margin-bottom: 12px; }
+.access-denied a { display: inline-block; margin-top: 16px; }
+
+@media (max-width: 600px) {
+  .wrap { padding: 20px 14px 60px; }
+  h1 { font-size: 26px; }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .tile-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="hdr-wrap">
+    <a href="/" class="logo">Near and Far <span class="grad">Events</span> · Admin</a>
+    <nav class="hdr-right">
+      <a href="/" class="hdr-nav-link">Calendar</a>
+      <a href="/directory" class="hdr-nav-link">Directory</a>
+      <a href="/advertise" class="hdr-nav-link">Advertise</a>
+      <a href="/help" class="hdr-nav-link">Help</a>
+      <button class="theme-toggle" onclick="toggleTheme()"><span id="themeIcon">🌙</span><span id="themeLabel" style="margin-left:4px">Dark</span></button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="loadingState" class="loading">
+    <div style="font-size:14px">Loading dashboard…</div>
+  </div>
+  <div id="accessDenied" class="access-denied" style="display:none">
+    <h2>🔒 Admin Access Required</h2>
+    <p>Sign in as an admin to view this dashboard.</p>
+    <a href="/" class="btn-amber">Go to Calendar →</a>
+  </div>
+  <div id="dashboard" style="display:none">
+    <h1>🎯 Admin <span class="grad">Dashboard</span></h1>
+    <p class="sub">Operations status, business checklist, and to-dos — all in one place.</p>
+
+    <div id="statsStrip" class="stats-strip"></div>
+    <div id="sectionsContainer"></div>
+  </div>
+</div>
+
+<!-- Instructions Modal -->
+<div id="instructionsModal" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modTitle"></div>
+    <div class="modal-body" id="modBody"></div>
+    <div>
+      <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px">📝 Your notes</label>
+      <textarea class="notes" id="modNotes" rows="3" placeholder="Track progress, dates, contact info, etc."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn-amber" id="modSaveBtn" onclick="saveNotes()">Save Notes</button>
+      <button class="btn-amber" id="modToggleBtn" onclick="toggleFromModal()" style="margin-left:auto"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Theme
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('nf_theme', next); } catch(_) {}
+  document.getElementById('themeIcon').textContent = next === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = next === 'dark' ? 'Light' : 'Dark';
+}
+(function() {
+  try {
+    const saved = localStorage.getItem('nf_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('themeIcon').textContent = saved === 'dark' ? '☀️' : '🌙';
+    document.getElementById('themeLabel').textContent = saved === 'dark' ? 'Light' : 'Dark';
+  } catch(_) {}
+})();
+
+// API + auth
+const TOKEN = localStorage.getItem('nlcc_token');
+async function api(path, opts) {
+  const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, ...(opts?.headers || {}) }});
+  if (!res.ok) throw new Error((await res.json().catch(()=>({error:'Network error'}))).error || ('HTTP ' + res.status));
+  return res.json();
+}
+function esc(s) { return String(s||'').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+// Dynamic operational tiles (live counts from /api/admin/dashboard)
+const SITE_OPS_TILES = [
+  { key:'pendingEvents',     title:'Pending Event Approvals',   action:{label:'Review',  url:'/?openApprovals=1'}, alertWhen: c=>c>0,  meta:'Events awaiting your OK' },
+  { key:'pendingInsiders',   title:'Pending Local Insider Requests', action:{label:'Review', url:'/?openApprovals=1'}, alertWhen: c=>c>0, meta:'User upgrade requests' },
+  { key:'pendingListings',   title:'Pending Business Listings', action:{label:'Review',  url:'/directory'}, alertWhen: c=>c>0, meta:'Business directory submissions' },
+  { key:'recentRemovals',    title:'Removed Items (last 30d)',  action:{label:'View Log', url:'/?openRemovedLog=1'}, alertWhen: ()=>false, warnWhen: c=>c>0, meta:'Auto-purges at 24 months' },
+];
+const REVENUE_TILES = [
+  { key:'activeBasic',       title:'Active Sponsor Bar Ads',   action:{label:'Manage', url:'/?openManageAds=1'}, goodWhen: c=>c>0, meta:'$25/mo · Bottom banner placements' },
+  { key:'activeFeatured',    title:'Active Featured Directory',action:{label:'Manage', url:'/?openManageAds=1'}, goodWhen: c=>c>0, meta:'$30/mo · Directory top spots' },
+  { key:'activePremium',     title:'Active Premium Popup Ads', action:{label:'Manage', url:'/?openManageAds=1'}, goodWhen: c=>c>0, meta:'$50/mo · Event popup ads (max 5)' },
+  { key:'activeSponsorships',title:'Active Calendar Sponsors', action:null, goodWhen: c=>c>0, meta:'2-week thank-you placements' },
+];
+const STATS_TILES = [
+  { key:'totalEvents',       label:'Upcoming Events' },
+  { key:'totalListings',     label:'Business Listings' },
+  { key:'totalUsers',        label:'Registered Users' },
+  { key:'pendingEvents',     label:'Pending Approvals', urgent: c=>c>0 },
+];
+const CATEGORY_LABELS = {
+  business:   { label:'Business & Legal',     tag:'BUSINESS',    emoji:'⚖️' },
+  technical:  { label:'Technical Setup',      tag:'TECHNICAL',   emoji:'⚙️' },
+  marketing:  { label:'Marketing & Outreach', tag:'MARKETING',   emoji:'📢' },
+  expansion:  { label:'Expansion',            tag:'GROWTH',      emoji:'🌎' },
+};
+
+let _dashboardData = null;
+let _currentTask = null;
+
+async function loadDashboard() {
+  try {
+    const data = await api('/api/admin/dashboard');
+    _dashboardData = data;
+    renderDashboard();
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('accessDenied').style.display = 'block';
+  }
+}
+
+function renderDashboard() {
+  const { counts, tasks } = _dashboardData;
+
+  // Top stats strip
+  document.getElementById('statsStrip').innerHTML = STATS_TILES.map(s => `
+    <div class="stat">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value ${s.urgent && s.urgent(counts[s.key]) ? 'urgent' : ''}">${counts[s.key].toLocaleString()}</div>
+    </div>
+  `).join('');
+
+  // Site Operations section
+  const siteOpsHtml = `
+    <div class="section">
+      <div class="section-head">
+        <span style="font-size:22px">🛡️</span>
+        <h2>Site Operations</h2>
+        <span class="cat-tag">MODERATION</span>
+        <span class="count">Live data</span>
+      </div>
+      <div class="tile-grid">
+        ${SITE_OPS_TILES.map(t => renderLiveTile(t, counts[t.key])).join('')}
+      </div>
+    </div>`;
+
+  // Revenue section
+  const revenueHtml = `
+    <div class="section">
+      <div class="section-head">
+        <span style="font-size:22px">💰</span>
+        <h2>Active Advertising</h2>
+        <span class="cat-tag">REVENUE</span>
+        <span class="count">Live data</span>
+      </div>
+      <div class="tile-grid">
+        ${REVENUE_TILES.map(t => renderLiveTile(t, counts[t.key])).join('')}
+      </div>
+    </div>`;
+
+  // Group checklist tasks by category
+  const byCategory = {};
+  tasks.forEach(t => { (byCategory[t.category] = byCategory[t.category] || []).push(t); });
+  const checklistHtml = Object.entries(CATEGORY_LABELS).map(([cat, info]) => {
+    const items = byCategory[cat] || [];
+    if (!items.length) return '';
+    const open = items.filter(t => !t.completed).length;
+    return `
+      <div class="section">
+        <div class="section-head">
+          <span style="font-size:22px">${info.emoji}</span>
+          <h2>${info.label}</h2>
+          <span class="cat-tag">${info.tag}</span>
+          <span class="count">${open} of ${items.length} open</span>
+        </div>
+        <div class="tile-grid">
+          ${items.map(t => renderTaskTile(t)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('sectionsContainer').innerHTML = siteOpsHtml + revenueHtml + checklistHtml;
+}
+
+function renderLiveTile(t, count) {
+  let countClass = 'zero';
+  if (t.alertWhen && t.alertWhen(count)) countClass = 'alert';
+  else if (t.warnWhen && t.warnWhen(count)) countClass = 'warn';
+  else if (t.goodWhen && t.goodWhen(count)) countClass = 'good';
+  return `
+    <div class="tile">
+      <div class="tile-head">
+        <div class="tile-title">${t.title}</div>
+        <div class="tile-count ${countClass}">${count.toLocaleString()}</div>
+      </div>
+      <div class="tile-meta">${t.meta || ''}</div>
+      ${t.action ? `<div class="tile-actions"><a href="${t.action.url}" class="tile-btn primary">${t.action.label} →</a></div>` : ''}
+    </div>`;
+}
+
+function renderTaskTile(task) {
+  const priorityClass = 'priority-' + (task.priority || 5);
+  const completedClass = task.completed ? ' completed' : '';
+  return `
+    <div class="tile ${priorityClass}${completedClass}">
+      <div class="tile-head">
+        <div class="tile-title">${esc(task.title)}</div>
+        <div style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.05em">P${task.priority}</div>
+      </div>
+      ${task.notes ? `<div class="tile-meta">📝 ${esc(task.notes.slice(0,60))}${task.notes.length>60?'…':''}</div>` : ''}
+      <div class="tile-actions">
+        <button class="tile-btn" onclick='openInstructions(${JSON.stringify(task).replace(/'/g,"&#39;")})'>📖 Instructions</button>
+        <button class="tile-btn done-toggle ${task.completed ? 'completed' : ''}" onclick="toggleTask('${task.task_key}')">${task.completed ? '✓ Done' : 'Mark Done'}</button>
+      </div>
+    </div>`;
+}
+
+function openInstructions(task) {
+  _currentTask = task;
+  document.getElementById('modTitle').textContent = task.title;
+  // Format instructions with clickable URLs
+  const formatted = (task.instructions || 'No instructions saved.').replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  document.getElementById('modBody').innerHTML = formatted;
+  document.getElementById('modNotes').value = task.notes || '';
+  const toggleBtn = document.getElementById('modToggleBtn');
+  toggleBtn.textContent = task.completed ? '↩️ Mark Incomplete' : '✓ Mark Done';
+  document.getElementById('instructionsModal').classList.add('on');
+}
+
+function closeModal() {
+  document.getElementById('instructionsModal').classList.remove('on');
+  _currentTask = null;
+}
+
+async function saveNotes() {
+  if (!_currentTask) return;
+  const notes = document.getElementById('modNotes').value;
+  try {
+    await api('/api/admin/tasks/' + _currentTask.task_key + '/notes', { method: 'PUT', body: JSON.stringify({ notes })});
+    _currentTask.notes = notes;
+    // Update tile inline
+    await loadDashboard();
+    closeModal();
+  } catch(e) { alert('Could not save: ' + e.message); }
+}
+
+async function toggleTask(key) {
+  try {
+    await api('/api/admin/tasks/' + key + '/toggle', { method: 'POST' });
+    await loadDashboard();
+  } catch(e) { alert('Could not toggle: ' + e.message); }
+}
+
+async function toggleFromModal() {
+  if (!_currentTask) return;
+  await toggleTask(_currentTask.task_key);
+  closeModal();
+}
+
+// Boot
+if (!TOKEN) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('accessDenied').style.display = 'block';
+} else {
+  loadDashboard();
+}
+</script>
+</body>
+</html>
