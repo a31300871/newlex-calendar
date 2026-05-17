@@ -616,7 +616,7 @@ function toggleTheme(){
 <nav>
   <div class="hdr-row1">
     <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.62em;font-weight:500;opacity:.7;letter-spacing:.02em;color:var(--text2)">Discover what's happening, near and far</span></a>
-    <div class="hdr-right"><button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><span class="nav-user" id="navUser"></span></div>
+    <div class="hdr-right"><a href="/help" class="theme-toggle" style="text-decoration:none;margin-right:8px" title="How to use this site"><span>❓</span><span style="margin-left:4px">Help</span></a><button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><span class="nav-user" id="navUser"></span></div>
   </div>
   <div class="hdr-row2">
     <a href="/" class="nav-btn" aria-label="Calendar">
@@ -766,6 +766,7 @@ function toggleTheme(){
 <!-- PRICING -->
 <div style="background:var(--surface2);padding:50px 24px">
   <div style="max-width:860px;margin:0 auto;text-align:center">
+    <a id="choose-plan" style="display:block;position:relative;top:-20px"></a>
     <div class="section-title" style="margin-bottom:8px">Choose Your Plan</div>
     <div class="section-sub" style="margin-bottom:32px">Both plans are month-to-month. Cancel any time. No contracts.</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:1000px;margin:0 auto">
@@ -877,7 +878,9 @@ function checkURLParams() {
     if (sessionId && advToken) {
       verifySession(sessionId);
     } else {
-      banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Activating your ad…</div>`;
+      // Item 20: Clear form selections after successful purchase
+  try { sessionStorage.removeItem("nf_chosen_tier"); selectedTier = ""; } catch(_) {}
+  banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Activating your ad…</div>`;
       if (advToken) refreshAdvertiser();
     }
     window.history.replaceState({}, '', '/advertise');
@@ -891,6 +894,8 @@ function checkURLParams() {
 // Verify the Stripe session and activate the advertiser
 async function verifySession(sessionId) {
   const banner = document.getElementById('alertBanner');
+  // Item 20: Clear form selections after successful purchase
+  try { sessionStorage.removeItem("nf_chosen_tier"); selectedTier = ""; } catch(_) {}
   banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">⏳ Activating your ad…</div>`;
   try {
     const result = await api('/api/advertiser/verify-session', {
@@ -900,7 +905,9 @@ async function verifySession(sessionId) {
     advertiser = result.advertiser;
     localStorage.setItem('nlcc_adv', JSON.stringify(advertiser));
     renderPortal();
-    banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Your ad is now live on the community calendar!</div>`;
+    // Item 20: Clear form selections after successful purchase
+  try { sessionStorage.removeItem("nf_chosen_tier"); selectedTier = ""; } catch(_) {}
+  banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">🎉 <strong>Payment successful!</strong> Your ad is now live on the community calendar!</div>`;
   } catch(e) {
     banner.innerHTML = `<div class="alert alert-warning" style="max-width:860px;margin:16px auto;border-radius:10px">Payment received but auto-activation failed (${esc(e.message)}). Click <strong>"Already paid? Check status"</strong> below to retry, or email <a href="mailto:hello@nearandfarevents.com">hello@nearandfarevents.com</a>.</div>`;
   }
@@ -1231,7 +1238,9 @@ async function confirmCancel(currentState) {
       const txt = currentState === 'pending'
         ? '✓ Pending listing cancelled. You can subscribe again any time below.'
         : '✓ Subscription cancelled. Your card will not be charged again.';
-      banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">${txt}</div>`;
+      // Item 20: Clear form selections after successful purchase
+  try { sessionStorage.removeItem("nf_chosen_tier"); selectedTier = ""; } catch(_) {}
+  banner.innerHTML = `<div class="alert alert-success" style="max-width:860px;margin:16px auto;border-radius:10px">${txt}</div>`;
       setTimeout(() => { banner.innerHTML = ''; }, 6000);
     }
     renderPortal();
