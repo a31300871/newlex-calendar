@@ -612,8 +612,12 @@ app.get('/api/events', async (req, res) => {
       try { const payload = jwt.verify(auth.slice(7), SECRET); isAdmin = !!payload.is_admin; userId = payload.id; } catch(_) {}
     }
     const zipcode = (req.query.zipcode||'').toString().trim();
-    const zipFilter = zipcode ? ' AND e.zipcode=?' : '';
-    const zipParam = zipcode ? [zipcode] : [];
+    const zipState = zipToState(zipcode);
+    // Zip filter: match either the event's exact zipcode OR its statewide_state to this zip's state
+    const zipFilter = zipcode
+      ? ' AND (e.zipcode=? OR (e.statewide_state != \'\' AND e.statewide_state = ?))'
+      : '';
+    const zipParam = zipcode ? [zipcode, zipState || ''] : [];
     let sql;
     let params;
     if (isAdmin) {
@@ -1037,6 +1041,36 @@ app.get('/api/admin/users/search', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+
+// ── ADMIN: Mark a calendar event as state-wide (appears in every zip of that state) ──
+app.put('/api/admin/events/:id/statewide', requireAdmin, async (req, res) => {
+  try {
+    const { state } = req.body || {};
+    const stateCode = (state || '').toString().trim().toUpperCase();
+    if (stateCode && stateCode.length !== 2) return res.status(400).json({ error: 'State must be a 2-letter code (e.g., OH), or empty to clear.' });
+    const db = await getDb();
+    const ev = await db.get('SELECT id, name FROM events WHERE id=?', [req.params.id]);
+    if (!ev) return res.status(404).json({ error: 'Event not found.' });
+    await db.run('UPDATE events SET statewide_state=? WHERE id=?', [stateCode, req.params.id]);
+    res.json({ success: true, statewide_state: stateCode, event_name: ev.name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN: List events for the state-wide picker (search by name) ──
+app.get('/api/admin/events/search', requireAdmin, async (req, res) => {
+  try {
+    const q = (req.query.q || '').toString().trim();
+    if (q.length < 2) return res.json([]);
+    const db = await getDb();
+    const like = '%' + q + '%';
+    const rows = await db.all(
+      "SELECT id, name, date, zipcode, statewide_state, status FROM events WHERE name LIKE ? AND status IN ('approved','pending') ORDER BY date DESC LIMIT 15",
+      [like]
+    );
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ── ADMIN: Set/clear statewide visibility for a listing ──
 app.put('/api/admin/listings/:id/statewide', requireAdmin, async (req, res) => {
