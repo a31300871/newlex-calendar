@@ -801,6 +801,24 @@ button:active{opacity:.8}
 </div>
 
 <script>
+// ── DIAGNOSTIC: catch all JS errors so we can see what fails ──
+window.addEventListener('error', function(e) {
+  console.error('[JS ERROR]', e.message, 'at', (e.filename||'').split('/').pop() + ':' + e.lineno + ':' + e.colno);
+  // Visible banner so user can see the error without F12
+  if (!document.getElementById('__diagBanner')) {
+    const div = document.createElement('div');
+    div.id = '__diagBanner';
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#DC2626;color:#fff;padding:10px 16px;font-size:13px;font-family:system-ui;z-index:99999;line-height:1.4;font-weight:600';
+    document.body && document.body.appendChild(div);
+  }
+  const banner = document.getElementById('__diagBanner');
+  if (banner) banner.textContent = 'JS Error: ' + e.message + ' (' + (e.filename||'').split('/').pop() + ':' + e.lineno + ')';
+});
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[PROMISE REJECTED]', e.reason);
+});
+console.log('[DIAG] Script loading...');
+
 const API='';
 const CATS=[
   {id:'sports',    label:'Sports',          c:'#185FA5'},
@@ -965,13 +983,15 @@ function readTimePicker(prefix){
 
 
 async function init(){
+  console.log('[DIAG] init() entered');
   // Each step wrapped — if one throws (bad endpoint, stale data, etc.) the others still run
-  try { await handleMagicLinkUrls(); } catch(e){ console.error('Magic-link handler:', e); }
-  try { renderAuth(); } catch(e){ console.error('renderAuth:', e); }
-  try { updateFilterPills(); } catch(e){ console.error('filter pills:', e); }
-  try { updateZipDisplay(); } catch(e){ console.error('zip display:', e); }
-  try { await Promise.all([loadEvents(),loadSponsors()]); } catch(e){ console.error('load events/sponsors:', e); }
-  try { await refreshPendingBadge(); } catch(e){ console.error('pending badge:', e); }
+  try { console.log('[DIAG] handleMagicLinkUrls...'); await handleMagicLinkUrls(); } catch(e){ console.error('[DIAG] handleMagicLinkUrls FAILED:', e); }
+  try { console.log('[DIAG] renderAuth...'); renderAuth(); console.log('[DIAG] ✓ renderAuth done'); } catch(e){ console.error('[DIAG] renderAuth FAILED:', e); }
+  try { console.log('[DIAG] updateFilterPills...'); updateFilterPills(); } catch(e){ console.error('[DIAG] updateFilterPills FAILED:', e); }
+  try { console.log('[DIAG] updateZipDisplay...'); updateZipDisplay(); } catch(e){ console.error('[DIAG] updateZipDisplay FAILED:', e); }
+  try { console.log('[DIAG] loadEvents + loadSponsors...'); await Promise.all([loadEvents(),loadSponsors()]); console.log('[DIAG] ✓ events + sponsors loaded'); } catch(e){ console.error('[DIAG] load events/sponsors FAILED:', e); }
+  try { await refreshPendingBadge(); } catch(e){ console.error('[DIAG] pending badge:', e); }
+  console.log('[DIAG] init() completed');
 }
 
 // ── Magic-link landing-page handlers ──
@@ -2968,7 +2988,15 @@ function showPendingNotice() {
 );
 
 // Boot the app
-init();
+console.log('[DIAG] Calling init()...');
+init().then(() => console.log('[DIAG] ✓ init() finished')).catch(e => {
+  console.error('[DIAG] init() rejected:', e);
+  // Show a visible banner explaining
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#DC2626;color:#fff;padding:12px 16px;font-size:13px;z-index:99999;font-family:system-ui;font-weight:700';
+  div.textContent = 'init() failed: ' + (e && e.message ? e.message : 'unknown');
+  document.body && document.body.appendChild(div);
+});
 
 </script>
 
