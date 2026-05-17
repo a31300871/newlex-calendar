@@ -1385,6 +1385,7 @@ function renderAuth(){
           <button onclick="openBulkRemove()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">👤 Bulk Remove by User</button>
           <button onclick="openManualAdvertiser()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📢 Add Business Ad</button>
           <button onclick="openStatewideListing()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🌎 Make Listing State-Wide</button>
+          <button onclick="openStatewideEvent()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📅 Make Event State-Wide</button>
           <button onclick="openManageAds()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🛠 Manage Business Ads</button>
           <button onclick="openRemovedItemsLog()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📜 Removed Items Log</button>
           <div style="height:1px;background:var(--border)"></div>
@@ -1717,6 +1718,85 @@ async function downloadMyData(){
 // ── ADMIN: Manually add an advertisement ──
 
 // ── ADMIN: Make a listing visible state-wide (one row, appears in every zip in that state) ──
+async 
+// ── ADMIN: Make a calendar event state-wide (single row, appears in every zip of one state) ──
+async function openStatewideEvent(){
+  closeAcctMenu();
+  document.getElementById('evModalContent').innerHTML = `
+    <div class="modal-title">📅 State-Wide Event</div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text2);line-height:1.5">
+      Make a calendar event visible in <strong>every zipcode of a single state</strong>. Useful for state fairs, state-wide festivals, or events with regional draw. One event row — appears everywhere in that state.
+    </div>
+    <div class="field"><label>Find event by name</label><input type="text" id="seQ" placeholder="Start typing..." oninput="seSearchEvents()" autocomplete="off"></div>
+    <div id="seResults" style="margin-bottom:14px"></div>
+    <div id="seSelected" style="display:none;background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px;margin-bottom:14px"></div>
+    <div class="field" id="seStateField" style="display:none">
+      <label>Show in every zip of which state?</label>
+      <select id="seState" style="width:100%;padding:9px 11px;font-family:var(--font-body);font-size:14px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text)">
+        <option value="">— Choose state —</option>
+        <option value="OH">Ohio (OH)</option>
+        <option value="PA">Pennsylvania (PA)</option>
+        <option value="WV">West Virginia (WV)</option>
+        <option value="KY">Kentucky (KY)</option>
+        <option value="IN">Indiana (IN)</option>
+        <option value="MI">Michigan (MI)</option>
+        <option value="">— Or clear (zip-specific only) —</option>
+      </select>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Leave blank to revert to single-zip visibility.</div>
+    </div>
+    <div class="modal-actions" id="seActions" style="display:none">
+      <button class="btn-ghost" onclick="closeModal('evModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="doStatewideEvent()">Apply</button>
+    </div>
+    <div class="err-msg" id="seErr"></div>`;
+  openModal('evModal');
+}
+let _seSelectedEvent = null;
+let _seTimer = null;
+function seSearchEvents(){
+  clearTimeout(_seTimer);
+  _seTimer = setTimeout(async () => {
+    const q = document.getElementById('seQ').value.trim();
+    if (q.length < 2) { document.getElementById('seResults').innerHTML = ''; return; }
+    try {
+      const rows = await api('/api/admin/events/search?q=' + encodeURIComponent(q));
+      if (!rows.length) { document.getElementById('seResults').innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px">No matches</div>'; return; }
+      document.getElementById('seResults').innerHTML = rows.map(ev => {
+        const args = JSON.stringify({id:ev.id, name:ev.name, date:ev.date, zip:ev.zipcode||'', sw:ev.statewide_state||''}).replace(/"/g,'&quot;');
+        return `<div onclick='seSelectFromData(${args})' style="padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;cursor:pointer;background:var(--surface);transition:all .15s" onmouseover="this.style.background='var(--amber-lt)';this.style.borderColor='var(--amber)'" onmouseout="this.style.background='var(--surface)';this.style.borderColor='var(--border)'">
+          <div style="font-weight:700;font-size:14px">${esc(ev.name)}</div>
+          <div style="font-size:12px;color:var(--text2)">${esc(ev.date)} · Zip ${esc(ev.zipcode||'?')}${ev.statewide_state?` · <strong style="color:var(--amber-dk)">State-wide: ${esc(ev.statewide_state)}</strong>`:''}</div>
+        </div>`;
+      }).join('');
+    } catch(e){}
+  }, 300);
+}
+function seSelectFromData(data){ seSelect(data.id, data.name, data.date, data.zip, data.sw); }
+function seSelect(id, name, date, zip, currentState){
+  _seSelectedEvent = { id, name, zip };
+  document.getElementById('seResults').innerHTML = '';
+  document.getElementById('seQ').value = '';
+  document.getElementById('seSelected').style.display = 'block';
+  document.getElementById('seSelected').innerHTML = `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Selected:</div>
+    <div style="font-weight:800;font-size:15px">${name}</div>
+    <div style="font-size:12px;color:var(--text2)">${date} · Currently zip ${zip}${currentState?` · State-wide: <strong style="color:var(--amber-dk)">${currentState}</strong>`:''}</div>`;
+  document.getElementById('seStateField').style.display = 'block';
+  document.getElementById('seActions').style.display = 'flex';
+  if (currentState) document.getElementById('seState').value = currentState;
+}
+async function doStatewideEvent(){
+  if (!_seSelectedEvent) { document.getElementById('seErr').textContent = 'Please select an event first.'; return; }
+  const state = document.getElementById('seState').value.trim().toUpperCase();
+  try {
+    const r = await api('/api/admin/events/' + _seSelectedEvent.id + '/statewide', { method:'PUT', body: JSON.stringify({ state })});
+    showMessageModal('✓ Done', state ? `"${_seSelectedEvent.name}" now appears in every zipcode in ${state}.` : `"${_seSelectedEvent.name}" is now single-zip only.`, 'success');
+    _seSelectedEvent = null;
+    await loadEvents();
+  } catch(e) { document.getElementById('seErr').textContent = e.message; }
+}
+
+
 async function openStatewideListing(){
   closeAcctMenu();
   document.getElementById('evModalContent').innerHTML = `
