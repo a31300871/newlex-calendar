@@ -146,6 +146,8 @@ async function getDb() {
   try { await _db.run("ALTER TABLE listings ADD COLUMN statewide_state TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN zipcode TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN statewide_state TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE sponsors ADD COLUMN zipcode TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE sponsors ADD COLUMN statewide_state TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN is_anonymous INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN submitter_name TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN submitter_email TEXT DEFAULT ''"); } catch(_) {}
