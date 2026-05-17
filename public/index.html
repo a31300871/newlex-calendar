@@ -363,7 +363,7 @@ button:active{opacity:.8}
   background:var(--gradient);-webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:transparent;
 }
-.spon-cards{display:flex;gap:9px;flex:1;overflow-x:auto;align-items:stretch;scrollbar-width:none}
+.spon-cards{display:flex;gap:9px;flex:1;overflow-x:auto;align-items:stretch;justify-content:center;scrollbar-width:none}
 .spon-cards::-webkit-scrollbar{display:none}
 .spon-card{
   background:var(--surface);
@@ -700,7 +700,7 @@ button:active{opacity:.8}
 <header id="hdr">
   <div class="hdr-row1">
     <div class="hdr-title"><span style="font-size:1.1em;display:inline-block;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.6em;font-weight:500;opacity:.7;letter-spacing:.02em">Discover what's happening, near and far</span></div>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><div class="hdr-right" id="authArea"></div>
+    <a href="/help" class="theme-toggle" style="text-decoration:none;margin-right:8px" title="How to use this site"><span>❓</span><span style="margin-left:4px">Help</span></a><button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><div class="hdr-right" id="authArea"></div>
   </div>
   <div class="hdr-row2">
     <a href="/" class="nav-btn active" aria-label="Calendar">
@@ -818,6 +818,40 @@ window.addEventListener('unhandledrejection', function(e) {
   console.error('[PROMISE REJECTED]', e.reason);
 });
 console.log('[DIAG] Script loading...');
+
+// Item 8: Enter key triggers the primary action button (non-cancel/secondary) in the focused modal/form
+(function() {
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    // Don't interfere with textareas (multi-line input) or buttons (default already fires)
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'textarea' || tag === 'button' || tag === 'select') return;
+    if (tag !== 'input') return;
+    // Find the visible modal containing this input, or fall back to the form
+    let container = e.target.closest('.modal-bg.on, .modal-bg[style*="display:flex"]');
+    if (!container) container = e.target.closest('.modal');
+    if (!container) container = e.target.closest('form');
+    if (!container) return;
+    // Find a primary button — prefer .btn-amber, then exclude btn-ghost/.btn-outline (cancel)
+    let primary = container.querySelector('.btn-amber:not([disabled])');
+    if (!primary) {
+      const all = container.querySelectorAll('button:not([disabled])');
+      for (const b of all) {
+        const cls = b.className || '';
+        const txt = (b.textContent||'').trim().toLowerCase();
+        if (cls.includes('btn-ghost') || cls.includes('btn-outline')) continue;
+        if (/^cancel$/.test(txt) || txt.startsWith('cancel')) continue;
+        primary = b;
+        break;
+      }
+    }
+    if (primary) {
+      e.preventDefault();
+      primary.click();
+    }
+  });
+})();
+
 
 const API='';
 const CATS=[
@@ -940,7 +974,6 @@ function buildTimePickerHTML(prefix, startTime, endTime, allDay){
   return `
     <div class="time-pickers-wrap">
       <div class="time-checkbox-row">
-        <label><input type="checkbox" id="${prefix}AllDay" ${allDay?'checked':''} onchange="onTimeMode('${prefix}')"> All day</label>
         <label><input type="checkbox" id="${prefix}TBD" ${tbd?'checked':''} onchange="onTimeMode('${prefix}','tbd')"> Time TBD</label>
       </div>
       <div id="${prefix}TimeFields" style="${(allDay||tbd)?'display:none':''}">
@@ -982,6 +1015,19 @@ function readTimePicker(prefix){
 }
 
 
+// Item 26: simple frontend zip→state mapper (mirrors backend)
+function zipToStateFE(zip){
+  zip = (zip||'').toString();
+  if (zip.length !== 5) return '';
+  const n = parseInt(zip, 10);
+  if (n >= 43000 && n <= 45999) return 'OH';
+  if (n >= 15000 && n <= 19699) return 'PA';
+  if (n >= 24700 && n <= 26999) return 'WV';
+  if (n >= 40000 && n <= 42799) return 'KY';
+  if (n >= 46000 && n <= 47999) return 'IN';
+  if (n >= 48000 && n <= 49999) return 'MI';
+  return '';
+}
 async function init(){
   console.log('[DIAG] init() entered');
   // Each step wrapped — if one throws (bad endpoint, stale data, etc.) the others still run
@@ -989,7 +1035,7 @@ async function init(){
   try { console.log('[DIAG] renderAuth...'); renderAuth(); console.log('[DIAG] ✓ renderAuth done'); } catch(e){ console.error('[DIAG] renderAuth FAILED:', e); }
   try { console.log('[DIAG] updateFilterPills...'); updateFilterPills(); } catch(e){ console.error('[DIAG] updateFilterPills FAILED:', e); }
   try { console.log('[DIAG] updateZipDisplay...'); updateZipDisplay(); } catch(e){ console.error('[DIAG] updateZipDisplay FAILED:', e); }
-  try { console.log('[DIAG] loadEvents + loadSponsors...'); await Promise.all([loadEvents(),loadSponsors()]); console.log('[DIAG] ✓ events + sponsors loaded'); } catch(e){ console.error('[DIAG] load events/sponsors FAILED:', e); }
+  try { console.log('[DIAG] loadEvents + loadSponsors + loadSponsorships...'); await Promise.all([loadEvents(),loadSponsors(),loadSponsorships()]); console.log('[DIAG] ✓ events + sponsors + sponsorships loaded'); } catch(e){ console.error('[DIAG] load events/sponsors FAILED:', e); }
   try { await refreshPendingBadge(); } catch(e){ console.error('[DIAG] pending badge:', e); }
   console.log('[DIAG] init() completed');
 }
@@ -1159,7 +1205,8 @@ async function openZipPicker(){
   document.getElementById('evModalContent').innerHTML = `
     <div class="modal-title">📍 Choose Your Area</div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your 5-digit zipcode to see local events. You can switch areas anytime.</p>
-    <div class="field"><label>Your Zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="12345" value="${esc(currentZipcode||'')}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
+    <button onclick="closeModal('evModal');openUSMap()" style="width:100%;background:var(--gradient);color:#fff;border:none;padding:11px;font-size:14px;font-weight:700;border-radius:var(--r);cursor:pointer;font-family:var(--font-body);margin-bottom:14px;box-shadow:0 3px 10px rgba(236,72,153,.20)">🗺️ Browse by State / Map</button>
+    <div class="field"><label>Or type your zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="12345" value="${esc(currentZipcode||'')}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
     ${popularZips.length ? `
       <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Popular zipcodes:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
@@ -1197,8 +1244,9 @@ async function saveZip(){
     } catch(_) {}
   }
   currentZipcode = zip;
-  // Re-fetch zip-dependent sponsor data after zip change
+  // Re-fetch zip-dependent data after zip change
   loadSponsors();
+  loadSponsorships();
   showAllAreas = false;
   localStorage.setItem('nlcc_zipcode', zip);
   // Save to user account if logged in
@@ -1211,7 +1259,24 @@ async function saveZip(){
   await loadEvents();
 }
 
+function toggleStatewideSearch(){
+  // Re-fetch events with statewide flag
+  loadEvents();
+}
+
+// Item 25: Load active calendar sponsorships for current zip (renders as cards in event list)
+async function loadSponsorships(){
+  try {
+    const zip = currentZipcode || '';
+    if (!zip) { allSponsorships = []; renderEvents(); return; }
+    const r = await fetch('/api/display/sponsorships?zipcode=' + encodeURIComponent(zip));
+    allSponsorships = await r.json();
+    renderEvents();
+  } catch(e){ console.error('loadSponsorships:', e); allSponsorships = []; }
+}
+
 async function loadEvents(){
+  const statewide = document.getElementById('searchStatewide')?.checked ? '&statewide=true' : '';
   try{
     const zip = (!showAllAreas && currentZipcode) ? '?zipcode='+encodeURIComponent(currentZipcode) : '';
     allEvs=await api('/api/events'+zip);
@@ -1267,7 +1332,10 @@ function updateFilterPills(){
   const whatVal = document.getElementById('fpWhatValue');
   const whatPill = document.getElementById('fpWhat');
   if (whatVal){
+    const hasFree = activeFilters.has('__free__');
+    const catCount = [...activeFilters].filter(id => id !== '__free__').length;
     if (activeFilters.size === 0) whatVal.textContent = 'All types';
+    else if (activeFilters.size === 1 && hasFree) whatVal.textContent = '🆓 Free';
     else if (activeFilters.size === 1) {
       const c = CATS.find(x => x.id === [...activeFilters][0]);
       whatVal.textContent = c ? c.label : 'Custom';
@@ -1291,19 +1359,106 @@ function openWhenPicker(e){
   if (e) e.stopPropagation();
   closeAllPopovers();
   const pop = document.getElementById('popWhen');
-  pop.innerHTML = WHEN_OPTIONS.map(o => `
-    <div class="fp-opt${dateFilter===o.id?' selected':''}" onclick="setDateFilter('${o.id}');closeAllPopovers()">
-      <span style="font-size:16px">${o.icon}</span>
-      <span>${o.label}</span>
-      ${dateFilter===o.id?'<span class="fp-opt-check">✓</span>':''}
-    </div>
-  `).join('') + `
-    <div style="border-top:1.5px solid var(--border);margin:6px -8px 0;padding:8px 8px 0 8px">
-      <button class="btn-amber" style="width:100%;padding:9px;font-size:14px;font-weight:700;border-radius:6px" onclick="closeAllPopovers()">Done</button>
-    </div>`;
+  // Build the calendar grid HTML + quick presets
+  pop.innerHTML = renderWhenPickerContent();
   positionPopover(pop, 'fpWhen');
   setTimeout(()=>document.addEventListener('click', closePopoverOnOutside, { once:true }), 0);
 }
+
+// Calendar state for custom date selection
+let _calMonth = null; // {year, month}
+let _calRangeStart = null;
+let _calRangeEnd = null;
+
+function _initCalState() {
+  if (!_calMonth) {
+    const now = new Date();
+    _calMonth = { year: now.getFullYear(), month: now.getMonth() };
+  }
+}
+
+function renderWhenPickerContent() {
+  _initCalState();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthLabel = monthNames[_calMonth.month] + ' ' + _calMonth.year;
+
+  // Build the day grid
+  const first = new Date(_calMonth.year, _calMonth.month, 1);
+  const last = new Date(_calMonth.year, _calMonth.month + 1, 0);
+  const startDow = first.getDay();
+  const daysInMonth = last.getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayKey = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+  let gridCells = '';
+  // Empty cells before day 1
+  for (let i = 0; i < startDow; i++) gridCells += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dKey = _calMonth.year + '-' + String(_calMonth.month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const isToday = dKey === todayKey;
+    const inRange = _calRangeStart && _calRangeEnd && dKey >= _calRangeStart && dKey <= _calRangeEnd;
+    const isStart = dKey === _calRangeStart;
+    const isEnd = dKey === _calRangeEnd;
+    const isSelected = isStart || isEnd || inRange;
+    const bg = isSelected ? 'var(--amber)' : isToday ? 'var(--amber-lt)' : 'transparent';
+    const color = isSelected ? '#fff' : isToday ? 'var(--amber-dk)' : 'var(--text)';
+    const fw = (isSelected || isToday) ? '700' : '500';
+    gridCells += `<div onclick="event.stopPropagation();onCalDayClick('${dKey}');" style="text-align:center;padding:6px 0;border-radius:6px;cursor:pointer;background:${bg};color:${color};font-size:13px;font-weight:${fw};transition:background .15s" onmouseover="if(!this.style.background.includes('amber'))this.style.background='var(--surface2)'" onmouseout="if(!('${dKey}'===_calRangeStart||'${dKey}'===_calRangeEnd||('${dKey}'>=_calRangeStart&&'${dKey}'<=_calRangeEnd)))this.style.background='${bg}'">${d}</div>`;
+  }
+
+  const rangeText = _calRangeStart ? (_calRangeEnd ? _calRangeStart + ' → ' + _calRangeEnd : _calRangeStart + ' (pick end date)') : 'No date picked';
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+      ${WHEN_OPTIONS.map(o => `
+        <div class="fp-opt${dateFilter===o.id?' selected':''}" onclick="event.stopPropagation();setDateFilter('${o.id}');_calRangeStart=null;_calRangeEnd=null;closeAllPopovers()" style="padding:7px 8px;font-size:12px">
+          <span style="font-size:13px">${o.icon}</span>
+          <span>${o.label}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div style="border-top:1.5px solid var(--border);padding-top:10px;margin-top:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px" onclick="event.stopPropagation()">
+        <button onclick="event.stopPropagation();calChangeMonth(-1);openWhenPicker(event)" style="background:var(--surface2);border:1.5px solid var(--border-md);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px">‹</button>
+        <strong style="font-size:13px;color:var(--text)">${monthLabel}</strong>
+        <button onclick="event.stopPropagation();calChangeMonth(1);openWhenPicker(event)" style="background:var(--surface2);border:1.5px solid var(--border-md);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px">›</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;font-weight:700;color:var(--text3);text-align:center;margin-bottom:4px">
+        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px" onclick="event.stopPropagation()">${gridCells}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center;padding:6px;background:var(--surface2);border-radius:6px" onclick="event.stopPropagation()">📅 ${rangeText}</div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="btn-ghost" style="flex:1;padding:9px;font-size:13px;font-weight:600;border-radius:6px" onclick="event.stopPropagation();_calRangeStart=null;_calRangeEnd=null;dateFilter='all';updateFilterPills();renderEvents();closeAllPopovers()">Clear</button>
+      <button class="btn-amber" style="flex:1;padding:9px;font-size:13px;font-weight:700;border-radius:6px" onclick="event.stopPropagation();applyCalRange();closeAllPopovers()">Apply</button>
+    </div>`;
+}
+
+function onCalDayClick(dKey){
+  if (!_calRangeStart || (_calRangeStart && _calRangeEnd)) {
+    _calRangeStart = dKey;
+    _calRangeEnd = null;
+  } else if (dKey < _calRangeStart) {
+    _calRangeEnd = _calRangeStart;
+    _calRangeStart = dKey;
+  } else {
+    _calRangeEnd = dKey;
+  }
+  openWhenPicker(event); // re-render
+}
+function calChangeMonth(dir){
+  _calMonth.month += dir;
+  if (_calMonth.month < 0) { _calMonth.month = 11; _calMonth.year--; }
+  if (_calMonth.month > 11) { _calMonth.month = 0; _calMonth.year++; }
+}
+function applyCalRange(){
+  if (!_calRangeStart) { renderEvents(); return; }
+  dateFilter = 'custom';
+  updateFilterPills();
+  renderEvents();
+}
+// Update matchesDate to handle custom range
 
 function openWhatPicker(e){
   if (e) e.stopPropagation();
@@ -1314,6 +1469,12 @@ function openWhatPicker(e){
       <span style="font-size:16px">⭐</span>
       <span>All types ${activeFilters.size===0?'<span class="fp-opt-check">✓</span>':''}</span>
     </div>
+    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+    <label class="fp-opt${activeFilters.has('__free__')?' selected':''}" onclick="event.stopPropagation()">
+      <input type="checkbox" ${activeFilters.has('__free__')?'checked':''} onchange="toggleFilter('__free__');openWhatPicker(event)">
+      <span style="font-size:16px;display:inline-block;width:14px;text-align:center">🆓</span>
+      <span style="font-weight:700;color:var(--amber-dk)">Free events only</span>
+    </label>
     <div style="border-top:1px solid var(--border);margin:4px 0"></div>
     ${CATS.map(c => `
       <label class="fp-opt${activeFilters.has(c.id)?' selected':''}" onclick="event.stopPropagation()">
@@ -1362,6 +1523,61 @@ function clearAllFilters(){
   loadEvents();
 }
 
+
+// Tap-to-pick state + zipcode (with manual entry fallback)
+const ENABLED_STATES_INFO = {
+  'OH': { name: 'Ohio', emoji: '🌰', popular: ['43764','43055','44113','44120','45040','45249','43215','44691'] },
+  'PA': { name: 'Pennsylvania', emoji: '🔔', popular: ['15201','16801','17601','18101','19103'] },
+  'WV': { name: 'West Virginia', emoji: '⛰️', popular: ['25301','26101','26505','26554'] },
+  'KY': { name: 'Kentucky', emoji: '🐎', popular: ['40202','40508','41011','42101'] },
+  'IN': { name: 'Indiana', emoji: '🏎️', popular: ['46201','46802','47201','47401'] },
+  'MI': { name: 'Michigan', emoji: '🚗', popular: ['48201','48933','49503','49684'] },
+};
+function openUSMap() {
+  closeAllPopovers();
+  // Populate the states grid
+  const grid = document.getElementById('usStatesGrid');
+  grid.innerHTML = Object.entries(ENABLED_STATES_INFO).map(([code, info]) => `
+    <button onclick="selectMapState('${code}')" style="background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);padding:14px 8px;cursor:pointer;transition:all .15s;font-family:var(--font-body);text-align:center" onmouseover="this.style.borderColor='var(--amber)';this.style.background='var(--amber-lt)'" onmouseout="this.style.borderColor='var(--border-md)';this.style.background='var(--surface)'">
+      <div style="font-size:24px;line-height:1;margin-bottom:4px">${info.emoji}</div>
+      <div style="font-size:12px;font-weight:800;color:var(--text)">${info.name}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">${code}</div>
+    </button>
+  `).join('');
+  document.getElementById('usZipList').style.display = 'none';
+  document.getElementById('usZipList').innerHTML = '';
+  document.getElementById('usMapZipInput').value = '';
+  document.getElementById('usMapErr').textContent = '';
+  openModal('usMapModal');
+}
+function selectMapState(code) {
+  const info = ENABLED_STATES_INFO[code];
+  const list = document.getElementById('usZipList');
+  list.innerHTML = `
+    <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:700">📍 Popular zipcodes in ${info.name}:</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px">
+      ${info.popular.map(z => `
+        <button onclick="useMapZip('${z}')" style="background:var(--amber-lt);border:1.5px solid var(--amber);color:var(--amber-dk);font-weight:700;padding:8px 4px;border-radius:var(--r);cursor:pointer;font-family:var(--font-body);font-size:13px" onmouseover="this.style.background='var(--amber)';this.style.color='#fff'" onmouseout="this.style.background='var(--amber-lt)';this.style.color='var(--amber-dk)'">${z}</button>
+      `).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:8px">Don't see your zip? Type it in below.</div>`;
+  list.style.display = 'block';
+}
+function useMapZip(zip) {
+  currentZipcode = zip;
+  try { localStorage.setItem('nlcc_zipcode', zip); } catch(_){}
+  loadSponsors();
+  if (typeof loadSponsorships === 'function') loadSponsorships();
+  loadEvents();
+  updateFilterPills();
+  closeModal('usMapModal');
+}
+function useTypedZip() {
+  const zip = document.getElementById('usMapZipInput').value.trim();
+  if (!/^\d{5}$/.test(zip)) { document.getElementById('usMapErr').textContent = 'Please enter a valid 5-digit zipcode.'; return; }
+  useMapZip(zip);
+}
+
 function openAreaPicker(){
   openZipPicker(); // existing function
 }
@@ -1401,16 +1617,19 @@ function renderAuth(){
       <button class="sign-out-btn" onclick="toggleAcctMenu(event)" style="padding-right:6px" title="Account menu">▾</button>
       <div id="acctMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:220px;z-index:1000;color:var(--text);font-family:var(--font-body);overflow:hidden">
         ${authUser.is_admin ? `
+          <a href="/admin" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:var(--gradient);color:#fff;text-decoration:none;font-weight:700">🎯 Admin Dashboard</a>
           <button onclick="openApprovalsPanel()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:600">📋 <span id="pendingCountBadge"></span>Approvals & Local Insiders</button>
           <button onclick="openBulkRemove()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">👤 Bulk Remove by User</button>
           <button onclick="openManualAdvertiser()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📢 Add Business Ad</button>
           <button onclick="openStatewideListing()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🌎 Make Listing State-Wide</button>
           <button onclick="openStatewideEvent()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📅 Make Event State-Wide</button>
+          <button onclick="openBulkBizModal()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📋 Bulk-Add Businesses</button>
           <button onclick="openManageAds()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🛠 Manage Business Ads</button>
           <button onclick="openRemovedItemsLog()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📜 Removed Items Log</button>
           <div style="height:1px;background:var(--border)"></div>
         ` : ''}
         <button onclick="openChangePassword()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500">🔑 Change Password</button>
+        <button onclick="openSavedEventsList()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">💛 My Saved Events</button>
         <button onclick="downloadMyData()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📥 Download My Data</button>
         ${authUser.is_admin ? '' : `<button onclick="openDeleteAccount()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--danger);font-weight:500;border-top:1px solid var(--border)">🗑 Delete My Account</button>`}
         <button onclick="doLogout();document.getElementById('acctMenu').style.display='none'" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:var(--surface2);border:none;cursor:pointer;color:var(--text);font-weight:600;border-top:1px solid var(--border)">Sign Out</button>
@@ -1453,7 +1672,10 @@ function buildAuthForm(tab){
   const cq=genCaptcha();
   return`<div class="modal-title">Submit an Event</div>
     <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--text2)">
-      <strong style="color:var(--amber-dk)">No account? No problem.</strong> You can submit your event as a guest — we'll just email you a confirmation link and a way to edit or delete it later.
+      <div style="font-size:16px;line-height:1.6;background:linear-gradient(135deg,rgba(99,102,241,.07),rgba(236,72,153,.04));border:2px solid var(--amber);border-radius:var(--r);padding:14px 16px;margin-bottom:8px">
+        <strong style="color:var(--amber-dk);font-size:17px;display:block;margin-bottom:6px">✨ No account? No problem!</strong>
+        <span style="color:var(--text);font-size:15px">Submit your event as a guest — we'll email you a confirmation link and a way to edit or delete it later. <strong>Quick and easy.</strong></span>
+      </div>
     </div>
     <div class="auth-tabs">
       <button class="auth-tab ${tab==='gu'?'on':''}" onclick="switchAuthTab('gu')">Guest</button>
@@ -1490,7 +1712,7 @@ function buildAuthForm(tab){
         💡 Provide either email OR phone (or both). At least one is required.
       </div>
       <div class="field"><label>Email</label><input type="email" id="rgEm" autocomplete="username" placeholder="your@email.com"></div>
-      <div class="field"><label>Cell Phone</label><input type="tel" id="rgPh" autocomplete="tel" placeholder="(740) 555-1234" inputmode="tel"></div>
+      <div class="field"><label>Cell Phone</label><input type="tel" id="rgPh" autocomplete="tel" placeholder="(555) 555-5555" inputmode="tel"></div>
       <div class="field"><label>Address <span class="req">*</span></label><input type="text" id="rgAddr" placeholder="Street, City, State"></div>
       <div class="field"><label>Password (8+ chars, letters + numbers) <span class="req">*</span></label><input type="password" id="rgPw" autocomplete="new-password"></div>
       <div class="captcha-box"><span class="captcha-q">🤖 ${cq}</span><input type="number" id="rgCap" placeholder="?" inputmode="numeric"></div>
@@ -1505,11 +1727,14 @@ function openGuestEventModal(){
   document.getElementById('evModalContent').innerHTML = `
     <div class="modal-title">📅 Submit Event as Guest</div>
     <div style="background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(236,72,153,.04));border:1.5px solid var(--border-md);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.5;color:var(--text2)">
-      We'll email you a confirmation link so we know the submission is real. Once confirmed, our team reviews quickly. You'll also get a magic link to edit or delete this event later — keep that email safe!
+      <div style="font-size:14px;background:linear-gradient(135deg,rgba(99,102,241,.07),rgba(236,72,153,.04));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 14px;line-height:1.55;color:var(--text)">
+        <strong style="color:var(--amber-dk);display:block;margin-bottom:4px">✉️ What happens next?</strong>
+        We'll email you a confirmation link so we know the submission is real. Once confirmed, our team reviews quickly. You'll also get a magic link to <strong>edit or delete</strong> this event later — keep that email safe!
+      </div>
     </div>
     <div class="field"><label>Your Name <span class="req">*</span></label><input type="text" id="guName" placeholder="Jane Smith"></div>
     <div class="field"><label>Your Email <span class="req">*</span></label><input type="email" id="guEmail" placeholder="your@email.com" autocomplete="email"></div>
-    <div class="field"><label>Your Phone (optional)</label><input type="tel" id="guPhone" placeholder="(740) 555-1234" autocomplete="tel"></div>
+    <div class="field"><label>Your Phone (optional)</label><input type="tel" id="guPhone" placeholder="(555) 555-5555" autocomplete="tel"></div>
     <hr style="margin:14px 0;border:none;border-top:1px solid var(--border)">
     <div class="modal-title" style="font-size:15px;margin-bottom:10px;font-weight:700;color:var(--text)">Event Details</div>
     <div class="field"><label>Event Name <span class="req">*</span></label><input type="text" id="guEvName"></div>
@@ -1942,7 +2167,7 @@ async function refreshAdsList(){
               <span style="background:${statusColor}22;color:${statusColor};padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.04em">${esc((a.status||'').toUpperCase())}</span>
             </div>
             ${a.tagline ? `<div style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.45">${esc(a.tagline)}</div>` : ''}
-            <div style="font-size:11px;color:var(--text3);margin-top:6px">${esc(a.email||'')} ${a.phone?'· '+esc(a.phone):''} ${a.url?'· <a href="'+esc(a.url)+'" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;font-weight:600">website ↗</a>':''}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">${esc(a.email||'')} ${a.phone?'· '+esc(a.phone):''} ${a.url?'· <a href="'+esc(a.url.startsWith('http')?a.url:'https://'+a.url)+'" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;font-weight:600">website ↗</a>':''}</div>
             <div style="font-size:11px;color:var(--amber-dk);margin-top:6px;font-weight:700">📍 ${a.statewide_state ? 'State-wide: '+esc(a.statewide_state) : a.zipcode ? 'Zip '+esc(a.zipcode) : '⚠ NO ZIP SET (only shows to no-zip viewers)'}</div>
           </div>
           <button onclick="deleteAdvertiser(${a.id}, ${JSON.stringify(a.business_name||a.name||'').replace(/"/g,'&quot;')}, ${a.stripe_subscription_id?1:0})" style="background:transparent;color:#DC2626;border:1.5px solid #DC2626;padding:6px 11px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap;flex-shrink:0">🗑 Delete</button>
@@ -1952,6 +2177,98 @@ async function refreshAdsList(){
   } catch(e) {
     document.getElementById('maListContent').innerHTML = '<div style="color:#DC2626;padding:14px;text-align:center">Error: ' + esc(e.message) + '</div>';
   }
+}
+
+
+// Item 17: Bulk-add businesses (CSV) — admin only
+function openBulkBizModal(){ closeAcctMenu(); document.getElementById('bulkBizErr').textContent=''; document.getElementById('bulkBizResult').innerHTML=''; openModal('bulkBizModal'); }
+function parseCsvLine(line) {
+  const cells = []; let cur = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') { if (line[i+1] === '"') { cur += '"'; i++; } else inQuotes = false; }
+      else cur += ch;
+    } else {
+      if (ch === ',') { cells.push(cur); cur = ''; }
+      else if (ch === '"') inQuotes = true;
+      else cur += ch;
+    }
+  }
+  cells.push(cur);
+  return cells.map(c => c.trim());
+}
+async function doBulkAddBiz(){
+  const csv = document.getElementById('bulkBizCsv').value.trim();
+  if (!csv) { document.getElementById('bulkBizErr').textContent = 'Paste CSV content first.'; return; }
+  const lines = csv.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) { document.getElementById('bulkBizErr').textContent = 'Need at least a header row + 1 data row.'; return; }
+  const cols = ['business_name','category','phone','website','address','description','zipcode'];
+  const listings = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCsvLine(lines[i]);
+    const obj = {};
+    cols.forEach((col, idx) => { obj[col] = cells[idx] || ''; });
+    listings.push(obj);
+  }
+  try {
+    const result = await api('/api/admin/listings/bulk', { method: 'POST', body: JSON.stringify({ listings })});
+    let html = '<div style="background:var(--green-lt,#D1FAE5);border:1.5px solid #10B981;color:#065F46;padding:10px 14px;border-radius:var(--r);font-size:13px;font-weight:600">✓ Added ' + result.inserted + ' businesses</div>';
+    if (result.errors?.length) html += '<div style="margin-top:8px;font-size:11px;color:var(--text2)"><strong>Skipped rows:</strong><ul style="margin:4px 0 0 16px">' + result.errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>';
+    document.getElementById('bulkBizResult').innerHTML = html;
+    if (typeof loadEvents === 'function') loadEvents();
+  } catch(e) { document.getElementById('bulkBizErr').textContent = e.message; }
+}
+
+// Item 12: Edit Advertiser — opens edit modal pre-populated with current values
+function openEditAdvertiserModal(advId){
+  const adv = (window._adminAdvs||[]).find(a => a.id === advId);
+  if (!adv) { showMessageModal('Error', 'Advertiser not found.', 'err'); return; }
+  document.getElementById('edAdvModalContent').innerHTML = `
+    <div class="modal-title">✏️ Edit Advertisement</div>
+    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="edaBn" value="${esc(adv.business_name||'')}"></div>
+    <div class="field"><label>Tagline</label><input type="text" id="edaTag" value="${esc(adv.tagline||'')}" placeholder="Short description"></div>
+    <div class="field"><label>Website URL</label><input type="text" id="edaUrl" value="${esc(adv.url||'')}" placeholder="https://..."></div>
+    <div class="field"><label>📍 Address</label><input type="text" id="edaAddr" value="${esc(adv.address||'')}" placeholder="123 Main St, City, OH 43764"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="edaPh" value="${esc(adv.phone||'')}" placeholder="(555) 555-5555"></div>
+    <div class="field"><label>🎯 Target Zipcode</label><input type="text" id="edaZip" value="${esc(adv.zipcode||'')}" maxlength="5" inputmode="numeric"></div>
+    <div class="field"><label>OR State-wide (2-letter)</label><input type="text" id="edaSt" value="${esc(adv.statewide_state||'')}" maxlength="2" style="text-transform:uppercase"></div>
+    <div class="field"><label>Ad Tier</label>
+      <select id="edaTier">
+        <option value="basic" ${adv.tier==='basic'?'selected':''}>Basic — Sponsor Bar ($25/mo)</option>
+        <option value="featured" ${adv.tier==='featured'?'selected':''}>Featured — Directory ($30/mo)</option>
+        <option value="premium" ${adv.tier==='premium'?'selected':''}>Premium — Event Popup ($50/mo)</option>
+      </select>
+    </div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:9px 13px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.5">
+      <strong style="color:var(--amber-dk)">Note:</strong> Editing tier won't change the Stripe subscription amount — only changes which display area shows the ad. For tier price changes, cancel + re-subscribe.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('edAdvModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="doEditAdvertiser(${adv.id})">💾 Save Changes</button>
+    </div>
+    <div class="err-msg" id="edaErr"></div>`;
+  openModal('edAdvModal');
+}
+async function doEditAdvertiser(advId){
+  const payload = {
+    business_name: document.getElementById('edaBn').value.trim(),
+    tagline: document.getElementById('edaTag').value.trim(),
+    url: document.getElementById('edaUrl').value.trim(),
+    phone: document.getElementById('edaPh').value.trim(),
+    address: document.getElementById('edaAddr').value.trim(),
+    zipcode: document.getElementById('edaZip').value.trim(),
+    statewide_state: document.getElementById('edaSt').value.trim().toUpperCase(),
+    tier: document.getElementById('edaTier').value,
+  };
+  if (!payload.business_name) { document.getElementById('edaErr').textContent = 'Business name is required.'; return; }
+  if (!payload.zipcode && !payload.statewide_state) { document.getElementById('edaErr').textContent = 'Target zipcode OR state-wide code required.'; return; }
+  try {
+    await api('/api/admin/advertisers/' + advId, { method:'PUT', body: JSON.stringify(payload) });
+    closeModal('edAdvModal');
+    showMessageModal('✓ Saved', 'Advertisement updated successfully.', 'success');
+    if (typeof openManageAdsModal === 'function') openManageAdsModal();
+  } catch(e) { document.getElementById('edaErr').textContent = e.message; }
 }
 
 async function deleteAdvertiser(id, name, hasSub){
@@ -1981,7 +2298,8 @@ function openManualAdvertiser(){
     <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="maBn" placeholder="Jim's Garage"></div>
     <div class="field"><label>Tagline (short, ≤80 chars)</label><input type="text" id="maTag" placeholder="Honest auto repair since 1995" maxlength="80"></div>
     <div class="field"><label>Website URL</label><input type="url" id="maUrl" placeholder="https://example.com"></div>
-    <div class="field"><label>Phone</label><input type="tel" id="maPh" placeholder="(740) 555-1234"></div>
+    <div class="field"><label>📍 Address</label><input type="text" id="maAddr" placeholder="123 Main St, City, OH 43764"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="maPh" placeholder="(555) 555-5555"></div>
     <div class="field"><label>🎯 Target Zipcode <span class="req">*</span></label><input type="text" id="maZip" placeholder="43764" maxlength="5" inputmode="numeric" style="font-size:16px"></div>
     <div class="field"><label>OR State-wide (2-letter code, optional)</label><input type="text" id="maState" placeholder="OH (leave blank for zip-specific)" maxlength="2" style="text-transform:uppercase;font-size:15px"></div>
     <div style="background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:9px 13px;margin-bottom:11px;font-size:12px;color:var(--text2);line-height:1.55">
@@ -2009,7 +2327,7 @@ async function doManualAdvertiser(){
   if (!zipcode && !statewide_state) { document.getElementById('maErr').textContent = 'Target zipcode OR state-wide code is required.'; return; }
   try {
     await api('/api/admin/advertisers/manual', { method: 'POST', body: JSON.stringify({
-      business_name, zipcode, statewide_state,
+      business_name, zipcode, statewide_state, address: document.getElementById('maAddr').value.trim(),
       tagline: document.getElementById('maTag').value.trim(),
       url: document.getElementById('maUrl').value.trim(),
       phone: document.getElementById('maPh').value.trim(),
@@ -2103,6 +2421,10 @@ async function openRemovedItemsLog(){
   closeAcctMenu();
   document.getElementById('evModalContent').innerHTML = `
     <div class="modal-title">📜 Removed Items Log</div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <a href="/api/admin/removed-items/export.csv" download style="background:var(--surface2);border:1.5px solid var(--border-md);padding:6px 12px;border-radius:100px;font-size:12px;font-weight:700;color:var(--text);text-decoration:none">⬇️ Export CSV</a>
+      <span style="font-size:11px;color:var(--text3)">Auto-purges items older than 24 months</span>
+    </div>
     <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text2);line-height:1.5">
       Audit trail of admin-removed events and listings. Retained for <strong>24 months</strong> then auto-purged. Required by our moderation policy.
     </div>
@@ -2549,13 +2871,314 @@ async function deleteEvent(id){
 }
 
 /* ── RENDER EVENTS ── */
+
+
+// Item 25: Open Calendar Sponsorship Modal
+function openSponsorshipModal() {
+  document.getElementById('sponsorshipModalContent').innerHTML = `
+    <div class="modal-title">💛 Sponsor This Community Calendar</div>
+    <div style="font-size:13.5px;color:var(--text2);line-height:1.55;margin-bottom:16px">
+      Your name appears on the calendar for <strong>two weeks</strong> as a thank-you. Help us keep ${esc(currentZipcode||'this area')} connected.
+    </div>
+
+    <div class="field">
+      <label style="font-weight:700">How should we display your name?</label>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+        ${[
+          {v:'anonymous',label:'Completely anonymous',hint:'Shows as "An anonymous friend"'},
+          {v:'first_name',label:'First name only',hint:'e.g., "Sarah"'},
+          {v:'full_name',label:'First and last name',hint:'e.g., "Sarah Johnson"'},
+          {v:'business',label:'Business name + website/phone',hint:'Public link to your business'},
+          {v:'tribute',label:'In memory / In honor of',hint:'e.g., "In memory of John Smith"'},
+        ].map(opt => `
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:9px 11px;border:1.5px solid var(--border-md);border-radius:var(--r);cursor:pointer;font-size:13px;background:var(--surface);transition:all .15s" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--border-md)'">
+            <input type="radio" name="spDispType" value="${opt.v}" onchange="onSpTypeChange(this)" style="margin-top:2px">
+            <span><strong>${opt.label}</strong><br><span style="color:var(--text3);font-size:11.5px">${opt.hint}</span></span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
+
+    <div id="spNameField" class="field" style="display:none"><label id="spNameLabel">Name</label><input type="text" id="spName" placeholder=""></div>
+    <div id="spBizFields" style="display:none">
+      <div class="field"><label>Website (optional if phone provided)</label><input type="text" id="spUrl" placeholder="yourbusiness.com"></div>
+      <div class="field"><label>Phone (optional if website provided)</label><input type="tel" id="spPh" placeholder="(555) 555-5555"></div>
+    </div>
+    <div id="spTributeField" class="field" style="display:none"><label>Tribute text</label><input type="text" id="spTribute" placeholder="In memory of Jane Smith"></div>
+
+    <div class="field"><label>Your email <span class="req">*</span><br><span style="font-size:11px;color:var(--text3);font-weight:400">For receipt only — never displayed publicly</span></label><input type="email" id="spEmail" placeholder="you@example.com"></div>
+
+    <div class="field"><label>Sponsorship amount (USD) <span class="req">*</span></label>
+      <div style="display:flex;gap:6px;align-items:stretch">
+        <span style="display:flex;align-items:center;padding:0 12px;background:var(--surface2);border:1.5px solid var(--border-md);border-right:none;border-radius:var(--r) 0 0 var(--r);font-weight:700">$</span>
+        <input type="number" id="spAmt" placeholder="" min="1" step="1" style="border-radius:0 var(--r) var(--r) 0;flex:1">
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Choose any amount you'd like — every bit helps.</div>
+    </div>
+
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:11px 13px;margin-bottom:12px;font-size:11.5px;color:var(--text2);line-height:1.6">
+      <strong style="color:var(--amber-dk);display:block;margin-bottom:4px">Please review:</strong>
+      <label style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="spAge" style="margin-top:3px;flex-shrink:0"><span>I confirm I am <strong>18 years or older</strong>.</span></label>
+      <label style="display:flex;align-items:flex-start;gap:6px;cursor:pointer"><input type="checkbox" id="spTerms" style="margin-top:3px;flex-shrink:0"><span>I understand this is a <strong>paid promotional sponsorship</strong>, not a tax-deductible donation. Payments are <strong>non-refundable</strong>. My placement runs 14 days from successful payment.</span></label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('sponsorshipModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="doSponsorshipCheckout()">Continue to Payment →</button>
+    </div>
+    <div class="err-msg" id="spErr"></div>`;
+  openModal('sponsorshipModal');
+}
+
+function onSpTypeChange(radio){
+  const type = radio.value;
+  document.getElementById('spNameField').style.display = (type === 'first_name' || type === 'full_name' || type === 'business') ? 'block' : 'none';
+  document.getElementById('spBizFields').style.display = type === 'business' ? 'block' : 'none';
+  document.getElementById('spTributeField').style.display = type === 'tribute' ? 'block' : 'none';
+  const label = document.getElementById('spNameLabel');
+  const input = document.getElementById('spName');
+  if (type === 'first_name') { label.textContent = 'First name'; input.placeholder = 'Sarah'; }
+  else if (type === 'full_name') { label.textContent = 'Full name'; input.placeholder = 'Sarah Johnson'; }
+  else if (type === 'business') { label.textContent = 'Business name'; input.placeholder = "Smith's Bakery"; }
+  // Highlight the chosen card
+  document.querySelectorAll('input[name="spDispType"]').forEach(r => {
+    r.closest('label').style.borderColor = r.checked ? 'var(--amber)' : 'var(--border-md)';
+    r.closest('label').style.background = r.checked ? 'var(--amber-lt)' : 'var(--surface)';
+  });
+}
+
+async function doSponsorshipCheckout(){
+  const errEl = document.getElementById('spErr'); errEl.textContent = '';
+  const radio = document.querySelector('input[name="spDispType"]:checked');
+  if (!radio) { errEl.textContent = 'Please choose how to display your name.'; return; }
+  const payload = {
+    zipcode: currentZipcode || '',
+    display_type: radio.value,
+    display_name: document.getElementById('spName')?.value.trim() || '',
+    contact_url: document.getElementById('spUrl')?.value.trim() || '',
+    contact_phone: document.getElementById('spPh')?.value.trim() || '',
+    tribute_text: document.getElementById('spTribute')?.value.trim() || '',
+    amount_dollars: document.getElementById('spAmt').value,
+    email: document.getElementById('spEmail').value.trim(),
+    age_confirmed: document.getElementById('spAge').checked,
+    terms_accepted: document.getElementById('spTerms').checked,
+  };
+  try {
+    const { url } = await api('/api/sponsorship/checkout', { method: 'POST', body: JSON.stringify(payload) });
+    window.location.href = url; // off to Stripe
+  } catch(e) { errEl.textContent = e.message; }
+}
+
+// Item 25: handle return from successful sponsorship payment
+(function checkSponsorshipReturn(){
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('sponsorship_success') === 'true') {
+    setTimeout(() => openModal('sponsorshipSuccessModal'), 600);
+    url.searchParams.delete('sponsorship_success');
+    history.replaceState({}, '', url.toString());
+  }
+})();
+
+// Item 25: Build a sponsor "thank-you" card for inclusion in event list
+
+
+// Bulk moderation helpers for approvals panel
+let _selectedEventIds = new Set();
+function toggleEvSelection(id, checkboxEl){
+  if (checkboxEl.checked) _selectedEventIds.add(id);
+  else _selectedEventIds.delete(id);
+  updateBulkActionsBar();
+}
+function selectAllPendingEvents(checked){
+  document.querySelectorAll('.pending-ev-checkbox').forEach(cb => {
+    cb.checked = checked;
+    const id = parseInt(cb.dataset.id, 10);
+    if (checked) _selectedEventIds.add(id);
+    else _selectedEventIds.delete(id);
+  });
+  updateBulkActionsBar();
+}
+function updateBulkActionsBar(){
+  const bar = document.getElementById('bulkApproveBar');
+  if (!bar) return;
+  if (_selectedEventIds.size === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.querySelector('.bulk-count').textContent = _selectedEventIds.size;
+}
+async function doBulkModerate(action){
+  const ids = [..._selectedEventIds];
+  if (!ids.length) return;
+  let reason = '';
+  if (action === 'reject') {
+    reason = prompt(`Reject ${ids.length} event(s)? Optional reason for the log:`, 'Bulk-rejected');
+    if (reason === null) return;
+  } else {
+    if (!confirm(`Approve ${ids.length} events?`)) return;
+  }
+  try {
+    const r = await api('/api/admin/events/bulk-moderate', { method: 'POST', body: JSON.stringify({ event_ids: ids, action, reason })});
+    _selectedEventIds.clear();
+    showMessageModal(action === 'approve' ? '✓ Approved' : '✓ Rejected', `${r.count} event(s) ${action}d.`, 'success');
+    openApprovalsPanel();
+    loadEvents();
+    refreshPendingBadge();
+  } catch(e) { alert(e.message); }
+}
+
+
+// Save Event (per-user, local-only, no account needed)
+function getSavedEventIds(){ try { return new Set(JSON.parse(localStorage.getItem('nf_saved_events')||'[]')); } catch(_){ return new Set(); } }
+function setSavedEventIds(s){ try { localStorage.setItem('nf_saved_events', JSON.stringify([...s])); } catch(_){} }
+function isEventSaved(id){ return getSavedEventIds().has(id); }
+function toggleSavedEvent(id, btnEl) {
+  const s = getSavedEventIds();
+  if (s.has(id)) { s.delete(id); showToast('Removed from saved events'); }
+  else { s.add(id); showToast('💛 Saved! Find it in My Saved Events.'); }
+  setSavedEventIds(s);
+  if (btnEl) { btnEl.textContent = s.has(id) ? '💛 Saved' : '🤍 Save'; btnEl.style.color = s.has(id) ? 'var(--pink)' : ''; }
+}
+function openSavedEventsList(){
+  const saved = getSavedEventIds();
+  const evs = allEvs.filter(e => saved.has(e.id));
+  const content = document.getElementById('evModalContent');
+  if (!evs.length) {
+    content.innerHTML = `
+      <div class="modal-title">💛 My Saved Events</div>
+      <div style="padding:30px 0;text-align:center;color:var(--text2);font-size:14px">
+        Nothing saved yet. Tap the 🤍 Save button on any event to bookmark it for later.
+      </div>
+      <div class="modal-actions"><button class="btn-amber" onclick="closeModal('evModal')">Close</button></div>`;
+  } else {
+    content.innerHTML = `
+      <div class="modal-title">💛 My Saved Events (${evs.length})</div>
+      <div style="max-height:60vh;overflow-y:auto">
+        ${evs.map(e => `
+          <div onclick='closeModal("evModal");openEventDetail(${JSON.stringify(e).replace(/'/g, "&#39;")})' style="padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='var(--surface)'">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;color:var(--text)">${esc(e.name)}</div>
+              <div style="font-size:11px;color:var(--text3)">📍 ${esc(e.location)} · 🗓 ${esc(e.date)}</div>
+            </div>
+            <button onclick="event.stopPropagation();toggleSavedEvent(${e.id});openSavedEventsList()" style="background:transparent;border:none;cursor:pointer;font-size:14px" title="Remove">🗑</button>
+          </div>
+        `).join('')}
+      </div>
+      <div class="modal-actions"><button class="btn-amber" onclick="closeModal('evModal')">Close</button></div>`;
+  }
+  openModal('evModal');
+}
+
+// Add to Calendar — generates .ics download for any event
+function addToCalendar(ev) {
+  // Build a date string in YYYYMMDDTHHmmss format
+  const date = ev.date.replace(/-/g, ''); // 20260615
+  function timeTo24(t) {
+    if (!t || t === '' || /tbd/i.test(t)) return '120000';
+    const m = t.match(/(\d+):?(\d*)\s*(am|pm)?/i);
+    if (!m) return '120000';
+    let h = parseInt(m[1], 10); const mins = m[2] ? parseInt(m[2], 10) : 0;
+    const ampm = (m[3]||'').toLowerCase();
+    if (ampm === 'pm' && h < 12) h += 12;
+    if (ampm === 'am' && h === 12) h = 0;
+    return String(h).padStart(2,'0') + String(mins).padStart(2,'0') + '00';
+  }
+  const start = date + 'T' + timeTo24(ev.start_time || ev.time);
+  // End time = start + 2 hours if not specified
+  let end;
+  if (ev.end_time && ev.end_time !== '' && !/tbd/i.test(ev.end_time)) {
+    end = date + 'T' + timeTo24(ev.end_time);
+  } else {
+    const startDate = new Date(ev.date + 'T' + timeTo24(ev.start_time || ev.time).replace(/(..)(..)(..)$/,'$1:$2:$3'));
+    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+    end = endDate.getFullYear() + String(endDate.getMonth()+1).padStart(2,'0') + String(endDate.getDate()).padStart(2,'0') + 'T' + String(endDate.getHours()).padStart(2,'0') + String(endDate.getMinutes()).padStart(2,'0') + '00';
+  }
+
+  const icsLines = [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Near and Far Events//EN',
+    'BEGIN:VEVENT',
+    'UID:event-' + ev.id + '@nearandfarevents.com',
+    'DTSTAMP:' + (new Date().toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z'),
+    'DTSTART:' + start,
+    'DTEND:' + end,
+    'SUMMARY:' + (ev.name||'').replace(/\n/g,' '),
+    'LOCATION:' + (ev.location||'').replace(/\n/g,' '),
+    'DESCRIPTION:' + ((ev.description||'') + (ev.contact ? '\\n\\nContact: ' + ev.contact : '') + (ev.price ? '\\nPrice: ' + ev.price : '')).replace(/\n/g,'\\n'),
+    'URL:https://www.nearandfarevents.com/',
+    'END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+  const blob = new Blob([icsLines], { type:'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (ev.name||'event').replace(/[^a-z0-9-]+/gi,'-').slice(0,60) + '.ics';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  showToast('📅 Calendar file downloaded — open it to add the event');
+}
+
+
+function buildSponsorshipCard(sp) {
+  let nameDisplay = '';
+  let contactLine = '';
+  if (sp.display_type === 'anonymous') {
+    nameDisplay = '<em>An anonymous friend of the community</em>';
+  } else if (sp.display_type === 'first_name') {
+    nameDisplay = esc(sp.display_name);
+  } else if (sp.display_type === 'full_name') {
+    nameDisplay = esc(sp.display_name);
+  } else if (sp.display_type === 'business') {
+    nameDisplay = '<strong>' + esc(sp.display_name) + '</strong>';
+    const parts = [];
+    if (sp.contact_url) parts.push('<a href="' + esc(sp.contact_url.startsWith('http')?sp.contact_url:'https://'+sp.contact_url) + '" target="_blank" rel="noopener nofollow" style="color:var(--amber-dk);text-decoration:none;font-weight:600">' + esc(sp.contact_url.replace(/^https?:\/\//,'')) + '</a>');
+    if (sp.contact_phone) parts.push('<span style="color:var(--text2)">' + esc(sp.contact_phone) + '</span>');
+    if (parts.length) contactLine = '<div style="font-size:12px;margin-top:2px">' + parts.join(' &nbsp;·&nbsp; ') + '</div>';
+  } else if (sp.display_type === 'tribute') {
+    nameDisplay = '<em>' + esc(sp.tribute_text) + '</em>';
+  }
+  return `
+    <div style="position:relative;margin:14px 0;padding:18px 20px 16px;border-radius:14px;background:linear-gradient(135deg,rgba(99,102,241,.04),rgba(236,72,153,.04),rgba(245,158,11,.06));border:1.5px solid transparent;background-clip:padding-box;box-shadow:0 0 0 1.5px rgba(99,102,241,.15),0 4px 14px rgba(0,0,0,.04);overflow:hidden">
+      <div style="position:absolute;top:0;right:0;background:var(--gradient);color:#fff;font-size:10px;font-weight:800;letter-spacing:.07em;padding:3px 10px;border-radius:0 0 0 8px;text-transform:uppercase">🙏 Sponsor</div>
+      <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:6px;padding-right:80px">
+        Thanks to ${nameDisplay} for sponsoring this community calendar.
+      </div>
+      ${contactLine}
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-top:6px">
+        We're humbled by your kindness. Contributions like yours help keep our communities connected.
+      </div>
+      <button onclick="openSponsorshipModal()" style="margin-top:10px;background:var(--surface);border:1.5px solid var(--amber);color:var(--amber-dk);font-size:12px;font-weight:700;padding:6px 14px;border-radius:100px;cursor:pointer;font-family:var(--font-body)" onmouseover="this.style.background='var(--amber-lt)'" onmouseout="this.style.background='var(--surface)'">
+        💛 Become a sponsor
+      </button>
+    </div>`;
+}
+// Placeholder card if no active sponsors yet
+function buildPlaceholderSponsorshipCard() {
+  return `
+    <div style="position:relative;margin:14px 0;padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,rgba(99,102,241,.03),rgba(236,72,153,.03),rgba(245,158,11,.04));border:1.5px dashed var(--border-md);text-align:center">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:6px">
+        💛 Be the first to sponsor this community calendar
+      </div>
+      <div style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:10px">
+        Help keep our communities connected. Your name will appear here for two weeks as a thank-you.
+      </div>
+      <button onclick="openSponsorshipModal()" style="background:var(--surface);border:1.5px solid var(--amber);color:var(--amber-dk);font-size:12px;font-weight:700;padding:6px 16px;border-radius:100px;cursor:pointer;font-family:var(--font-body)">
+        Sponsor →
+      </button>
+    </div>`;
+}
+
 function renderEvents(){
   const q=srchQ.toLowerCase();
+  // Item: "Free" filter — special id __free__ filters by price; combines with category filters
+  const wantsFree = activeFilters.has('__free__');
+  const catFilters = new Set([...activeFilters].filter(id => id !== '__free__'));
+  function isFreeEvent(e) {
+    const p = (e.price||'').toString().toLowerCase().trim();
+    return p === '' || p === 'free' || p === '$0' || p === '0' || p === 'no charge' || p === 'no cost';
+  }
   const f=allEvs.filter(e=>{
-    const mc=activeFilters.size===0||activeFilters.has(e.cat);
+    const mc=catFilters.size===0||catFilters.has(e.cat);
+    const mfree = !wantsFree || isFreeEvent(e);
     const mq=!q||e.name.toLowerCase().includes(q)||e.location.toLowerCase().includes(q)||cl(e.cat).toLowerCase().includes(q);
     const md=matchesDate(e.date);
-    return mc&&mq&&md;
+    return mc&&mfree&&mq&&md;
   });
   document.getElementById('evCount').textContent=f.length?`${f.length} event${f.length!==1?'s':''} found`:'';
 
@@ -2584,7 +3207,18 @@ function renderEvents(){
   };
   const isAdm=authUser&&authUser.is_admin;
   const canAct=e=>authUser&&(e.added_by===authUser.id||isAdm);
-  list.innerHTML=Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>{
+  // Item 25: Inject sponsor cards — first card always, then every 20 events
+  let _evCount = 0;
+  let _sponsorIdx = 0;
+  function _getNextSponsorCard() {
+    if (allSponsorships && allSponsorships.length) {
+      const sp = allSponsorships[_sponsorIdx % allSponsorships.length];
+      _sponsorIdx++;
+      return buildSponsorshipCard(sp);
+    }
+    return buildPlaceholderSponsorshipCard();
+  }
+  const _groupsHtml = Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>{
     const f=fmtD(d);
     return `
     <div class="date-group">
@@ -2621,6 +3255,8 @@ function renderSponsors(){
   let html='';
   if(allSponsors.length){
     html+=allSponsors.map(s=>{
+      // Match directory.html: ensure URL has scheme so it isn't treated as a relative path
+      const url = s.url ? (s.url.startsWith('http') ? s.url : 'https://' + s.url) : '';
       let adminPart = '';
       if (isAdm) {
         let badge = '';
@@ -2631,7 +3267,7 @@ function renderSponsors(){
       return '<div class="spon-card">' + adminPart +
         '<div class="spon-name">' + esc(s.name) + '</div>' +
         (s.tagline ? '<div class="spon-tag">' + esc(s.tagline) + '</div>' : '') +
-        (s.url ? '<a class="spon-link" href="' + esc(s.url) + '" target="_blank" rel="noopener">Visit →</a>' : '') +
+        (url ? '<a class="spon-link" href="' + esc(url) + '" target="_blank" rel="noopener">Visit →</a>' : '') +
         '</div>';
     }).join('');
   }
@@ -2844,7 +3480,7 @@ function linkify(text) {
   return escaped;
 }
 
-function openEventDetail(ev) {
+function openEventDetail(ev) { const _evSaved = isEventSaved(ev.id);
   const ad = getRandomAd();
   const catColor = cc(ev.cat);
   const catName  = cl(ev.cat);
@@ -3057,6 +3693,87 @@ function cookieConsent(action){
   }
 }
 </script>
+
+
+<!-- Item 12: Edit Advertiser Modal -->
+<div id="edAdvModal" class="modal-bg">
+  <div class="modal" id="edAdvModalContent">
+    <!-- Content injected by openEditAdvertiserModal -->
+  </div>
+</div>
+
+
+<!-- Item 17: Admin Bulk-Add Businesses Modal -->
+<div id="bulkBizModal" class="modal-bg">
+  <div class="modal" id="bulkBizModalContent">
+    <div class="modal-title">📋 Bulk-Add Businesses (Free Directory)</div>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:11px 13px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.55">
+      <strong style="color:var(--amber-dk)">CSV columns (in order):</strong> business_name, category, phone, website, address, description, zipcode<br>
+      First row is treated as header and skipped. Zipcode must be 5 digits.
+    </div>
+    <div class="field">
+      <label>Paste CSV here</label>
+      <textarea id="bulkBizCsv" rows="10" style="width:100%;font-family:Menlo,monospace;font-size:12px;padding:10px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text)" placeholder="business_name,category,phone,website,address,description,zipcode
+Smith&apos;s Bakery,food,555-1234,smithbakery.com,123 Main St,Best pies in town,43764
+Acme Hardware,retail,,acme.com,,Tools and supplies,43764"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('bulkBizModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="doBulkAddBiz()">📤 Upload</button>
+    </div>
+    <div class="err-msg" id="bulkBizErr"></div>
+    <div id="bulkBizResult" style="margin-top:12px"></div>
+  </div>
+</div>
+
+
+<!-- Item 25: Calendar Sponsorship Modal (paid 2-week thank-you placement) -->
+<div id="sponsorshipModal" class="modal-bg">
+  <div class="modal" id="sponsorshipModalContent" style="max-width:520px">
+    <!-- Content rendered by openSponsorshipModal() -->
+  </div>
+</div>
+
+<!-- Item 25: Sponsorship Success Toast -->
+<div id="sponsorshipSuccessModal" class="modal-bg">
+  <div class="modal" style="max-width:460px;text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">🙏</div>
+    <div class="modal-title" style="text-align:center">Thank You for Sponsoring</div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:18px">
+      Your thank-you placement will appear in the calendar shortly and stay live for <strong>two weeks</strong>. We're humbled by your kindness — contributions like yours help keep our communities connected.
+    </div>
+    <div style="font-size:12px;color:var(--text3);line-height:1.5;margin-bottom:16px;padding:10px;background:var(--surface2);border-radius:var(--r)">
+      A receipt has been emailed to you. Save it — this is a paid sponsorship for promotional placement, <strong>not a tax-deductible donation</strong>.
+    </div>
+    <button class="btn-amber" onclick="closeModal('sponsorshipSuccessModal')" style="width:100%">Close</button>
+  </div>
+</div>
+
+
+<!-- US Region Picker — clickable state grid → zip codes -->
+<div id="usMapModal" class="modal-bg">
+  <div class="modal" style="max-width:520px" id="usMapModalContent">
+    <div class="modal-title">🗺️ Choose Your Area</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:14px">
+      Tap a state, then pick a zipcode — or just type your zipcode below.
+    </div>
+
+    <!-- Live states (Ohio first since that's where we launched) -->
+    <div id="usStatesGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:14px"></div>
+
+    <!-- Zip list for chosen state -->
+    <div id="usZipList" style="display:none;margin-bottom:14px"></div>
+
+    <!-- OR type manually -->
+    <div style="text-align:center;color:var(--text3);font-size:11px;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">— Or type it in —</div>
+    <div class="field" style="margin-bottom:0"><label>5-digit Zipcode</label><input type="text" id="usMapZipInput" maxlength="5" inputmode="numeric" placeholder="43764" style="font-size:16px;letter-spacing:.05em;text-align:center"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('usMapModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="useTypedZip()">Use This Zip →</button>
+    </div>
+    <div class="err-msg" id="usMapErr"></div>
+  </div>
+</div>
 
 </body>
 </html>
