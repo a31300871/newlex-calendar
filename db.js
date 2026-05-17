@@ -147,6 +147,7 @@ async function getDb() {
   try { await _db.run("ALTER TABLE listings ADD COLUMN statewide_state TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN zipcode TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE advertisers ADD COLUMN statewide_state TEXT DEFAULT ''"); } catch(_) {}
+  try { await _db.run("ALTER TABLE advertisers ADD COLUMN address TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE sponsors ADD COLUMN zipcode TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE sponsors ADD COLUMN statewide_state TEXT DEFAULT ''"); } catch(_) {}
   try { await _db.run("ALTER TABLE events ADD COLUMN is_anonymous INTEGER NOT NULL DEFAULT 0"); } catch(_) {}
@@ -202,6 +203,77 @@ async function getDb() {
     );
     console.log('DB seeded. Admin: ' + ADMIN_EMAIL + ' / ' + ADMIN_PASS);
   }
+
+  // Item 25: Calendar Sponsorships (paid 2-week thank-you placements, NOT charitable donations)
+  await _db.run(`CREATE TABLE IF NOT EXISTS calendar_sponsorships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    zipcode TEXT NOT NULL,
+    display_type TEXT NOT NULL CHECK(display_type IN ('anonymous','first_name','full_name','business','tribute')),
+    display_name TEXT DEFAULT '',
+    contact_url TEXT DEFAULT '',
+    contact_phone TEXT DEFAULT '',
+    tribute_text TEXT DEFAULT '',
+    amount_cents INTEGER NOT NULL DEFAULT 0,
+    stripe_payment_intent_id TEXT DEFAULT '',
+    stripe_session_id TEXT DEFAULT '',
+    email TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL DEFAULT (datetime('now', '+14 days'))
+  )`);
+  try { await _db.run("CREATE INDEX IF NOT EXISTS idx_sponsorships_zip_status_exp ON calendar_sponsorships(zipcode, status, expires_at)"); } catch(_) {}
+
+
+  // Admin Dashboard — checklist tasks (legal, business, marketing, technical)
+  await _db.run(`CREATE TABLE IF NOT EXISTS admin_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    task_key TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    instructions TEXT DEFAULT '',
+    priority INTEGER DEFAULT 5,
+    completed INTEGER DEFAULT 0,
+    completed_at TEXT DEFAULT '',
+    notes TEXT DEFAULT ''
+  )`);
+
+  // Seed checklist tasks (idempotent — INSERT OR IGNORE so re-deploys don't duplicate)
+  const _seedTasks = [
+    // BUSINESS/LEGAL (priority 1 = do soon)
+    ['business','ohio_llc','Form Ohio LLC (Form 610)',1,'Go to Ohio Secretary of State business filing portal. File Form 610 ($99 fee). Choose name carefully — must be available. Takes 3-7 business days. After approval, you officially exist as a legal entity.\n\nLink: https://www.sos.state.oh.us/businesses/business-filing-services/'],
+    ['business','ein','Get EIN from IRS',1,'After LLC is formed, get a free EIN (federal tax ID) from IRS.gov. Takes 5 minutes online. Required for opening a business bank account.\n\nLink: https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online'],
+    ['business','bank','Open business bank account',2,'Bring LLC formation docs + EIN. Most local credit unions or banks offer free business checking. Required so business income is separate from personal — protects LLC liability shield.'],
+    ['business','stripe_update','Update Stripe business name after LLC',2,'In Stripe Dashboard → Settings → Account details, update legal business name from your personal name to "Near and Far Events LLC". Update bank account to business account.'],
+    ['business','attorney','Hire Ohio attorney for ToS/Privacy review',3,'Even with template legal pages, have an Ohio business attorney review before serious traffic. Cost: $1500-3000 one-time. Worth it for liability protection.\n\nSearch: Ohio business attorney specializing in tech/website law.'],
+    ['business','dmca','Register DMCA agent ($6 at copyright.gov)',3,'Required if you allow user-generated content (you do — events, listings). Protects you from copyright lawsuits.\n\nLink: https://dmca.copyright.gov/osp/login.html — $6 fee, valid 3 years.'],
+    ['business','trademark','USPTO trademark search for "Near and Far Events"',4,'Free search at uspto.gov to ensure no conflicts. If clear, consider filing trademark ($350) once you have traction.\n\nLink: https://tmsearch.uspto.gov/search/search-information'],
+    ['business','insurance','Get business insurance quote',4,'Try Hiscox, Next, or Thimble for tech/online business insurance. ~$30-50/mo for basic GL + cyber. Required by most landlords if you ever rent office space.'],
+
+    // TECHNICAL (priority 1-2)
+    ['technical','jwt_secret','Set JWT_SECRET env var in Render',1,'In Render Dashboard → Environment, set JWT_SECRET to a strong random string. Generate with: openssl rand -hex 32 (or use any secure password generator, 32+ chars). Without this, default value is vulnerable.'],
+    ['technical','resend','Set up Resend API for email',1,'Sign up at resend.com (free tier). Add domain nearandfarevents.com, verify via DNS records, copy API key, add as RESEND_API_KEY env var in Render. Unlocks: confirmation emails, magic links, password resets, and the email approve/reject admin feature.'],
+    ['technical','stripe_featured','Create Stripe price for Featured tier ($30/mo)',2,'In Stripe → Products → Add product: "Featured Directory — Near and Far Events", $30/mo recurring. Copy the price ID, add as STRIPE_PRICE_FEATURED env var in Render. Until done, customers see friendly error if they try to buy Featured.'],
+    ['technical','backups','Set up automatic database backups',3,'Render Disks include daily snapshots. Verify they are enabled at Render Dashboard → your service → Disks. For extra safety, consider weekly sqlite3 .dump export to S3 or Backblaze B2.'],
+    ['technical','analytics_id','Set real Google Analytics Measurement ID',4,'Replace G-XXXXXXXXXX placeholder in index.html with real measurement ID, or switch to Plausible ($9/mo, more privacy-friendly).'],
+
+    // MARKETING (priority 2-3)
+    ['marketing','launch_content','Write launch announcement',2,'Draft a 200-word post announcing the calendar. Post on personal Facebook, local Facebook groups (Near and Far Events for [town]), Nextdoor. Goal: 50 people see it day 1.'],
+    ['marketing','first_businesses','Onboard first 10 business listings',2,'Personally reach out to 10 local businesses you know (or visit in person). Show them the directory page, offer to add them yourself in 2 minutes. Goal: directory feels populated when first visitors arrive.'],
+    ['marketing','first_events','Seed first 20 events',2,'Use the CSV bulk import to add upcoming local events from sources like Eventbrite, library calendars, church bulletins, school district sites. Goal: visitors see at least 20 events on day 1.'],
+    ['marketing','social','Create Facebook page',3,'Create a Facebook business page for Near and Far Events. Cross-post local events you add. Cheap and effective for community calendars.'],
+    ['marketing','press','Reach out to local press',4,'Email local newspaper / radio about "free new community calendar for [town]". Local press loves community-good stories. 1-line pitch: "Free new community calendar made by [name] launches today, focused on bringing back what made small-town newspapers work."'],
+
+    // EXPANSION (priority 4-5)
+    ['expansion','enable_pa','Enable Pennsylvania (after first 100 users in OH)',5,'Once OH has steady traffic, expand. Update enabled_states in settings table to include PA. Add PA zip ranges to backend zipToState() function. Update Help page state list.'],
+    ['expansion','more_zips','Expand popular zip code lists in US Map picker',5,'Edit ENABLED_STATES_INFO in index.html — add more popular zips per state based on real usage data (admin dashboard analytics will show which zips are most active).'],
+  ];
+
+  for (const [category, key, title, priority, instructions] of _seedTasks) {
+    try {
+      await _db.run("INSERT OR IGNORE INTO admin_tasks (category, task_key, title, priority, instructions) VALUES (?,?,?,?,?)", [category, key, title, priority, instructions]);
+    } catch(_) {}
+  }
+
   return _db;
 }
 
