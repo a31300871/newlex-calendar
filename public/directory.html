@@ -607,7 +607,7 @@ function toggleTheme(){
 <nav>
   <div class="hdr-row1">
     <a href="/" class="nav-brand"><span style="background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">✦</span> <span class="brand-grad">Near and Far Events</span><br><span style="font-size:.62em;font-weight:500;opacity:.7;letter-spacing:.02em;color:var(--text2)">Discover what's happening, near and far</span></a>
-    <div class="hdr-right"><button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><span class="nav-user" id="navUser"></span></div>
+    <div class="hdr-right"><a href="/help" class="theme-toggle" style="text-decoration:none;margin-right:8px" title="How to use this site"><span>❓</span><span style="margin-left:4px">Help</span></a><button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" style="margin-right:8px"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button><span id="authArea"></span></div>
   </div>
   <div class="hdr-row2">
     <a href="/" class="nav-btn" aria-label="Calendar">
@@ -674,7 +674,7 @@ function toggleTheme(){
         <div class="featured-title"><span class="featured-title-mark">⭐</span> Featured Businesses</div>
         <div class="featured-sub">Premium advertisers in your area</div>
       </div>
-      <a href="/advertise?tier=featured" class="featured-cta">Claim a spot — $30/mo →</a>
+      <a href="/advertise?tier=featured#choose-plan" class="featured-cta">Claim a spot — $30/mo →</a>
     </div>
     <div class="adv-grid" id="advGrid">
       <div style="color:var(--text3);font-size:14px;padding:20px 0">Loading featured businesses…</div>
@@ -928,7 +928,7 @@ function renderAdvGrid() {
       <div class="adv-card-tag" style="-webkit-text-fill-color:var(--text3);color:var(--text3);background:none">Featured Spot Available</div>
       <div class="adv-card-name">Your Business Here</div>
       <div class="adv-card-tag2">Advertise to your local community</div>
-      <a href="/advertise?tier=featured" class="adv-card-btn" style="background:var(--surface2);color:var(--text3);border:1.5px dashed var(--border-md);box-shadow:none">Claim This Spot — $30/mo</a>
+      <a href="/advertise?tier=featured#choose-plan" class="adv-card-btn" style="background:var(--surface2);color:var(--text3);border:1.5px dashed var(--border-md);box-shadow:none">Claim This Spot — $30/mo</a>
     </div>`;
   }
   grid.innerHTML = html;
@@ -1206,20 +1206,20 @@ document.getElementById('dirSearch').addEventListener('input', function() {
 
 // Nav
 function renderNav() {
-  const el = document.getElementById('navUser');
+  // Item 24: HTML structure now matches calendar page's renderAuth — same look on both pages
+  const el = document.getElementById('authArea');
   const floatCTA = document.getElementById('floatCTA');
   const adminAddBtn = document.getElementById('adminAddBtn');
   if (adminAddBtn) adminAddBtn.style.display = isAdmin ? 'inline-block' : 'none';
   if (floatCTA) floatCTA.style.display = 'flex';
   if (calUser) {
     const ini = (calUser.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    el.innerHTML = `
-      <div class="user-pill">
-        <div class="avatar">${esc(ini)}</div>
-        <span class="user-name">${esc(calUser.name)}${calUser.is_admin ? ' ★' : ''}</span>
-        ${myListings.length > 0 ? `<button class="pill-btn amber" onclick="openMyListings()">My Businesses (${myListings.length})</button>` : ''}
-        <button class="pill-btn" onclick="doLogout()">Log out</button>
-      </div>`;
+    el.innerHTML = `<div class="user-pill" style="position:relative">
+      <div class="avatar">${esc(ini)}</div>
+      <span class="user-name">${esc(calUser.name)}${calUser.is_admin ? ' <span title="Admin" style="color:var(--amber);font-size:13px">★</span>' : ''}</span>
+      ${myListings.length > 0 ? `<button class="pill-btn amber" onclick="openMyListings()" style="font-size:11px;padding:4px 10px;border-radius:100px;border:1.5px solid var(--amber);background:var(--amber-lt);color:var(--amber-dk);font-weight:700;margin-left:4px;cursor:pointer">My Businesses (${myListings.length})</button>` : ''}
+      <button class="sign-out-btn" onclick="doLogout()" title="Sign out">Sign Out</button>
+    </div>`;
   } else {
     el.innerHTML = `<div class="auth-buttons">
       <button class="register-btn" onclick="openRegister()">Register</button>
