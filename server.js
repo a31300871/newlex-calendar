@@ -1078,18 +1078,27 @@ app.get('/api/sponsors', async (req, res) => {
 });
 app.post('/api/sponsors', requireAdmin, async (req, res) => {
   try {
-    const { name, tagline, url } = req.body || {};
+    const { name, tagline, url, zipcode, statewide_state } = req.body || {};
     if (!name?.trim()) return res.status(400).json({ error: 'Name required.' });
+    const zipClean = (zipcode || '').toString().trim();
+    const stateClean = (statewide_state || '').toString().trim().toUpperCase();
+    if (!zipClean && !stateClean) return res.status(400).json({ error: 'Target zipcode OR state-wide code (e.g., OH) is required so the sponsor shows in the right area.' });
+    if (stateClean && stateClean.length !== 2) return res.status(400).json({ error: 'State code must be exactly 2 letters (e.g., OH).' });
+    if (zipClean && (zipClean.length !== 5 || !/^\d{5}$/.test(zipClean))) return res.status(400).json({ error: 'Zipcode must be 5 digits.' });
     const db = await getDb();
-    const r = await db.run('INSERT INTO sponsors (name,tagline,url) VALUES (?,?,?)', [name.trim(), tagline||'', url||'']);
+    const r = await db.run('INSERT INTO sponsors (name,tagline,url,zipcode,statewide_state) VALUES (?,?,?,?,?)', [name.trim(), tagline||'', url||'', zipClean, stateClean]);
     res.status(201).json(await db.get('SELECT * FROM sponsors WHERE id=?', [r.lastID]));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.put('/api/sponsors/:id', requireAdmin, async (req, res) => {
   try {
-    const { name, tagline, url } = req.body || {};
+    const { name, tagline, url, zipcode, statewide_state } = req.body || {};
+    const zipClean = (zipcode || '').toString().trim();
+    const stateClean = (statewide_state || '').toString().trim().toUpperCase();
+    if (zipClean && (zipClean.length !== 5 || !/^\d{5}$/.test(zipClean))) return res.status(400).json({ error: 'Zipcode must be 5 digits.' });
+    if (stateClean && stateClean.length !== 2) return res.status(400).json({ error: 'State code must be 2 letters.' });
     const db = await getDb();
-    await db.run('UPDATE sponsors SET name=?,tagline=?,url=? WHERE id=?', [name||'', tagline||'', url||'', req.params.id]);
+    await db.run('UPDATE sponsors SET name=?,tagline=?,url=?,zipcode=?,statewide_state=? WHERE id=?', [name||'', tagline||'', url||'', zipClean, stateClean, req.params.id]);
     res.json(await db.get('SELECT * FROM sponsors WHERE id=?', [req.params.id]));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1108,8 +1117,16 @@ app.get('/api/display/sponsors', async (req, res) => {
     const zip = (req.query.zipcode || '').toString().trim();
     const state = zipToState(zip);
     const db = await getDb();
-    // Manual sponsors: always shown (admin-controlled, not zip-bound)
-    const manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors ORDER BY id');
+    // Manual sponsors: now zip-bound (matches advertiser behavior)
+    let manual = [];
+    if (zip) {
+      manual = await db.all(
+        'SELECT id, name, tagline, url, "manual" AS source FROM sponsors WHERE zipcode=? OR (statewide_state!=\'\' AND statewide_state=?) ORDER BY id',
+        [zip, state || '']
+      );
+    } else {
+      manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors WHERE zipcode=\'\' ORDER BY id');
+    }
     // Banner advertisers: must match this zip OR cover the state-wide
     let banner = [];
     if (zip) {
