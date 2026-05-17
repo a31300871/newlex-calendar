@@ -613,24 +613,36 @@ app.get('/api/events', async (req, res) => {
     }
     const zipcode = (req.query.zipcode||'').toString().trim();
     const zipState = zipToState(zipcode);
-    // Zip filter: match either the event's exact zipcode OR its statewide_state to this zip's state
-    const zipFilter = zipcode
-      ? ' AND (e.zipcode=? OR (e.statewide_state != \'\' AND e.statewide_state = ?))'
-      : '';
-    const zipParam = zipcode ? [zipcode, zipState || ''] : [];
+    const statewide = (req.query.statewide||'') === 'true';
+    // Zip filter logic:
+    // - If statewide=true AND we have a state: include events from any zip in that state
+    // - Otherwise: zip match OR state-wide event matching this zip's state
+    let zipFilter = '';
+    let zipParam = [];
+    if (statewide && zipState) {
+      // Show all events in this state — match either by event's zip prefix-to-state OR statewide_state
+      zipFilter = " AND ((SELECT substr(e.zipcode,1,5)) IN (SELECT zipcode FROM listings WHERE statewide_state=? OR zipcode LIKE ?) OR e.statewide_state=?)";
+      zipParam = [zipState, '%', zipState];
+      // Simpler reliable approach: just filter by state-prefix match using JS-side filter after query
+      zipFilter = '';  // we will filter in JS instead
+      zipParam = [];
+    } else if (zipcode) {
+      zipFilter = ' AND (e.zipcode=? OR (e.statewide_state != \'\' AND e.statewide_state = ?))';
+      zipParam = [zipcode, zipState || ''];
+    }
     let sql;
     let params;
     if (isAdmin) {
       sql = 'SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE 1=1' + zipFilter + ' ORDER BY e.date ASC,e.start_time ASC,e.time ASC';
       params = zipParam;
     } else if (userId) {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?)) AND COALESCE(NULLIF(e.effective_end_at,''), datetime(e.date || ' 23:59:00', '+4 hours')) > datetime('now')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE (e.status='approved' OR (e.status='pending' AND e.added_by=?)) AND e.date >= date('now', 'localtime')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
       params = [userId, ...zipParam];
     } else {
-      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved' AND COALESCE(NULLIF(e.effective_end_at,''), datetime(e.date || ' 23:59:00', '+4 hours')) > datetime('now')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
+      sql = "SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.status='approved' AND e.date >= date('now', 'localtime')" + zipFilter + " ORDER BY e.date ASC,e.start_time ASC,e.time ASC";
       params = zipParam;
     }
-    const rows = await db.all(sql, params);
+    let rows = await db.all(sql, params);
     // Filter out events in non-enabled states for non-admin users
     if (!isAdmin) {
       const enabled = await getEnabledStates(db);
@@ -646,7 +658,7 @@ app.get('/api/events', async (req, res) => {
 
 app.post('/api/events', requireAuth, async (req, res) => {
   try {
-    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
+    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description, statewide_state } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
     // Validate zipcode is in an enabled state (skip for admin)
@@ -671,7 +683,7 @@ app.post('/api/events', requireAuth, async (req, res) => {
     const eff = computeEffectiveEndAt(date, st, et, ad);
     const timeDisplay = (time?.trim()) || buildTimeDisplay(st, et, ad);
     const r = await db.run(
-      'INSERT INTO events (cat,name,location,date,time,start_time,end_time,all_day,effective_end_at,price,contact,added_by,status,zipcode,affiliate_url,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO events (cat,name,location,date,time,start_time,end_time,all_day,effective_end_at,price,contact,added_by,status,zipcode,affiliate_url,description,statewide_state) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
       [cat||'other', name.trim(), location.trim(), date, timeDisplay, st, et, ad, eff, price?.trim()||'Free', contact?.trim()||'-', req.user.id, status, zip, (affiliate_url||'').trim(), cleanDescription(description)]
     );
     const ev = await db.get('SELECT e.*,u.name AS author_name FROM events e JOIN users u ON u.id=e.added_by WHERE e.id=?', [r.lastID]);
@@ -811,7 +823,7 @@ app.get('/api/events/manage/:token', async (req, res) => {
 app.put('/api/events/manage/:token', async (req, res) => {
   try {
     const { token } = req.params;
-    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
+    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description, statewide_state } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const db = await getDb();
     const manageHash = hashToken(token);
@@ -883,7 +895,7 @@ app.put('/api/events/:id', requireAuth, async (req, res) => {
     const ev = await db.get('SELECT * FROM events WHERE id=?', [req.params.id]);
     if (!ev) return res.status(404).json({ error: 'Event not found.' });
     if (ev.added_by !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'You can only edit events you posted.' });
-    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description } = req.body || {};
+    const { cat, name, location, date, time, start_time, end_time, all_day, price, contact, zipcode, affiliate_url, description, statewide_state } = req.body || {};
     if (!name?.trim() || !location?.trim() || !date) return res.status(400).json({ error: 'Name, location, and date are required.' });
     const st = (start_time||'').toString().trim();
     const et = (end_time||'').toString().trim();
@@ -960,7 +972,7 @@ app.delete('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
 // ── ADMIN: Manually add an advertisement (no Stripe required) ──
 app.post('/api/admin/advertisers/manual', requireAdmin, async (req, res) => {
   try {
-    const { business_name, tagline, url, phone, tier, zipcode, statewide_state } = req.body || {};
+    const { business_name, tagline, url, phone, tier, zipcode, statewide_state, address } = req.body || {};
     if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
     const validTier = (tier === 'premium' || tier === 'featured') ? tier : 'basic';
     const zipClean = (zipcode || '').toString().trim();
@@ -972,10 +984,10 @@ app.post('/api/admin/advertisers/manual', requireAdmin, async (req, res) => {
     const fakeEmail = `manual-${Date.now()}-${Math.random().toString(36).slice(2,8)}@nearandfarevents.local`;
     const unusableHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
     const r = await db.run(
-      `INSERT INTO advertisers (name, email, password_hash, business_name, tagline, url, status, tier, phone, email_verified, zipcode, statewide_state)
-       VALUES (?,?,?,?,?,?,'active',?,?,1,?,?)`,
+      `INSERT INTO advertisers (name, email, password_hash, business_name, tagline, url, status, tier, phone, email_verified, zipcode, statewide_state, address)
+       VALUES (?,?,?,?,?,?,'active',?,?,1,?,?,?)`,
       [(business_name||'').trim() + ' (manual)', fakeEmail, unusableHash, business_name.trim(),
-       (tagline||'').trim(), (url||'').trim(), validTier, (phone||'').trim(), zipClean, stateClean]
+       (tagline||'').trim(), (url||'').trim(), validTier, (phone||'').trim(), zipClean, stateClean, (address||'').trim()]
     );
     res.status(201).json({ success: true, id: r.lastID });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1057,6 +1069,40 @@ app.put('/api/admin/events/:id/statewide', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// ── ADMIN: Edit any advertiser's business info / tier / zip / state-wide ──
+app.put('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
+  try {
+    const { business_name, tagline, url, phone, tier, zipcode, statewide_state, address } = req.body || {};
+    const db = await getDb();
+    const adv = await db.get('SELECT id, tier, status FROM advertisers WHERE id=?', [req.params.id]);
+    if (!adv) return res.status(404).json({ error: 'Advertiser not found.' });
+    // Validation
+    if (business_name !== undefined && !String(business_name).trim()) return res.status(400).json({ error: 'Business name cannot be empty.' });
+    const validTier = ['basic','featured','premium'].includes(tier) ? tier : adv.tier;
+    const zipClean = (zipcode || '').toString().trim();
+    const stateClean = (statewide_state || '').toString().trim().toUpperCase();
+    if (zipClean && (zipClean.length !== 5 || !/^\d{5}$/.test(zipClean))) return res.status(400).json({ error: 'Zipcode must be 5 digits.' });
+    if (stateClean && stateClean.length !== 2) return res.status(400).json({ error: 'State must be 2 letters.' });
+    if (!zipClean && !stateClean) return res.status(400).json({ error: 'Target zipcode OR state-wide code is required.' });
+    await db.run(
+      `UPDATE advertisers SET
+        business_name = COALESCE(?, business_name),
+        tagline = COALESCE(?, tagline),
+        url = COALESCE(?, url),
+        phone = COALESCE(?, phone),
+        tier = ?,
+        zipcode = ?,
+        statewide_state = ?,
+        address = COALESCE(?, address)
+       WHERE id=?`,
+      [business_name, tagline, url, phone, validTier, zipClean, stateClean, address, req.params.id]
+    );
+    const updated = await db.get('SELECT id,business_name,tagline,url,phone,tier,status,zipcode,statewide_state,email FROM advertisers WHERE id=?', [req.params.id]);
+    res.json(updated);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── ADMIN: List events for the state-wide picker (search by name) ──
 app.get('/api/admin/events/search', requireAdmin, async (req, res) => {
   try {
@@ -1069,6 +1115,226 @@ app.get('/api/admin/events/search', requireAdmin, async (req, res) => {
       [like]
     );
     res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ── ADMIN: Export removed-items log to CSV ──
+app.get('/api/admin/removed-items/export.csv', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all('SELECT id, item_type, item_name, item_date, item_zipcode, owner_name, owner_email, removed_by_name, reason, removed_at FROM removed_items ORDER BY removed_at DESC');
+    const esc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+    const header = ['id','type','item_name','item_date','zipcode','owner_name','owner_email','removed_by','reason','removed_at'].map(esc).join(',');
+    const lines = rows.map(r => [r.id, r.item_type, r.item_name, r.item_date, r.item_zipcode, r.owner_name, r.owner_email, r.removed_by_name, r.reason, r.removed_at].map(esc).join(','));
+    const csv = '\ufeff' + header + '\n' + lines.join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="removed-items-' + new Date().toISOString().slice(0,10) + '.csv"');
+    res.send(csv);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+
+// ============================================================
+// Item 25: CALENDAR SPONSORSHIPS (paid 2-week thank-you, NOT charitable)
+// Framed as a sponsorship (commerce) to avoid state charitable solicitation laws.
+// Built-in disclosures: not tax-deductible, 18+, non-refundable.
+// ============================================================
+
+// Display: active sponsorships for this zipcode (renders as cards in event list)
+app.get('/api/display/sponsorships', async (req, res) => {
+  try {
+    const zip = (req.query.zipcode || '').toString().trim();
+    if (!zip) return res.json([]);
+    const db = await getDb();
+    const rows = await db.all(
+      `SELECT id, display_type, display_name, contact_url, contact_phone, tribute_text, created_at, expires_at
+       FROM calendar_sponsorships
+       WHERE zipcode = ? AND status = 'active' AND datetime(expires_at) > datetime('now')
+       ORDER BY created_at DESC`,
+      [zip]
+    );
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create Stripe checkout for a calendar sponsorship
+app.post('/api/sponsorship/checkout', spamGuardSponsorship, async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Payment system not configured.' });
+  try {
+    const { zipcode, display_type, display_name, contact_url, contact_phone, tribute_text, amount_dollars, email, age_confirmed, terms_accepted } = req.body || {};
+    // Validation
+    if (!zipcode || !/^\d{5}$/.test(String(zipcode))) return res.status(400).json({ error: 'Valid 5-digit zipcode required.' });
+    const validTypes = ['anonymous','first_name','full_name','business','tribute'];
+    if (!validTypes.includes(display_type)) return res.status(400).json({ error: 'Invalid display type.' });
+    const amt = parseFloat(amount_dollars);
+    if (!amt || amt < 1) return res.status(400).json({ error: 'Sponsorship amount must be at least $1.' });
+    if (amt > 10000) return res.status(400).json({ error: 'Maximum sponsorship is $10,000. For larger amounts, contact us directly.' });
+    if (!age_confirmed || !terms_accepted) return res.status(400).json({ error: 'You must confirm you are 18+ and accept the sponsorship terms.' });
+    if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required for receipt.' });
+
+    // Type-specific validation
+    if (display_type === 'first_name' && !display_name?.trim()) return res.status(400).json({ error: 'First name required for this display type.' });
+    if (display_type === 'full_name' && !display_name?.trim()) return res.status(400).json({ error: 'Name required for this display type.' });
+    if (display_type === 'business' && !display_name?.trim()) return res.status(400).json({ error: 'Business name required.' });
+    if (display_type === 'business' && !contact_url?.trim() && !contact_phone?.trim()) return res.status(400).json({ error: 'For business sponsorships, please include a website OR phone number.' });
+    if (display_type === 'tribute' && !tribute_text?.trim()) return res.status(400).json({ error: 'Tribute text required (e.g., "In memory of Jane Smith").' });
+
+    const db = await getDb();
+    // Insert pending row first
+    const insertResult = await db.run(
+      `INSERT INTO calendar_sponsorships (zipcode, display_type, display_name, contact_url, contact_phone, tribute_text, amount_cents, email, status)
+       VALUES (?,?,?,?,?,?,?,?,'pending')`,
+      [
+        String(zipcode), display_type,
+        (display_name||'').trim(),
+        (contact_url||'').trim(),
+        (contact_phone||'').trim(),
+        (tribute_text||'').trim(),
+        Math.round(amt * 100),
+        email.toLowerCase().trim()
+      ]
+    );
+    const sponsorshipId = insertResult.lastID;
+
+    // Create Stripe Checkout session (one-time payment)
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer_email: email,
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Calendar Sponsorship — Near and Far Events',
+            description: `2-week public thank-you placement on calendar (zipcode ${zipcode})`
+          },
+          unit_amount: Math.round(amt * 100),
+        },
+        quantity: 1,
+      }],
+      success_url: `${SITE_URL}/?sponsorship_success=true`,
+      cancel_url: `${SITE_URL}/?sponsorship_cancelled=true`,
+      metadata: { sponsorship_id: String(sponsorshipId), zipcode: String(zipcode) },
+      payment_intent_data: {
+        description: `Calendar sponsorship #${sponsorshipId} — 2-week placement in zip ${zipcode}`,
+      },
+    });
+
+    // Save session id on the pending row
+    await db.run('UPDATE calendar_sponsorships SET stripe_session_id=? WHERE id=?', [session.id, sponsorshipId]);
+    res.json({ url: session.url });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
+
+// ============================================================
+// ADMIN DASHBOARD — checklist tasks + live counts
+// ============================================================
+app.get('/api/admin/dashboard', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    // Live counts from existing tables
+    const pendingEvents     = (await db.get("SELECT COUNT(*) AS c FROM events WHERE status='pending'")).c;
+    const pendingInsiders   = (await db.get("SELECT COUNT(*) AS c FROM users WHERE town_crier_status='pending'")).c;
+    const pendingListings   = (await db.get("SELECT COUNT(*) AS c FROM listings WHERE status='pending'")).c;
+    const activeBasic       = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='basic'")).c;
+    const activeFeatured    = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='featured'")).c;
+    const activePremium     = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='premium'")).c;
+    const activeSponsorships = (await db.get("SELECT COUNT(*) AS c FROM calendar_sponsorships WHERE status='active' AND datetime(expires_at)>datetime('now')")).c;
+    const recentRemovals    = (await db.get("SELECT COUNT(*) AS c FROM removed_items WHERE datetime(removed_at)>datetime('now','-30 days')")).c;
+    const totalEvents       = (await db.get("SELECT COUNT(*) AS c FROM events WHERE status='approved' AND date>=date('now')")).c;
+    const totalListings     = (await db.get("SELECT COUNT(*) AS c FROM listings WHERE status='active'")).c;
+    const totalUsers        = (await db.get("SELECT COUNT(*) AS c FROM users")).c;
+
+    // Checklist tasks
+    const tasks = await db.all("SELECT id, category, task_key, title, instructions, priority, completed, completed_at, notes FROM admin_tasks ORDER BY category, priority, id");
+
+    res.json({
+      counts: {
+        pendingEvents, pendingInsiders, pendingListings,
+        activeBasic, activeFeatured, activePremium,
+        activeSponsorships, recentRemovals,
+        totalEvents, totalListings, totalUsers,
+      },
+      tasks
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Toggle a checklist task's completed state
+app.post('/api/admin/tasks/:key/toggle', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const task = await db.get("SELECT id, completed FROM admin_tasks WHERE task_key=?", [req.params.key]);
+    if (!task) return res.status(404).json({ error: 'Task not found.' });
+    const newCompleted = task.completed ? 0 : 1;
+    await db.run("UPDATE admin_tasks SET completed=?, completed_at=? WHERE id=?", [newCompleted, newCompleted ? new Date().toISOString() : '', task.id]);
+    res.json({ completed: newCompleted });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update task notes
+app.put('/api/admin/tasks/:key/notes', requireAdmin, async (req, res) => {
+  try {
+    const { notes } = req.body || {};
+    const db = await getDb();
+    await db.run("UPDATE admin_tasks SET notes=? WHERE task_key=?", [(notes||'').toString().slice(0,1000), req.params.key]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Bulk moderation: approve/reject multiple events at once
+app.post('/api/admin/events/bulk-moderate', requireAdmin, async (req, res) => {
+  try {
+    const { event_ids, action, reason } = req.body || {};
+    if (!Array.isArray(event_ids) || !event_ids.length) return res.status(400).json({ error: 'No event IDs provided.' });
+    if (!['approve','reject'].includes(action)) return res.status(400).json({ error: 'Invalid action.' });
+    const db = await getDb();
+    let count = 0;
+    for (const id of event_ids) {
+      try {
+        if (action === 'approve') {
+          await db.run("UPDATE events SET status='approved' WHERE id=? AND status='pending'", [id]);
+        } else {
+          // Reject: log to removed_items + delete
+          const ev = await db.get("SELECT id, name, date, zipcode, added_by FROM events WHERE id=? AND status='pending'", [id]);
+          if (ev) {
+            const owner = await db.get("SELECT name, email FROM users WHERE id=?", [ev.added_by]);
+            await db.run("INSERT INTO removed_items (item_type, original_id, item_name, item_date, item_zipcode, owner_user_id, owner_name, owner_email, removed_by, removed_by_name, reason) VALUES ('event',?,?,?,?,?,?,?,?,?,?)",
+              [ev.id, ev.name, ev.date, ev.zipcode, ev.added_by, owner?.name||'', owner?.email||'', req.user.id, req.user.name, (reason||'Bulk-rejected by admin').slice(0,500)]);
+            await db.run("DELETE FROM events WHERE id=?", [id]);
+          }
+        }
+        count++;
+      } catch(_) {}
+    }
+    res.json({ count, action });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Item 17: ADMIN bulk-add free directory listings (CSV) ──
+app.post('/api/admin/listings/bulk', requireAdmin, async (req, res) => {
+  try {
+    const { listings } = req.body || {};
+    if (!Array.isArray(listings) || !listings.length) return res.status(400).json({ error: 'No listings supplied.' });
+    const db = await getDb();
+    let inserted = 0, errors = [];
+    for (let i = 0; i < listings.length; i++) {
+      const r = listings[i];
+      try {
+        if (!r.business_name || !r.zipcode) { errors.push(`Row ${i+1}: missing business_name or zipcode`); continue; }
+        const zip = String(r.zipcode).trim();
+        if (zip.length !== 5 || !/^\d{5}$/.test(zip)) { errors.push(`Row ${i+1}: invalid zipcode ${zip}`); continue; }
+        await db.run(
+          "INSERT INTO listings (business_name,category,phone,website,address,description,zipcode,status) VALUES (?,?,?,?,?,?,?,'active')",
+          [String(r.business_name).trim(), String(r.category||'').trim(), String(r.phone||'').trim(), String(r.website||'').trim(), String(r.address||'').trim(), String(r.description||'').trim(), zip]
+        );
+        inserted++;
+      } catch(e) { errors.push(`Row ${i+1}: ${e.message}`); }
+    }
+    res.json({ inserted, errors });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1155,23 +1421,23 @@ app.get('/api/display/sponsors', async (req, res) => {
     let manual = [];
     if (zip) {
       manual = await db.all(
-        'SELECT id, name, tagline, url, "manual" AS source FROM sponsors WHERE zipcode=? OR (statewide_state!=\'\' AND statewide_state=?) ORDER BY id',
+        'SELECT id, name, tagline, url, "manual" AS source FROM sponsors WHERE zipcode=? OR (statewide_state!=\'\' AND statewide_state=?) ORDER BY id LIMIT 2',
         [zip, state || '']
       );
     } else {
-      manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors WHERE zipcode=\'\' ORDER BY id');
+      manual = await db.all('SELECT id, name, tagline, url, "manual" AS source FROM sponsors WHERE zipcode=\'\' ORDER BY id LIMIT 2');
     }
     // Banner advertisers: must match this zip OR cover the state-wide
     let banner = [];
     if (zip) {
       banner = await db.all(
-        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' AND (zipcode=? OR (statewide_state!='' AND statewide_state=?)) ORDER BY id",
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' AND (zipcode=? OR (statewide_state!='' AND statewide_state=?)) ORDER BY id LIMIT 2",
         [zip, state || '']
       );
     } else {
       // No zip provided — only show advertisers that haven't set a zip yet (legacy) or admin manual ads
       banner = await db.all(
-        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' AND zipcode='' ORDER BY id"
+        "SELECT id, business_name AS name, tagline, url, phone, tier, 'advertiser' AS source FROM advertisers WHERE status IN ('active','approved') AND tier='basic' AND zipcode='' ORDER BY id LIMIT 2"
       );
     }
     res.json([...manual, ...banner]);
@@ -1369,7 +1635,7 @@ app.post('/api/advertiser/refresh-status', requireAdvertiser, async (req, res) =
 app.get('/api/admin/advertisers', requireAdmin, async (req, res) => {
   try {
     const db = await getDb();
-    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,phone,tier,status,zipcode,statewide_state,stripe_customer_id,stripe_subscription_id,created_at FROM advertisers ORDER BY created_at DESC');
+    const rows = await db.all('SELECT id,name,email,business_name,tagline,url,phone,tier,status,zipcode,statewide_state,address,stripe_customer_id,stripe_subscription_id,created_at FROM advertisers ORDER BY created_at DESC');
     res.json(rows);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1390,6 +1656,18 @@ function safeAdv(a) {
 
 app.get('/advertise',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'advertise.html')));
 app.get('/directory',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'directory.html')));
+app.get('/help',       (_req, res) => res.sendFile(path.join(__dirname, 'public', 'help.html')));
+app.get('/admin',      (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
+// ── Footer links: shorthand routes that serve the /legal/*.html files ──
+app.get('/terms',                  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'terms.html')));
+app.get('/privacy',                (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'privacy.html')));
+app.get('/cookies',                (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'cookies.html')));
+app.get('/dmca',                   (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'dmca.html')));
+app.get('/contact',                (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'contact.html')));
+app.get('/accessibility',          (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'accessibility.html')));
+app.get('/community-guidelines',   (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'community-guidelines.html')));
+app.get('/affiliate-disclosure',   (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'affiliate-disclosure.html')));
 // Email verification + password reset landing pages — served by index.html which handles the URL params client-side
 app.get('/verify',         (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/reset-password', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -1464,6 +1742,14 @@ app.get('/api/listings', async (req, res) => {
           for (const sr of stateRows) if (!ids.has(sr.id)) rows.push(sr);
         }
       } catch(_) {}
+    }
+    // If statewide search active, filter to only events whose zipcode is in the searched state OR statewide_state matches
+    if (statewide && zipState) {
+      const rowsFiltered = rows.filter(r => {
+        const eventState = zipToState(r.zipcode);
+        return eventState === zipState || r.statewide_state === zipState;
+      });
+      rows = rowsFiltered;
     }
     if (!isAdmin) {
       const enabled = await getEnabledStates(db);
