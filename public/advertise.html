@@ -1029,26 +1029,104 @@ async function doLogin() {
 
 function doLogout() { clearSession(); renderPortal(); }
 
+/* ── MULTI-AD SUPPORT (switch between ads, create new ads) ── */
+async function switchToAd(adId) {
+  try {
+    const { token: newToken, ad } = await api('/api/advertiser/switch-ad', { method:'POST', body: JSON.stringify({ ad_id: adId })});
+    localStorage.setItem('nf_adv_token', newToken);
+    advertiser = ad;
+    renderDashboard();
+    document.getElementById('portalCard').scrollIntoView({ behavior:'smooth', block:'start' });
+  } catch(e) { alert(e.message); }
+}
+
+function startNewAd() {
+  document.getElementById('portalTitle').textContent = 'Start a New Advertisement';
+  document.getElementById('portalSub').textContent   = 'Add another ad to your account. Each ad has its own tier, zipcode, and subscription.';
+  document.getElementById('portalCard').innerHTML = `
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.55">Fill in details for this new ad. You can have multiple ads for different businesses, different zipcodes, or different tiers — each billed separately.</p>
+    <div class="field"><label>Business Name <span class="req">*</span></label><input type="text" id="naBiz" placeholder="The business this ad is for"></div>
+    <div class="field"><label>Tagline</label><input type="text" id="naTag" placeholder="Short description shown under your business name"></div>
+    <div class="field"><label>Business Phone</label><input type="tel" id="naPhone" placeholder="(740) 555-1234"></div>
+    <div class="field"><label>Website URL</label><input type="text" id="naUrl" placeholder="https://yourbusiness.com"></div>
+    <div class="field"><label>🎯 Target Zipcode <span class="req">*</span></label><input type="text" id="naZip" placeholder="43764" maxlength="5" inputmode="numeric" style="font-size:16px;letter-spacing:.05em"></div>
+    <div class="form-actions" style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn-ghost" onclick="renderDashboard()" style="flex:0 0 auto;border:1.5px solid var(--border-md);background:var(--surface);color:var(--text);padding:10px 18px;border-radius:100px;font-weight:700;cursor:pointer">← Back</button>
+      <button class="btn-amber" style="flex:1" onclick="doCreateNewAd()">Create Ad →</button>
+    </div>
+    <div class="err-msg" id="naErr"></div>`;
+  document.getElementById('portalCard').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+async function doCreateNewAd() {
+  const errEl = document.getElementById('naErr'); errEl.textContent = '';
+  const zip = document.getElementById('naZip').value.trim();
+  if (!zip || zip.length !== 5) { errEl.textContent = 'A valid 5-digit target zipcode is required.'; return; }
+  const payload = {
+    business_name: document.getElementById('naBiz').value.trim(),
+    tagline: document.getElementById('naTag').value.trim(),
+    phone: document.getElementById('naPhone').value.trim(),
+    url: document.getElementById('naUrl').value.trim(),
+    zipcode: zip,
+  };
+  if (!payload.business_name) { errEl.textContent = 'Business name is required.'; return; }
+  try {
+    const { token: newToken, ad } = await api('/api/advertiser/new-ad', { method:'POST', body: JSON.stringify(payload) });
+    localStorage.setItem('nf_adv_token', newToken);
+    advertiser = ad;
+    renderDashboard();
+  } catch(e) { errEl.textContent = e.message; }
+}
+
 /* ── DASHBOARD ── */
-function renderDashboard() {
+async function renderDashboard() {
   // Apply any tier the user clicked BEFORE they registered
   setTimeout(applyChosenTierIfAny, 0);
   document.getElementById('portalTitle').textContent = 'Your Advertiser Dashboard';
-  document.getElementById('portalSub').textContent   = 'Manage your listing and subscription.';
+  document.getElementById('portalSub').textContent   = 'Manage your ads and subscriptions.';
+
+  // Fetch ALL ads for this advertiser's email (one account can now have multiple ads)
+  let allAds = [];
+  try { allAds = await api('/api/advertiser/my-ads'); } catch(_) { allAds = [advertiser]; }
 
   const adv    = advertiser;
   const status = adv.status;
   const statusLabels = { active:'● Live', pending:'● Pending Payment', paused:'● Payment Failed', cancelled:'● Cancelled' };
   const statusClass  = { active:'active', pending:'pending', paused:'paused', cancelled:'cancelled' };
+  // Helpers for the ads list
+  const tierLabel = t => t === 'premium' ? '🎯 Premium Popup' : t === 'featured' ? '⭐ Featured Directory' : '📢 Sponsor Bar';
+  const tierPrice = t => t === 'premium' ? '$50' : t === 'featured' ? '$30' : '$25';
+  // Build the ads list HTML (each ad is a row showing tier + status + "Manage" button)
+  const otherAds = allAds.filter(a => a.id !== adv.id);
+  const adsListHtml = `
+    <div class="dash-section" style="margin-bottom:18px">
+      <div class="dash-label" style="display:flex;align-items:center;justify-content:space-between">
+        <span>My Advertisements (${allAds.length})</span>
+        <button onclick="startNewAd()" style="background:var(--gradient);color:#fff;border:none;padding:7px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body)">+ Start New Ad</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+        ${allAds.map(a => {
+          const isCurrent = a.id === adv.id;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${isCurrent?'var(--amber)':'var(--border-md)'};border-radius:var(--r);background:${isCurrent?'var(--amber-lt)':'var(--surface)'}">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;color:var(--text)">${esc(a.business_name)}${isCurrent?' <span style="font-size:10px;color:var(--amber-dk);font-weight:800;letter-spacing:.05em;background:var(--surface);padding:2px 6px;border-radius:100px;margin-left:6px">EDITING</span>':''}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">${tierLabel(a.tier)} · ${tierPrice(a.tier)}/mo · ${esc(a.zipcode||'no zip')} · <span style="color:${statusClass[a.status]==='active'?'var(--success-fg,#065f46)':statusClass[a.status]==='cancelled'?'var(--text3)':'var(--amber-dk)'};font-weight:700">${statusLabels[a.status]||a.status}</span></div>
+            </div>
+            ${isCurrent ? '' : `<button onclick="switchToAd(${a.id})" style="background:var(--surface);border:1.5px solid var(--border-md);color:var(--text);padding:6px 12px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-body)">Manage →</button>`}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <hr class="divider">`;
 
-  document.getElementById('portalCard').innerHTML = `
+  document.getElementById('portalCard').innerHTML = adsListHtml + `
     <span class="status-pill ${statusClass[status]||'pending'}">${statusLabels[status]||status}</span>
 
     ${status === 'active' ? '' : `
       <div class="alert alert-warning" style="margin-bottom:20px">
         ${status === 'pending'   ? '💳 Your listing is ready — complete payment below to go live.' : ''}
         ${status === 'paused'    ? '⚠️ Your last payment failed. Update your payment method to reactivate.' : ''}
-        ${status === 'cancelled' ? '🔄 Your subscription was cancelled. Subscribe again to go live.' : ''}
+        ${status === 'cancelled' ? '🔄 Your subscription was cancelled. Subscribe again to go live OR click "+ Start New Ad" to create a different one.' : ''}
       </div>
     `}
 
