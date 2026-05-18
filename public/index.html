@@ -1175,7 +1175,7 @@ async function doSaveGuestEvent(token){
       affiliate_url: document.getElementById('mgAff').value
     })});
     document.getElementById('mgOk').textContent = r.requeued ? '✓ Saved! Sent back for quick review.' : '✓ Saved!';
-    document.getElementById('mgOk').style.display='block';
+    {const _e=document.getElementById('mgOk'); if(_e) _e.style.display='block';}
     document.getElementById('mgErr').textContent='';
   } catch(e) { document.getElementById('mgErr').textContent = e.message; }
 }
@@ -1662,7 +1662,7 @@ function renderAuth(){
     </div>`;
 
   }
-  document.getElementById('addSponsorBarBtn').style.display=isAdm?'':'none';
+  {const _b=document.getElementById('addSponsorBarBtn'); if(_b) _b.style.display=isAdm?'':'none';}
   renderSponsors();
 }
 function setSession(tk,user){token=tk;authUser=user;localStorage.setItem('nlcc_token',tk);localStorage.setItem('nlcc_user',JSON.stringify(user));if(!localStorage.getItem('nf_theme'))applyTheme('dark');renderAuth();renderEvents();refreshPendingBadge();}
@@ -1871,7 +1871,7 @@ function showLoginNeedsVerify(email){
 async function doResendVerify(){
   try{
     await api('/api/auth/resend-verify',{method:'POST',body:JSON.stringify({email:document.getElementById('rvEm').value})});
-    document.getElementById('rvOk').style.display='block';
+    {const _e=document.getElementById('rvOk'); if(_e) _e.style.display='block';}
   }catch(e){ document.getElementById('rvErr').textContent = e.message; }
 }
 
@@ -1938,7 +1938,7 @@ async function doForgotPassword(){
   if(!em){ document.getElementById('fpErr').textContent = 'Please enter your email address.'; return; }
   try{
     await api('/api/auth/forgot-password', { method:'POST', body: JSON.stringify({ email: em }) });
-    document.getElementById('fpOk').style.display = 'block';
+    {const _e=document.getElementById('fpOk'); if(_e) _e.style.display = 'block';}
     document.getElementById('fpErr').textContent = '';
   } catch(e) { document.getElementById('fpErr').textContent = e.message; }
 }
