@@ -1337,7 +1337,19 @@ function updateFilterPills(){
   const whenVal = document.getElementById('fpWhenValue');
   const whenPill = document.getElementById('fpWhen');
   if (whenVal){
-    whenVal.textContent = WHEN_SHORT[dateFilter] || 'All';
+    if (dateFilter === 'custom' && typeof _calRangeStart !== 'undefined' && _calRangeStart) {
+      // Format like "Jun 15 → Jun 20" (short month + day, more readable than raw dates)
+      function _fmtShort(d) {
+        const parts = d.split('-'); // YYYY-MM-DD
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return months[parseInt(parts[1],10)-1] + ' ' + parseInt(parts[2],10);
+      }
+      whenVal.textContent = _calRangeEnd
+        ? _fmtShort(_calRangeStart) + ' → ' + _fmtShort(_calRangeEnd)
+        : _fmtShort(_calRangeStart);
+    } else {
+      whenVal.textContent = WHEN_SHORT[dateFilter] || 'All';
+    }
     if (whenPill) whenPill.classList.toggle('active', dateFilter !== 'all');
   }
   // What pill
