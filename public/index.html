@@ -125,6 +125,11 @@ button:active{opacity:.8}
   box-shadow:0 0 18px rgba(99,102,241,0.45),0 0 30px rgba(236,72,153,0.3);
 }
 @media(max-width:600px){
+  .site-header{padding:8px 12px !important}
+  .hdr-title{font-size:16px !important;line-height:1.15}
+  .hdr-title span[style*='font-size:.6em']{font-size:.55em !important;display:block !important;margin-top:2px}
+  .hero,.hero-section,.page-hero{padding-top:14px !important;padding-bottom:14px !important}
+  .filter-pills,.fp-row{padding:6px 8px !important;gap:6px !important;margin-bottom:8px !important}
   #hdr{padding:8px 12px 8px}
   .hdr-row1{margin-bottom:8px;min-height:36px}
 }
@@ -1205,7 +1210,7 @@ async function openZipPicker(){
   document.getElementById('evModalContent').innerHTML = `
     <div class="modal-title">📍 Choose Your Area</div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Enter your 5-digit zipcode to see local events. You can switch areas anytime.</p>
-    <button onclick="closeModal('evModal');openUSMap()" style="width:100%;background:var(--gradient);color:#fff;border:none;padding:11px;font-size:14px;font-weight:700;border-radius:var(--r);cursor:pointer;font-family:var(--font-body);margin-bottom:14px;box-shadow:0 3px 10px rgba(236,72,153,.20)">🗺️ Browse by State / Map</button>
+    <button onclick="closeModal('evModal');setTimeout(openUSMap,150)" style="width:100%;background:var(--gradient);color:#fff;border:none;padding:11px;font-size:14px;font-weight:700;border-radius:var(--r);cursor:pointer;font-family:var(--font-body);margin-bottom:14px;box-shadow:0 3px 10px rgba(236,72,153,.20)">🗺️ Browse by State / Map</button>
     <div class="field"><label>Or type your zipcode</label><input type="text" id="zipInput" maxlength="5" placeholder="12345" value="${esc(currentZipcode||'')}" inputmode="numeric" style="font-size:18px;letter-spacing:.1em;text-align:center;font-weight:700"></div>
     ${popularZips.length ? `
       <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Popular zipcodes:</div>
@@ -1293,6 +1298,11 @@ async function loadSponsors(){
 function getToday(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function evDate(str){return new Date(str+'T00:00:00');}
 function matchesDate(dateStr){
+  // Custom range from the calendar picker
+  if (dateFilter==='custom' && typeof _calRangeStart!=='undefined' && _calRangeStart) {
+    if (!_calRangeEnd) return dateStr === _calRangeStart;
+    return dateStr >= _calRangeStart && dateStr <= _calRangeEnd;
+  }
   const today=getToday();
   const ed=evDate(dateStr);
   if(dateFilter==='today')    return ed.toDateString()===today.toDateString();
@@ -1430,7 +1440,7 @@ function renderWhenPickerContent() {
       <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center;padding:6px;background:var(--surface2);border-radius:6px" onclick="event.stopPropagation()">📅 ${rangeText}</div>
     </div>
     <div style="display:flex;gap:6px;margin-top:8px">
-      <button class="btn-ghost" style="flex:1;padding:9px;font-size:13px;font-weight:600;border-radius:6px" onclick="event.stopPropagation();_calRangeStart=null;_calRangeEnd=null;dateFilter='all';updateFilterPills();renderEvents();closeAllPopovers()">Clear</button>
+      <button class="btn-ghost" style="flex:1;padding:9px;font-size:13px;font-weight:600;border-radius:6px" onclick="event.stopPropagation();_calRangeStart=null;_calRangeEnd=null;openWhenPicker(event)">Clear</button>
       <button class="btn-amber" style="flex:1;padding:9px;font-size:13px;font-weight:700;border-radius:6px" onclick="event.stopPropagation();applyCalRange();closeAllPopovers()">Apply</button>
     </div>`;
 }
@@ -1623,7 +1633,7 @@ function renderAuth(){
           <button onclick="openManualAdvertiser()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📢 Add Business Ad</button>
           <button onclick="openStatewideListing()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🌎 Make Listing State-Wide</button>
           <button onclick="openStatewideEvent()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📅 Make Event State-Wide</button>
-          <button onclick="openBulkBizModal()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📋 Bulk-Add Businesses</button>
+          <!-- Bulk-Add Businesses moved to directory page admin menu (more contextual) -->
           <button onclick="openManageAds()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🛠 Manage Business Ads</button>
           <button onclick="openRemovedItemsLog()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📜 Removed Items Log</button>
           <div style="height:1px;background:var(--border)"></div>
@@ -2831,7 +2841,7 @@ function renderBulkInModal(){
         <li><strong>Download the CSV template</strong> below — it has example rows showing the exact format we need</li>
         <li><strong>Open the file in Excel or Google Sheets.</strong> Replace the example rows with your own events (one event per row)</li>
         <li><strong>Required columns:</strong> <code style="font-size:11.5px;background:var(--surface);padding:2px 6px;border-radius:4px;font-weight:600;color:var(--amber-dk)">name</code>, <code style="font-size:11.5px;background:var(--surface);padding:2px 6px;border-radius:4px;font-weight:600;color:var(--amber-dk)">location</code>, <code style="font-size:11.5px;background:var(--surface);padding:2px 6px;border-radius:4px;font-weight:600;color:var(--amber-dk)">date</code> &nbsp;<span style="color:var(--text2);font-size:12px">(date format: <strong>YYYY-MM-DD</strong> — for example, <code style="background:var(--surface);padding:1px 4px;border-radius:3px">2026-07-15</code>)</span></li>
-        <li><strong>Optional columns:</strong> <span style="color:var(--text2)">time, price, contact, category, zipcode, affiliate_url, description</span></li>
+        <li><strong>Optional columns:</strong> <span style="color:var(--text2)">time, price, contact, category, zipcode${isAdmin?', affiliate_url, description':''}</span></li>
         <li><strong>Save the file as CSV</strong> (in Excel: File → Save As → CSV. In Google Sheets: File → Download → Comma Separated Values)</li>
         <li><strong>Upload it below</strong> (drag-and-drop or click) — or open the CSV in a text editor and paste the contents into the box</li>
         <li><strong>Click Preview</strong> to make sure everything looks right, then <strong>${submitLabel}</strong></li>
@@ -2840,7 +2850,7 @@ function renderBulkInModal(){
     </div>
     <a class="import-template" onclick="downloadTemplate()">⬇ Download CSV Template</a>
     <div class="field"><label>Paste CSV here</label>
-      <textarea class="import-csv-area" id="csvArea" placeholder="name,location,date,time,price,contact,category,zipcode,affiliate_url,description&#10;&quot;Annual Bake Sale&quot;,&quot;First Baptist Church&quot;,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,,&quot;Homemade pies and cookies. All proceeds go to youth ministry.&quot;"></textarea>
+      <textarea class="import-csv-area" id="csvArea" placeholder="${isAdmin ? 'name,location,date,time,price,contact,category,zipcode,affiliate_url,description&#10;&quot;Annual Bake Sale&quot;,&quot;First Baptist Church&quot;,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,,&quot;Homemade pies and cookies. All proceeds go to youth ministry.&quot;' : 'name,location,date,time,price,contact,category,zipcode&#10;&quot;Annual Bake Sale&quot;,&quot;First Baptist Church&quot;,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764'}"></textarea>
     </div>
     <div class="field"><label>Or upload a .csv file</label><input type="file" id="csvFile" accept=".csv,.txt" onchange="handleCSVFile(this)" style="font-size:13px;padding:7px"></div>
     <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -2969,15 +2979,23 @@ async function doSponsorshipCheckout(){
   } catch(e) { errEl.textContent = e.message; }
 }
 
-// Item 25: handle return from successful sponsorship payment
-(function checkSponsorshipReturn(){
-  const url = new URL(window.location.href);
-  if (url.searchParams.get('sponsorship_success') === 'true') {
-    setTimeout(() => openModal('sponsorshipSuccessModal'), 600);
-    url.searchParams.delete('sponsorship_success');
-    history.replaceState({}, '', url.toString());
-  }
-})();
+// Handle return from successful sponsorship payment — open popup
+function checkSponsorshipReturn(){
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('sponsorship_success') === 'true') {
+      // Wait for DOM + scripts to fully load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(()=>openModal('sponsorshipSuccessModal'), 400));
+      } else {
+        setTimeout(()=>openModal('sponsorshipSuccessModal'), 400);
+      }
+      url.searchParams.delete('sponsorship_success');
+      history.replaceState({}, '', url.toString());
+    }
+  } catch(e){ console.error('checkSponsorshipReturn:', e); }
+}
+checkSponsorshipReturn();
 
 // Item 25: Build a sponsor "thank-you" card for inclusion in event list
 
@@ -3207,7 +3225,7 @@ function renderEvents(){
   };
   const isAdm=authUser&&authUser.is_admin;
   const canAct=e=>authUser&&(e.added_by===authUser.id||isAdm);
-  // Item 25: Inject sponsor cards — first card always, then every 20 events
+  // Inject sponsor cards — first card always at top, then every ~20 events
   let _evCount = 0;
   let _sponsorIdx = 0;
   function _getNextSponsorCard() {
@@ -3218,7 +3236,9 @@ function renderEvents(){
     }
     return buildPlaceholderSponsorshipCard();
   }
-  const _groupsHtml = Object.entries(grp).sort(([a],[b])=>a.localeCompare(b)).map(([d,evs])=>{
+  // Build group HTML pieces (NOT joined yet — we interleave sponsor cards between them)
+  const sortedDates = Object.entries(grp).sort(([a],[b])=>a.localeCompare(b));
+  const groupPieces = sortedDates.map(([d,evs])=>{
     const f=fmtD(d);
     return `
     <div class="date-group">
@@ -3237,7 +3257,18 @@ function renderEvents(){
       </div>`).join('')}
       </div>
     </div>`;
-  }).join('');
+  });
+  // Compose final HTML: sponsor card at top, then groups, with sponsor cards every ~20 events
+  const parts = [_getNextSponsorCard()];
+  for (let i = 0; i < groupPieces.length; i++) {
+    parts.push(groupPieces[i]);
+    _evCount += sortedDates[i][1].length;
+    if (_evCount >= 20 && i < groupPieces.length - 1) {
+      parts.push(_getNextSponsorCard());
+      _evCount = 0;
+    }
+  }
+  list.innerHTML = parts.join('');
 }
 
 /* ── CATEGORY FILTERS ── */
@@ -3356,7 +3387,7 @@ function openImportModal(){
         <li><strong>Download the CSV template</strong> below — it has example rows showing the exact format we need</li>
         <li><strong>Open the file in Excel or Google Sheets.</strong> Replace the example rows with your own events (one event per row)</li>
         <li><strong>Required columns:</strong> <code style="font-size:11.5px;background:var(--surface);padding:2px 6px;border-radius:4px;font-weight:600;color:var(--amber-dk)">name</code>, <code style="font-size:11.5px;background:var(--surface);padding:2px 6px;border-radius:4px;font-weight:600;color:var(--amber-dk)">location</code>, <code style="font-size:11.5px;background:var(--surface);padding:2px 6px;border-radius:4px;font-weight:600;color:var(--amber-dk)">date</code> &nbsp;<span style="color:var(--text2);font-size:12px">(date format: <strong>YYYY-MM-DD</strong> — for example, <code style="background:var(--surface);padding:1px 4px;border-radius:3px">2026-07-15</code>)</span></li>
-        <li><strong>Optional columns:</strong> <span style="color:var(--text2)">time, price, contact, category, zipcode, affiliate_url, description</span></li>
+        <li><strong>Optional columns:</strong> <span style="color:var(--text2)">time, price, contact, category, zipcode${isAdmin?', affiliate_url, description':''}</span></li>
         <li><strong>Save the file as CSV</strong> (in Excel: File → Save As → CSV. In Google Sheets: File → Download → Comma Separated Values)</li>
         <li><strong>Upload it below</strong> (drag-and-drop or click) — or open the CSV in a text editor and paste the contents into the box</li>
         <li><strong>Click Preview</strong> to make sure everything looks right, then <strong>${isAdmin || isTC ? 'Import' : 'Submit for Review'}</strong></li>
@@ -3365,7 +3396,7 @@ function openImportModal(){
     </div>
     <a class="import-template" onclick="downloadTemplate()">⬇ Download CSV Template</a>
     <div class="field"><label>Paste CSV here</label>
-      <textarea class="import-csv-area" id="csvArea" placeholder="name,location,date,time,price,contact,category,zipcode,affiliate_url,description&#10;&quot;Annual Bake Sale&quot;,&quot;First Baptist Church&quot;,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,,&quot;Homemade pies and cookies. All proceeds go to youth ministry.&quot;"></textarea>
+      <textarea class="import-csv-area" id="csvArea" placeholder="${isAdmin ? 'name,location,date,time,price,contact,category,zipcode,affiliate_url,description&#10;&quot;Annual Bake Sale&quot;,&quot;First Baptist Church&quot;,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,,&quot;Homemade pies and cookies. All proceeds go to youth ministry.&quot;' : 'name,location,date,time,price,contact,category,zipcode&#10;&quot;Annual Bake Sale&quot;,&quot;First Baptist Church&quot;,2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764'}"></textarea>
     </div>
     <div class="field"><label>Or upload a .csv file</label><input type="file" id="csvFile" accept=".csv,.txt" onchange="handleCSVFile(this)" style="font-size:13px;padding:7px"></div>
     <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -3381,7 +3412,15 @@ function openImportModal(){
   openModal('importModal');
 }
 function downloadTemplate(){
-  const rows=['name,location,date,time,price,contact,category,zipcode,affiliate_url,description','"Annual Bake Sale","First Baptist Church",2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,,"Homemade pies and cookies. All proceeds go to the youth ministry. Free coffee."','"Farmers Market","Main Street",2026-06-20,8:00 AM - Noon,Free,info@market.org,food,43764,,"Local produce, baked goods, crafts. Family friendly. Pet friendly. Free parking on West 3rd."'];
+  const isAdmin = authUser && authUser.is_admin;
+  // For non-admins, use simplified template without admin-only columns
+  const headerRow = isAdmin
+    ? 'name,location,date,time,price,contact,category,zipcode,affiliate_url,description'
+    : 'name,location,date,time,price,contact,category,zipcode';
+  const sampleRows = isAdmin
+    ? ['"Annual Bake Sale","First Baptist Church",2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764,,"Homemade pies and cookies. All proceeds go to the youth ministry. Free coffee."','"Farmers Market","Main Street",2026-06-20,8:00 AM - Noon,Free,info@market.org,food,43764,,"Local produce, baked goods, crafts. Family friendly. Pet friendly. Free parking on West 3rd."']
+    : ['"Annual Bake Sale","First Baptist Church",2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764','"Farmers Market","Main Street",2026-06-20,8:00 AM - Noon,Free,info@market.org,food,43764'];
+  const rows = [headerRow, ...sampleRows];
   const blob=new Blob([rows.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nearandfarevents-template.csv';a.click();
 }
