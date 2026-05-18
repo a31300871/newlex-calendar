@@ -130,6 +130,12 @@ button:active{opacity:.8}
   .hdr-title span[style*='font-size:.6em']{font-size:.55em !important;display:block !important;margin-top:2px}
   .hero,.hero-section,.page-hero{padding-top:14px !important;padding-bottom:14px !important}
   .filter-pills,.fp-row{padding:6px 8px !important;gap:6px !important;margin-bottom:8px !important}
+  /* Filter pills row — compact, single row on mobile */
+  .filter-pills-row{margin-top:8px !important;gap:5px !important}
+  .filter-pills-row .fp{padding:7px 9px !important;font-size:11px !important;min-width:0 !important;flex:1 1 0 !important}
+  .filter-pills-row .fp-icon{font-size:13px}
+  .filter-pills-row .fp-label{font-size:9px !important;letter-spacing:.04em}
+  .filter-pills-row .fp-value{font-size:11px !important;line-height:1.1}
   #hdr{padding:8px 12px 8px}
   .hdr-row1{margin-bottom:8px;min-height:36px}
 }
@@ -502,7 +508,7 @@ button:active{opacity:.8}
 
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
-  :root{--hdr-h:130px;--about-h:0px;--spon-h:80px}
+  :root{--hdr-h:175px;--about-h:0px;--spon-h:80px}
   .hdr-title{font-size:14px}
   #addEventBtn{font-size:12px;padding:7px 11px}
   .user-name{display:none}
