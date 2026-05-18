@@ -1814,7 +1814,7 @@ function showGuestSuccess(email){
       <p style="margin:0 0 10px;font-size:17px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;word-break:break-all">${email}</p>
       <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.55">Click the link in that email to confirm — then your event will go into the moderation queue for quick review. The email also contains a <strong>magic link</strong> to edit or delete your event later (keep it safe!).</p>
     </div>
-    <p style="font-size:12px;color:var(--text3);text-align:center;line-height:1.55">Didn't receive it within a few minutes? Check your spam folder, or contact <a href="mailto:hello@nearandfarevents.com" style="color:var(--amber-dk);font-weight:700">hello@nearandfarevents.com</a>.</p>
+    <p style="font-size:12px;color:var(--text3);text-align:center;line-height:1.55">Didn't receive it within a few minutes? Check your spam folder, or contact <a href="javascript:openSponsorshipModal()" style="color:var(--text3)">💛 Sponsor this calendar</a> &nbsp;·&nbsp; <a href="mailto:hello@nearandfarevents.com" style="color:var(--amber-dk);font-weight:700">hello@nearandfarevents.com</a>.</p>
     <div class="modal-actions" style="margin-top:14px"><button class="btn-amber" style="flex:1" onclick="closeModal('evModal')">Got it</button></div>`;
 }
 
@@ -2186,7 +2186,7 @@ async function refreshAdsList(){
 
 
 // Item 17: Bulk-add businesses (CSV) — admin only
-function openBulkBizModal(){ closeAcctMenu(); document.getElementById('bulkBizErr').textContent=''; document.getElementById('bulkBizResult').innerHTML=''; openModal('bulkBizModal'); }
+// openBulkBizModal removed — admin functionality lives on /admin
 function parseCsvLine(line) {
   const cells = []; let cur = ''; let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
@@ -2203,27 +2203,7 @@ function parseCsvLine(line) {
   cells.push(cur);
   return cells.map(c => c.trim());
 }
-async function doBulkAddBiz(){
-  const csv = document.getElementById('bulkBizCsv').value.trim();
-  if (!csv) { document.getElementById('bulkBizErr').textContent = 'Paste CSV content first.'; return; }
-  const lines = csv.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) { document.getElementById('bulkBizErr').textContent = 'Need at least a header row + 1 data row.'; return; }
-  const cols = ['business_name','category','phone','website','address','description','zipcode'];
-  const listings = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cells = parseCsvLine(lines[i]);
-    const obj = {};
-    cols.forEach((col, idx) => { obj[col] = cells[idx] || ''; });
-    listings.push(obj);
-  }
-  try {
-    const result = await api('/api/admin/listings/bulk', { method: 'POST', body: JSON.stringify({ listings })});
-    let html = '<div style="background:var(--green-lt,#D1FAE5);border:1.5px solid #10B981;color:#065F46;padding:10px 14px;border-radius:var(--r);font-size:13px;font-weight:600">✓ Added ' + result.inserted + ' businesses</div>';
-    if (result.errors?.length) html += '<div style="margin-top:8px;font-size:11px;color:var(--text2)"><strong>Skipped rows:</strong><ul style="margin:4px 0 0 16px">' + result.errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>';
-    document.getElementById('bulkBizResult').innerHTML = html;
-    if (typeof loadEvents === 'function') loadEvents();
-  } catch(e) { document.getElementById('bulkBizErr').textContent = e.message; }
-}
+// doBulkAddBiz removed — admin functionality lives on /admin
 
 // Item 12: Edit Advertiser — opens edit modal pre-populated with current values
 function openEditAdvertiserModal(advId){
@@ -3220,18 +3200,7 @@ function renderEvents(){
   };
   const isAdm=authUser&&authUser.is_admin;
   const canAct=e=>authUser&&(e.added_by===authUser.id||isAdm);
-  // Inject sponsor cards — first card always at top, then every ~20 events
-  let _evCount = 0;
-  let _sponsorIdx = 0;
-  function _getNextSponsorCard() {
-    if (allSponsorships && allSponsorships.length) {
-      const sp = allSponsorships[_sponsorIdx % allSponsorships.length];
-      _sponsorIdx++;
-      return buildSponsorshipCard(sp);
-    }
-    return buildPlaceholderSponsorshipCard();
-  }
-  // Build group HTML pieces (NOT joined yet — we interleave sponsor cards between them)
+  // Build group HTML pieces
   const sortedDates = Object.entries(grp).sort(([a],[b])=>a.localeCompare(b));
   const groupPieces = sortedDates.map(([d,evs])=>{
     const f=fmtD(d);
@@ -3253,17 +3222,7 @@ function renderEvents(){
       </div>
     </div>`;
   });
-  // Compose final HTML: sponsor card at top, then groups, with sponsor cards every ~20 events
-  const parts = [_getNextSponsorCard()];
-  for (let i = 0; i < groupPieces.length; i++) {
-    parts.push(groupPieces[i]);
-    _evCount += sortedDates[i][1].length;
-    if (_evCount >= 20 && i < groupPieces.length - 1) {
-      parts.push(_getNextSponsorCard());
-      _evCount = 0;
-    }
-  }
-  list.innerHTML = parts.join('');
+  list.innerHTML = groupPieces.join('');
 }
 
 /* ── CATEGORY FILTERS ── */
@@ -3737,28 +3696,7 @@ function cookieConsent(action){
 </div>
 
 
-<!-- Item 17: Admin Bulk-Add Businesses Modal -->
-<div id="bulkBizModal" class="modal-bg">
-  <div class="modal" id="bulkBizModalContent">
-    <div class="modal-title">📋 Bulk-Add Businesses (Free Directory)</div>
-    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-left:3px solid var(--amber);border-radius:var(--r);padding:11px 13px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.55">
-      <strong style="color:var(--amber-dk)">CSV columns (in order):</strong> business_name, category, phone, website, address, description, zipcode<br>
-      First row is treated as header and skipped. Zipcode must be 5 digits.
-    </div>
-    <div class="field">
-      <label>Paste CSV here</label>
-      <textarea id="bulkBizCsv" rows="10" style="width:100%;font-family:Menlo,monospace;font-size:12px;padding:10px;border:1.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text)" placeholder="business_name,category,phone,website,address,description,zipcode
-Smith&apos;s Bakery,food,555-1234,smithbakery.com,123 Main St,Best pies in town,43764
-Acme Hardware,retail,,acme.com,,Tools and supplies,43764"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal('bulkBizModal')">Cancel</button>
-      <button class="btn-amber" style="flex:1" onclick="doBulkAddBiz()">📤 Upload</button>
-    </div>
-    <div class="err-msg" id="bulkBizErr"></div>
-    <div id="bulkBizResult" style="margin-top:12px"></div>
-  </div>
-</div>
+
 
 
 <!-- Item 25: Calendar Sponsorship Modal (paid 2-week thank-you placement) -->
