@@ -1408,23 +1408,25 @@ app.post('/api/admin/bulk-remove-by-user', requireAdmin, async (req, res) => {
 // ADMIN DASHBOARD — checklist tasks + live counts
 // ============================================================
 app.get('/api/admin/dashboard', requireAdmin, async (req, res) => {
+  // Each query wrapped — missing tables (calendar_sponsorships, admin_tasks) won't fail the whole endpoint
+  async function safeCount(db, sql) { try { return (await db.get(sql)).c; } catch(_) { return 0; } }
   try {
     const db = await getDb();
-    // Live counts from existing tables
-    const pendingEvents     = (await db.get("SELECT COUNT(*) AS c FROM events WHERE status='pending'")).c;
-    const pendingInsiders   = (await db.get("SELECT COUNT(*) AS c FROM users WHERE town_crier_status='pending'")).c;
-    const pendingListings   = (await db.get("SELECT COUNT(*) AS c FROM listings WHERE status='pending'")).c;
-    const activeBasic       = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='basic'")).c;
-    const activeFeatured    = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='featured'")).c;
-    const activePremium     = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='premium'")).c;
-    const activeSponsorships = (await db.get("SELECT COUNT(*) AS c FROM calendar_sponsorships WHERE status='active' AND datetime(expires_at)>datetime('now')")).c;
-    const recentRemovals    = (await db.get("SELECT COUNT(*) AS c FROM removed_items WHERE datetime(removed_at)>datetime('now','-30 days')")).c;
-    const totalEvents       = (await db.get("SELECT COUNT(*) AS c FROM events WHERE status='approved' AND date>=date('now')")).c;
-    const totalListings     = (await db.get("SELECT COUNT(*) AS c FROM listings WHERE status='active'")).c;
-    const totalUsers        = (await db.get("SELECT COUNT(*) AS c FROM users")).c;
+    const pendingEvents      = await safeCount(db, "SELECT COUNT(*) AS c FROM events WHERE status='pending'");
+    const pendingInsiders    = await safeCount(db, "SELECT COUNT(*) AS c FROM users WHERE town_crier_status='pending'");
+    const pendingListings    = await safeCount(db, "SELECT COUNT(*) AS c FROM listings WHERE status='pending'");
+    const activeBasic        = await safeCount(db, "SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='basic'");
+    const activeFeatured     = await safeCount(db, "SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='featured'");
+    const activePremium      = await safeCount(db, "SELECT COUNT(*) AS c FROM advertisers WHERE status='active' AND tier='premium'");
+    const activeSponsorships = await safeCount(db, "SELECT COUNT(*) AS c FROM calendar_sponsorships WHERE status='active' AND datetime(expires_at)>datetime('now')");
+    const recentRemovals     = await safeCount(db, "SELECT COUNT(*) AS c FROM removed_items WHERE datetime(removed_at)>datetime('now','-30 days')");
+    const totalEvents        = await safeCount(db, "SELECT COUNT(*) AS c FROM events WHERE status='approved' AND date>=date('now')");
+    const totalListings      = await safeCount(db, "SELECT COUNT(*) AS c FROM listings WHERE status='active'");
+    const totalUsers         = await safeCount(db, "SELECT COUNT(*) AS c FROM users");
 
-    // Checklist tasks
-    const tasks = await db.all("SELECT id, category, task_key, title, instructions, priority, completed, completed_at, notes FROM admin_tasks ORDER BY category, priority, id");
+    let tasks = [];
+    try { tasks = await db.all("SELECT id, category, task_key, title, instructions, priority, completed, completed_at, notes FROM admin_tasks ORDER BY category, priority, id"); }
+    catch(_) { tasks = []; } // admin_tasks table may not exist yet on first deploy
 
     res.json({
       counts: {
@@ -1435,7 +1437,10 @@ app.get('/api/admin/dashboard', requireAdmin, async (req, res) => {
       },
       tasks
     });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    console.error('Admin dashboard error:', e);
+    res.status(500).json({ error: 'Dashboard error: ' + e.message });
+  }
 });
 
 // Toggle a checklist task's completed state
