@@ -1841,6 +1841,10 @@ async function doLogin(){
       return;
     }
     setSession(r.token, r.user); closeModal('evModal');
+    // Auto-redirect moderators (non-admin) to their dedicated dashboard
+    if (r.user && r.user.is_moderator && !r.user.is_admin) {
+      setTimeout(() => { window.location.href = '/moderator'; }, 250);
+    }
   } catch(e){
     // 403 with needsVerification flag
     if(e.message && e.message.toLowerCase().includes('verify')){
@@ -3227,7 +3231,7 @@ function renderEvents(){
       </div>
       <div class="events-col">
     ${evs.map(e=>`
-      <div class="erow${e.status==='pending'?' ev-pending':''}" onclick='openEventDetail(${JSON.stringify(e)})'>
+      <div class="erow${e.status==='pending'?' ev-pending':''}" onclick='openEventDetail(${JSON.stringify(e).replace(/'/g, "&#39;")})'>
         <span class="dot" style="background:${cc(e.cat)}"></span>
         <span class="ename">${esc(e.name)}${e.status==='pending'?' <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:100px;font-weight:700;margin-left:6px">⏳ Pending</span>':''}</span>
         <span class="erow-more">more</span>
@@ -3546,7 +3550,7 @@ function openEventDetail(ev) { const _evSaved = isEventSaved(ev.id);
           ` : ''}
           <a class="btn-sm" style="flex:1;min-width:90px;text-align:center;text-decoration:none;background:var(--surface2);color:var(--text);border:1.5px solid var(--border-md)" href="/api/events/${ev.id}/ical">📅 Add to Calendar</a>
           <button class="btn-sm" style="flex:1;min-width:90px;background:var(--surface2);color:var(--text);border-color:var(--border-md)" onclick="toggleSavedEvent(${ev.id}, this)">${_evSaved ? '💛 Saved' : '🤍 Save'}</button>
-          <button class="btn-sm" style="flex:1;min-width:90px;background:var(--surface2);color:var(--text);border-color:var(--border-md)" onclick='shareEvent(${JSON.stringify(ev)})'>↗ Share</button>
+          <button class="btn-sm" style="flex:1;min-width:90px;background:var(--surface2);color:var(--text);border-color:var(--border-md)" onclick='shareEvent(${JSON.stringify(ev).replace(/'/g, "&#39;")})'>↗ Share</button>
         </div>
         ${ev.affiliate_url ? `
           <div style="margin-top:8px;padding:7px 11px;background:var(--surface2);border-radius:6px;font-size:11px;color:var(--text3);line-height:1.45;border-left:3px solid var(--amber)">
