@@ -144,6 +144,46 @@ textarea.notes { width: 100%; padding: 10px 12px; font-size: 13px; font-family: 
   </div>
 </div>
 
+
+<!-- ── Approvals Panel ── -->
+<div id="approvalsModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('approvalsModal')">
+  <div class="modal" style="max-width:720px"><div id="approvalsContent"></div></div>
+</div>
+
+<!-- ── Removed Items Log ── -->
+<div id="removedLogModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('removedLogModal')">
+  <div class="modal" style="max-width:820px"><div id="removedLogContent"></div></div>
+</div>
+
+<!-- ── Manage Business Ads ── -->
+<div id="manageAdsModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('manageAdsModal')">
+  <div class="modal" style="max-width:780px"><div id="manageAdsContent"></div></div>
+</div>
+
+<!-- ── Add Business Ad (Manual) ── -->
+<div id="manualAdModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('manualAdModal')">
+  <div class="modal" style="max-width:540px"><div id="manualAdContent"></div></div>
+</div>
+
+<!-- ── Bulk Remove by User ── -->
+<div id="bulkRemoveModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('bulkRemoveModal')">
+  <div class="modal" style="max-width:680px"><div id="bulkRemoveContent"></div></div>
+</div>
+
+<!-- ── Make Listing State-Wide ── -->
+<div id="statewideListingModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('statewideListingModal')">
+  <div class="modal" style="max-width:580px"><div id="statewideListingContent"></div></div>
+</div>
+
+<!-- ── Make Event State-Wide ── -->
+<div id="statewideEventModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('statewideEventModal')">
+  <div class="modal" style="max-width:580px"><div id="statewideEventContent"></div></div>
+</div>
+
+<!-- ── Generic message popup (toast-like) ── -->
+<div id="adminToast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--surface);padding:11px 22px;border-radius:100px;font-size:13px;font-weight:600;z-index:5000;display:none;box-shadow:0 8px 24px rgba(0,0,0,.25)"></div>
+
+
 <!-- Instructions Modal -->
 <div id="instructionsModal" class="modal-bg" onclick="if(event.target===this)closeModal()">
   <div class="modal">
@@ -191,16 +231,23 @@ function esc(s) { return String(s||'').replace(/[<>&"]/g, c => ({'<':'&lt;','>':
 
 // Dynamic operational tiles (live counts from /api/admin/dashboard)
 const SITE_OPS_TILES = [
-  { key:'pendingEvents',     title:'Pending Event Approvals',   action:{label:'Review',  url:'/?openApprovals=1'}, alertWhen: c=>c>0,  meta:'Events awaiting your OK' },
-  { key:'pendingInsiders',   title:'Pending Local Insider Requests', action:{label:'Review', url:'/?openApprovals=1'}, alertWhen: c=>c>0, meta:'User upgrade requests' },
-  { key:'pendingListings',   title:'Pending Business Listings', action:{label:'Review',  url:'/directory'}, alertWhen: c=>c>0, meta:'Business directory submissions' },
-  { key:'recentRemovals',    title:'Removed Items (last 30d)',  action:{label:'View Log', url:'/?openRemovedLog=1'}, alertWhen: ()=>false, warnWhen: c=>c>0, meta:'Auto-purges at 24 months' },
+  { key:'pendingEvents',     title:'Pending Event Approvals',   action:{label:'Review',  fn:'openApprovalsPanel()'}, alertWhen: c=>c>0, meta:'Events awaiting your OK' },
+  { key:'pendingInsiders',   title:'Pending Local Insider Requests', action:{label:'Review', fn:'openApprovalsPanel()'}, alertWhen: c=>c>0, meta:'User upgrade requests' },
+  { key:'pendingListings',   title:'Pending Business Listings', action:{label:'Review',  fn:'openApprovalsPanel()'}, alertWhen: c=>c>0, meta:'Business directory submissions' },
+  { key:'recentRemovals',    title:'Removed Items (last 30d)',  action:{label:'View Log', fn:'openRemovedLog()'}, alertWhen: ()=>false, warnWhen: c=>c>0, meta:'Auto-purges at 24 months' },
 ];
 const REVENUE_TILES = [
-  { key:'activeBasic',       title:'Active Sponsor Bar Ads',   action:{label:'Manage', url:'/?openManageAds=1'}, goodWhen: c=>c>0, meta:'$25/mo · Bottom banner placements' },
-  { key:'activeFeatured',    title:'Active Featured Directory',action:{label:'Manage', url:'/?openManageAds=1'}, goodWhen: c=>c>0, meta:'$30/mo · Directory top spots' },
-  { key:'activePremium',     title:'Active Premium Popup Ads', action:{label:'Manage', url:'/?openManageAds=1'}, goodWhen: c=>c>0, meta:'$50/mo · Event popup ads (max 5)' },
+  { key:'activeBasic',       title:'Active Sponsor Bar Ads',   action:{label:'Manage', fn:'openManageAdsModal()'}, goodWhen: c=>c>0, meta:'$25/mo · Bottom banner placements' },
+  { key:'activeFeatured',    title:'Active Featured Directory',action:{label:'Manage', fn:'openManageAdsModal()'}, goodWhen: c=>c>0, meta:'$30/mo · Directory top spots' },
+  { key:'activePremium',     title:'Active Premium Popup Ads', action:{label:'Manage', fn:'openManageAdsModal()'}, goodWhen: c=>c>0, meta:'$50/mo · Event popup ads (max 5)' },
   { key:'activeSponsorships',title:'Active Calendar Sponsors', action:null, goodWhen: c=>c>0, meta:'2-week thank-you placements' },
+];
+// Quick action tiles for admin tools that don't have a "count" — always-visible action buttons
+const QUICK_ACTION_TILES = [
+  { title:'📢 Add Business Ad (Manual)',  desc:'Manually add a paid advertiser', fn:'openManualAdvertiser()' },
+  { title:'👤 Bulk Remove by User',       desc:'Find a user, remove all their content', fn:'openBulkRemove()' },
+  { title:'🌎 Make Listing State-Wide',   desc:'Promote a listing across an entire state', fn:'openStatewideListing()' },
+  { title:'📅 Make Event State-Wide',     desc:'Promote an event across an entire state', fn:'openStatewideEvent()' },
 ];
 const STATS_TILES = [
   { key:'totalEvents',       label:'Upcoming Events' },
@@ -270,6 +317,28 @@ function renderDashboard() {
       </div>
     </div>`;
 
+  // Quick Actions section — action-only tiles for admin tools
+  const quickActionsHtml = `
+    <div class="section">
+      <div class="section-head">
+        <span style="font-size:22px">🛠️</span>
+        <h2>Quick Actions</h2>
+        <span class="cat-tag">TOOLS</span>
+        <span class="count">All available admin tools</span>
+      </div>
+      <div class="tile-grid">
+        ${QUICK_ACTION_TILES.map(t => `
+          <div class="tile priority-4">
+            <div class="tile-head">
+              <div class="tile-title">${t.title}</div>
+            </div>
+            <div class="tile-meta">${t.desc}</div>
+            <div class="tile-actions"><button onclick="${t.fn}" class="tile-btn primary">Open →</button></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+
   // Group checklist tasks by category
   const byCategory = {};
   tasks.forEach(t => { (byCategory[t.category] = byCategory[t.category] || []).push(t); });
@@ -291,7 +360,7 @@ function renderDashboard() {
       </div>`;
   }).join('');
 
-  document.getElementById('sectionsContainer').innerHTML = siteOpsHtml + revenueHtml + checklistHtml;
+  document.getElementById('sectionsContainer').innerHTML = siteOpsHtml + revenueHtml + quickActionsHtml + checklistHtml;
 }
 
 function renderLiveTile(t, count) {
@@ -306,7 +375,7 @@ function renderLiveTile(t, count) {
         <div class="tile-count ${countClass}">${count.toLocaleString()}</div>
       </div>
       <div class="tile-meta">${t.meta || ''}</div>
-      ${t.action ? `<div class="tile-actions"><a href="${t.action.url}" class="tile-btn primary">${t.action.label} →</a></div>` : ''}
+      ${t.action ? `<div class="tile-actions"><button onclick="${t.action.fn}" class="tile-btn primary">${t.action.label} →</button></div>` : ''}
     </div>`;
 }
 
@@ -367,6 +436,407 @@ async function toggleFromModal() {
   if (!_currentTask) return;
   await toggleTask(_currentTask.task_key);
   closeModal();
+}
+
+
+
+// ============================================================
+// ADMIN TOOLS — all inline modals + functions (no external page navigation)
+// ============================================================
+function openAdminModal(id) { document.getElementById(id).classList.add('on'); }
+function closeAdminModal(id) { document.getElementById(id).classList.remove('on'); }
+function adminToast(msg, ms) {
+  const el = document.getElementById('adminToast');
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(window._adminToastT);
+  window._adminToastT = setTimeout(() => el.style.display = 'none', ms || 3000);
+}
+
+// ────────────────────────────────────────────────────────────
+// 1. APPROVALS PANEL — events + listings + Local Insider requests
+// ────────────────────────────────────────────────────────────
+async function openApprovalsPanel() {
+  document.getElementById('approvalsContent').innerHTML = '<div class="modal-title">📋 Pending Approvals</div><div style="text-align:center;padding:30px;color:var(--text3)">Loading…</div>';
+  openAdminModal('approvalsModal');
+  try {
+    const data = await api('/api/admin/pending');
+    const evs = data.events || [];
+    const lsts = data.listings || [];
+    const ins = data.insiders || [];
+    const total = evs.length + lsts.length + ins.length;
+    let html = `<div class="modal-title">📋 Pending Approvals <span style="font-size:13px;color:var(--text3);font-weight:500">(${total} total)</span></div>`;
+    if (!total) {
+      html += '<div style="padding:30px;text-align:center;color:var(--text3)">🎉 All caught up. Nothing pending.</div>';
+    } else {
+      // Events
+      if (evs.length) {
+        html += `<div style="margin-bottom:18px"><h3 style="font-family:var(--font-head);font-size:16px;margin-bottom:8px;font-weight:700">📅 Pending Events (${evs.length})</h3>`;
+        html += `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:8px"><input type="checkbox" onchange="selectAllPendingEvs(this.checked)"> Select all events</label>`;
+        evs.forEach(e => {
+          html += `<div style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px">
+            <input type="checkbox" class="adm-ev-cb" data-id="${e.id}" onchange="toggleAdmEvSel(${e.id},this)">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px">${esc(e.name)}</div>
+              <div style="font-size:11px;color:var(--text3)">📅 ${esc(e.date)} · 📍 ${esc(e.location)} · ${esc(e.cat||'other')}${e.statewide_state?' · <strong style="color:var(--amber-dk)">STATE-WIDE: '+esc(e.statewide_state)+'</strong>':' · zip '+esc(e.zipcode||'')}</div>
+            </div>
+            <button onclick="approveItem('event',${e.id})" class="tile-btn" style="background:var(--green-lt);color:var(--green-dk);border-color:var(--green);font-size:11px">✓</button>
+            <button onclick="rejectItem('event',${e.id})" class="tile-btn" style="background:var(--red-lt);color:var(--red-dk);border-color:var(--red);font-size:11px">✗</button>
+          </div>`;
+        });
+        html += `<div id="bulkEvBar" style="display:none;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:8px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700;color:var(--amber-dk)"><span id="bulkEvCount">0</span> selected</span>
+          <button onclick="bulkModerateEvs('approve')" class="tile-btn" style="background:var(--green);color:#fff;border:none;font-size:11px">✓ Approve Selected</button>
+          <button onclick="bulkModerateEvs('reject')" class="tile-btn" style="background:var(--red);color:#fff;border:none;font-size:11px">✗ Reject Selected</button>
+        </div></div>`;
+      }
+      // Listings
+      if (lsts.length) {
+        html += `<div style="margin-bottom:18px"><h3 style="font-family:var(--font-head);font-size:16px;margin-bottom:8px;font-weight:700">🏪 Pending Business Listings (${lsts.length})</h3>`;
+        lsts.forEach(l => {
+          html += `<div style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px">${esc(l.name)}</div>
+              <div style="font-size:11px;color:var(--text3)">${esc(l.category||'')} · zip ${esc(l.zipcode||'')} · ${esc(l.phone||'')} ${esc(l.url||'')}</div>
+            </div>
+            <button onclick="approveItem('listing',${l.id})" class="tile-btn" style="background:var(--green-lt);color:var(--green-dk);border-color:var(--green);font-size:11px">✓</button>
+            <button onclick="rejectItem('listing',${l.id})" class="tile-btn" style="background:var(--red-lt);color:var(--red-dk);border-color:var(--red);font-size:11px">✗</button>
+          </div>`;
+        });
+        html += '</div>';
+      }
+      // Insiders
+      if (ins.length) {
+        html += `<div style="margin-bottom:18px"><h3 style="font-family:var(--font-head);font-size:16px;margin-bottom:8px;font-weight:700">⭐ Local Insider Requests (${ins.length})</h3>`;
+        ins.forEach(u => {
+          html += `<div style="display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px">${esc(u.name)}</div>
+              <div style="font-size:11px;color:var(--text3)">${esc(u.email)} · zip ${esc(u.zipcode||'')}</div>
+              ${u.town_crier_reason ? '<div style="font-size:12px;color:var(--text2);margin-top:4px;font-style:italic">"'+esc(u.town_crier_reason)+'"</div>' : ''}
+            </div>
+            <button onclick="approveItem('insider',${u.id})" class="tile-btn" style="background:var(--green-lt);color:var(--green-dk);border-color:var(--green);font-size:11px">✓</button>
+            <button onclick="rejectItem('insider',${u.id})" class="tile-btn" style="background:var(--red-lt);color:var(--red-dk);border-color:var(--red);font-size:11px">✗</button>
+          </div>`;
+        });
+        html += '</div>';
+      }
+    }
+    html += '<div class="modal-actions"><button class="btn-ghost" onclick="closeAdminModal(\'approvalsModal\')">Close</button></div>';
+    document.getElementById('approvalsContent').innerHTML = html;
+  } catch(e) { document.getElementById('approvalsContent').innerHTML = '<div class="modal-title">Error</div><p>' + esc(e.message) + '</p>'; }
+}
+let _admEvSel = new Set();
+function toggleAdmEvSel(id, cb) {
+  if (cb.checked) _admEvSel.add(id); else _admEvSel.delete(id);
+  const bar = document.getElementById('bulkEvBar');
+  if (!bar) return;
+  bar.style.display = _admEvSel.size ? 'flex' : 'none';
+  document.getElementById('bulkEvCount').textContent = _admEvSel.size;
+}
+function selectAllPendingEvs(checked) {
+  document.querySelectorAll('.adm-ev-cb').forEach(cb => {
+    cb.checked = checked; const id = parseInt(cb.dataset.id, 10);
+    if (checked) _admEvSel.add(id); else _admEvSel.delete(id);
+  });
+  const bar = document.getElementById('bulkEvBar');
+  if (bar) { bar.style.display = _admEvSel.size ? 'flex' : 'none'; document.getElementById('bulkEvCount').textContent = _admEvSel.size; }
+}
+async function bulkModerateEvs(action) {
+  const ids = [..._admEvSel];
+  if (!ids.length) return;
+  let reason = '';
+  if (action === 'reject') { reason = prompt(`Reject ${ids.length} event(s)? Optional reason:`, 'Bulk-rejected'); if (reason === null) return; }
+  else if (!confirm(`Approve ${ids.length} event(s)?`)) return;
+  try {
+    const r = await api('/api/admin/events/bulk-moderate', { method:'POST', body: JSON.stringify({ event_ids:ids, action, reason })});
+    adminToast(`✓ ${r.count} event(s) ${action}d`);
+    _admEvSel.clear();
+    openApprovalsPanel();
+    loadDashboard();
+  } catch(e) { alert(e.message); }
+}
+async function approveItem(type, id) {
+  try {
+    if (type === 'event')   await api(`/api/admin/events/${id}/approve`, { method:'PUT' });
+    if (type === 'listing') await api(`/api/admin/listings/${id}/approve`, { method:'PUT' });
+    if (type === 'insider') await api(`/api/admin/insiders/${id}/approve`, { method:'POST' });
+    adminToast('✓ Approved');
+    openApprovalsPanel(); loadDashboard();
+  } catch(e) { alert(e.message); }
+}
+async function rejectItem(type, id) {
+  const reason = prompt('Reason for rejection (optional):', '');
+  if (reason === null) return;
+  try {
+    if (type === 'event')   await api(`/api/admin/events/${id}`, { method:'DELETE', body: JSON.stringify({ reason })});
+    if (type === 'listing') await api(`/api/admin/listings/${id}`, { method:'DELETE', body: JSON.stringify({ reason })});
+    if (type === 'insider') await api(`/api/admin/insiders/${id}/reject`, { method:'POST', body: JSON.stringify({ reason })});
+    adminToast('✓ Rejected');
+    openApprovalsPanel(); loadDashboard();
+  } catch(e) { alert(e.message); }
+}
+
+// ────────────────────────────────────────────────────────────
+// 2. REMOVED ITEMS LOG
+// ────────────────────────────────────────────────────────────
+async function openRemovedLog() {
+  document.getElementById('removedLogContent').innerHTML = '<div class="modal-title">📜 Removed Items Log</div><div style="text-align:center;padding:30px;color:var(--text3)">Loading…</div>';
+  openAdminModal('removedLogModal');
+  try {
+    const items = await api('/api/admin/removed-items');
+    let html = `<div class="modal-title">📜 Removed Items Log <span style="font-size:13px;color:var(--text3);font-weight:500">(${items.length} items, last 24 months)</span></div>
+      <div style="margin-bottom:12px"><a href="/api/admin/removed-items/export.csv?token=${TOKEN}" download class="tile-btn primary" style="text-decoration:none;display:inline-block">⬇ Export CSV</a></div>`;
+    if (!items.length) {
+      html += '<div style="padding:30px;text-align:center;color:var(--text3)">Nothing removed yet.</div>';
+    } else {
+      html += '<div style="max-height:60vh;overflow-y:auto">';
+      items.forEach(r => {
+        html += `<div style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:12px">
+          <div style="display:flex;justify-content:space-between;gap:8px"><strong>${esc(r.item_type)}: ${esc(r.item_name)}</strong><span style="color:var(--text3)">${esc(r.removed_at)}</span></div>
+          <div style="color:var(--text3);margin-top:2px">Owner: ${esc(r.owner_name||'')} (${esc(r.owner_email||'')}) · Removed by: ${esc(r.removed_by_name||'')}</div>
+          ${r.reason ? `<div style="color:var(--text2);margin-top:4px;font-style:italic">Reason: ${esc(r.reason)}</div>` : ''}
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '<div class="modal-actions"><button class="btn-ghost" onclick="closeAdminModal(\'removedLogModal\')">Close</button></div>';
+    document.getElementById('removedLogContent').innerHTML = html;
+  } catch(e) { document.getElementById('removedLogContent').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
+
+// ────────────────────────────────────────────────────────────
+// 3. MANAGE BUSINESS ADS
+// ────────────────────────────────────────────────────────────
+async function openManageAdsModal() {
+  document.getElementById('manageAdsContent').innerHTML = '<div class="modal-title">🛠 Manage Business Ads</div><div style="text-align:center;padding:30px;color:var(--text3)">Loading…</div>';
+  openAdminModal('manageAdsModal');
+  try {
+    const ads = await api('/api/admin/advertisers');
+    let html = `<div class="modal-title">🛠 Manage Business Ads <span style="font-size:13px;color:var(--text3);font-weight:500">(${ads.length} total)</span></div>`;
+    if (!ads.length) {
+      html += '<div style="padding:30px;text-align:center;color:var(--text3)">No business ads yet. Use "Add Business Ad" to create the first one.</div>';
+    } else {
+      html += '<div style="max-height:60vh;overflow-y:auto">';
+      ads.forEach(a => {
+        const tier = a.tier || 'basic';
+        const tierLbl = tier === 'premium' ? '🎯 Premium $50' : tier === 'featured' ? '⭐ Featured $30' : '📢 Basic $25';
+        const status = a.status || 'pending';
+        const statusColor = status === 'active' ? 'var(--green-dk)' : status === 'pending' ? 'var(--amber-dk)' : 'var(--text3)';
+        const url = a.url ? (a.url.startsWith('http') ? a.url : 'https://' + a.url) : '';
+        html += `<div style="padding:12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:14px">${esc(a.name)}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">${tierLbl} · <span style="color:${statusColor};font-weight:700">${esc(status.toUpperCase())}</span> · ${a.statewide_state?'STATE: '+esc(a.statewide_state):'zip '+esc(a.zipcode||'')}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:6px">${esc(a.email||'')} ${a.phone?'· '+esc(a.phone):''} ${url?'· <a href="'+esc(url)+'" target="_blank" style="color:var(--indigo)">website ↗</a>':''}</div>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button onclick="editAd(${a.id})" class="tile-btn" style="font-size:11px">Edit</button>
+              <button onclick="deleteAd(${a.id},'${esc(a.name).replace(/'/g,"&#39;")}')" class="tile-btn" style="font-size:11px;background:var(--red-lt);color:var(--red-dk);border-color:var(--red)">Delete</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '<div class="modal-actions"><button class="btn-amber" onclick="closeAdminModal(\'manageAdsModal\');openManualAdvertiser()">+ Add Business Ad</button><button class="btn-ghost" onclick="closeAdminModal(\'manageAdsModal\')">Close</button></div>';
+    document.getElementById('manageAdsContent').innerHTML = html;
+  } catch(e) { document.getElementById('manageAdsContent').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
+async function editAd(id) {
+  try {
+    const a = await api('/api/admin/advertisers/' + id);
+    document.getElementById('manualAdContent').innerHTML = renderAdForm('Edit Business Ad', a, true);
+    closeAdminModal('manageAdsModal');
+    openAdminModal('manualAdModal');
+  } catch(e) { alert(e.message); }
+}
+async function deleteAd(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  try {
+    await api('/api/admin/advertisers/' + id, { method:'DELETE' });
+    adminToast('✓ Deleted');
+    openManageAdsModal(); loadDashboard();
+  } catch(e) { alert(e.message); }
+}
+
+// ────────────────────────────────────────────────────────────
+// 4. ADD BUSINESS AD (MANUAL)
+// ────────────────────────────────────────────────────────────
+function openManualAdvertiser() {
+  document.getElementById('manualAdContent').innerHTML = renderAdForm('Add Business Ad', null, false);
+  openAdminModal('manualAdModal');
+}
+function renderAdForm(title, existing, isEdit) {
+  const a = existing || {};
+  return `<div class="modal-title">${title}</div>
+    <div style="font-size:12.5px;color:var(--text2);margin-bottom:14px">Manually add a paid advertiser (e.g., for customers who paid by cash/check or were comped).</div>
+    <div class="field"><label>Tier</label>
+      <select id="adTier" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)">
+        <option value="basic"${a.tier==='basic'?' selected':''}>📢 Basic $25/mo — Sponsor Bar</option>
+        <option value="featured"${a.tier==='featured'?' selected':''}>⭐ Featured $30/mo — Directory</option>
+        <option value="premium"${a.tier==='premium'?' selected':''}>🎯 Premium $50/mo — Event Popup</option>
+      </select>
+    </div>
+    <div class="field"><label>Business Name <span style="color:var(--red)">*</span></label><input id="adName" value="${esc(a.name||'')}" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <div class="field"><label>Email <span style="color:var(--red)">*</span></label><input id="adEmail" type="email" value="${esc(a.email||'')}" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <div class="field"><label>Phone</label><input id="adPhone" value="${esc(a.phone||'')}" placeholder="(555) 555-5555" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <div class="field"><label>Website</label><input id="adUrl" value="${esc(a.url||'')}" placeholder="example.com" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <div class="field"><label>Address (optional)</label><input id="adAddress" value="${esc(a.address||'')}" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <div class="field"><label>Description / Tagline</label><textarea id="adDesc" rows="3" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body);resize:vertical">${esc(a.description||a.tagline||'')}</textarea></div>
+    <div class="field"><label>Target Zipcode <span style="color:var(--red)">*</span> <span style="font-size:11px;color:var(--text3);font-weight:400">— or use state-wide below</span></label><input id="adZip" value="${esc(a.zipcode||'')}" maxlength="5" placeholder="43764" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <div class="field"><label>State-Wide (2-letter code, e.g. OH) — overrides zipcode</label><input id="adState" value="${esc(a.statewide_state||'')}" maxlength="2" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <div class="field"><label>Status</label>
+      <select id="adStatus" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)">
+        <option value="active"${a.status==='active'||!a.status?' selected':''}>Active</option>
+        <option value="pending"${a.status==='pending'?' selected':''}>Pending</option>
+        <option value="canceled"${a.status==='canceled'?' selected':''}>Canceled</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeAdminModal('manualAdModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="saveManualAd(${isEdit ? a.id : 'null'})">${isEdit?'Save Changes':'Add Business Ad'} →</button>
+    </div>
+    <div id="adErr" style="color:var(--red);font-size:13px;margin-top:8px"></div>`;
+}
+async function saveManualAd(id) {
+  const errEl = document.getElementById('adErr'); errEl.textContent = '';
+  const payload = {
+    tier: document.getElementById('adTier').value,
+    name: document.getElementById('adName').value.trim(),
+    email: document.getElementById('adEmail').value.trim(),
+    phone: document.getElementById('adPhone').value.trim(),
+    url: document.getElementById('adUrl').value.trim(),
+    address: document.getElementById('adAddress').value.trim(),
+    description: document.getElementById('adDesc').value.trim(),
+    zipcode: document.getElementById('adZip').value.trim(),
+    statewide_state: document.getElementById('adState').value.trim().toUpperCase(),
+    status: document.getElementById('adStatus').value,
+  };
+  if (!payload.name || !payload.email) { errEl.textContent = 'Business name and email are required.'; return; }
+  if (!payload.zipcode && !payload.statewide_state) { errEl.textContent = 'Either zipcode or state-wide state is required.'; return; }
+  try {
+    if (id) await api('/api/admin/advertisers/' + id, { method:'PUT', body: JSON.stringify(payload) });
+    else    await api('/api/admin/advertisers/manual', { method:'POST', body: JSON.stringify(payload) });
+    adminToast('✓ Saved');
+    closeAdminModal('manualAdModal');
+    openManageAdsModal(); loadDashboard();
+  } catch(e) { errEl.textContent = e.message; }
+}
+
+// ────────────────────────────────────────────────────────────
+// 5. BULK REMOVE BY USER
+// ────────────────────────────────────────────────────────────
+function openBulkRemove() {
+  document.getElementById('bulkRemoveContent').innerHTML = `
+    <div class="modal-title">👤 Bulk Remove by User</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Find a user by email and remove all events + listings they posted. Useful when spam slips through.</p>
+    <div class="field"><label>User Email</label><input id="brEmail" type="email" placeholder="user@example.com" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)"></div>
+    <button onclick="loadUserItems()" class="btn-amber" style="width:100%">Find User's Posts →</button>
+    <div id="brResults" style="margin-top:14px"></div>
+    <div class="modal-actions"><button class="btn-ghost" onclick="closeAdminModal('bulkRemoveModal')">Close</button></div>`;
+  openAdminModal('bulkRemoveModal');
+}
+async function loadUserItems() {
+  const email = document.getElementById('brEmail').value.trim();
+  if (!email) return;
+  try {
+    const data = await api('/api/admin/user-items?email=' + encodeURIComponent(email));
+    let html = `<div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"><strong>${esc(data.user?.name||'Unknown user')}</strong> · ${esc(data.user?.email||email)}<br><span style="color:var(--text3);font-size:12px">${data.events.length} event(s), ${data.listings.length} listing(s)</span></div>`;
+    if (data.events.length || data.listings.length) {
+      html += `<button onclick="bulkRemoveByUser('${esc(email)}')" class="btn-amber" style="width:100%;margin-top:10px;background:var(--red);color:#fff">🗑 Remove ALL of this user's posts</button>`;
+    }
+    document.getElementById('brResults').innerHTML = html;
+  } catch(e) { document.getElementById('brResults').innerHTML = '<p style="color:var(--red);font-size:13px">' + esc(e.message) + '</p>'; }
+}
+async function bulkRemoveByUser(email) {
+  const reason = prompt('Reason for bulk removal (for the audit log):', 'Spam');
+  if (reason === null) return;
+  if (!confirm(`Permanently remove ALL events + listings from ${email}? This cannot be undone.`)) return;
+  try {
+    const r = await api('/api/admin/bulk-remove-by-user', { method:'POST', body: JSON.stringify({ email, reason })});
+    adminToast(`✓ Removed ${r.events_removed} event(s) + ${r.listings_removed} listing(s)`);
+    closeAdminModal('bulkRemoveModal');
+    loadDashboard();
+  } catch(e) { alert(e.message); }
+}
+
+// ────────────────────────────────────────────────────────────
+// 6 + 7. STATE-WIDE LISTINGS + EVENTS
+// ────────────────────────────────────────────────────────────
+function openStatewideListing() {
+  document.getElementById('statewideListingContent').innerHTML = `
+    <div class="modal-title">🌎 Make Listing State-Wide</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Promote a listing to show in EVERY zipcode in a state.</p>
+    <div class="field"><label>Listing ID or search by name</label><input id="swlSearch" placeholder="Type listing name or ID" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)" oninput="searchListingsForSW()"></div>
+    <div id="swlResults" style="max-height:200px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="field"><label>State (2-letter code, e.g. OH)</label><input id="swlState" maxlength="2" placeholder="OH" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body);text-transform:uppercase"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeAdminModal('statewideListingModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="applyStatewideListing()">Make State-Wide →</button>
+    </div>
+    <div id="swlErr" style="color:var(--red);font-size:13px;margin-top:8px"></div>`;
+  openAdminModal('statewideListingModal');
+}
+let _swlSelectedId = null;
+async function searchListingsForSW() {
+  const q = document.getElementById('swlSearch').value.trim();
+  if (q.length < 2) { document.getElementById('swlResults').innerHTML = ''; return; }
+  try {
+    const items = await api('/api/admin/listings?search=' + encodeURIComponent(q));
+    document.getElementById('swlResults').innerHTML = (items || []).slice(0, 8).map(l => `
+      <div onclick="_swlSelectedId=${l.id};document.getElementById('swlSearch').value='${esc(l.name).replace(/'/g,"&#39;")}';document.getElementById('swlResults').innerHTML=''" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:12px" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='var(--surface)'">
+        <strong>${esc(l.name)}</strong> (#${l.id}) · ${esc(l.zipcode||'')} ${l.statewide_state?'<strong style="color:var(--amber-dk)">[STATE: '+esc(l.statewide_state)+']</strong>':''}
+      </div>`).join('');
+  } catch(e){}
+}
+async function applyStatewideListing() {
+  const state = document.getElementById('swlState').value.trim().toUpperCase();
+  if (!_swlSelectedId) { document.getElementById('swlErr').textContent = 'Please pick a listing from the search.'; return; }
+  if (!/^[A-Z]{2}$/.test(state)) { document.getElementById('swlErr').textContent = 'Please enter a valid 2-letter state code.'; return; }
+  try {
+    await api(`/api/admin/listings/${_swlSelectedId}/statewide`, { method:'PUT', body: JSON.stringify({ state })});
+    adminToast(`✓ Listing now state-wide in ${state}`);
+    closeAdminModal('statewideListingModal'); _swlSelectedId = null;
+  } catch(e) { document.getElementById('swlErr').textContent = e.message; }
+}
+
+function openStatewideEvent() {
+  document.getElementById('statewideEventContent').innerHTML = `
+    <div class="modal-title">📅 Make Event State-Wide</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Promote an event to show in EVERY zipcode in a state.</p>
+    <div class="field"><label>Event ID or search by name</label><input id="sweSearch" placeholder="Type event name or ID" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body)" oninput="searchEventsForSW()"></div>
+    <div id="sweResults" style="max-height:200px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="field"><label>State (2-letter code)</label><input id="sweState" maxlength="2" placeholder="OH" style="width:100%;padding:9px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:var(--font-body);text-transform:uppercase"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeAdminModal('statewideEventModal')">Cancel</button>
+      <button class="btn-amber" style="flex:1" onclick="applyStatewideEvent()">Make State-Wide →</button>
+    </div>
+    <div id="sweErr" style="color:var(--red);font-size:13px;margin-top:8px"></div>`;
+  openAdminModal('statewideEventModal');
+}
+let _sweSelectedId = null;
+async function searchEventsForSW() {
+  const q = document.getElementById('sweSearch').value.trim();
+  if (q.length < 2) { document.getElementById('sweResults').innerHTML = ''; return; }
+  try {
+    const items = await api('/api/admin/events/search?q=' + encodeURIComponent(q));
+    document.getElementById('sweResults').innerHTML = (items || []).slice(0, 8).map(e => `
+      <div onclick="_sweSelectedId=${e.id};document.getElementById('sweSearch').value='${esc(e.name).replace(/'/g,"&#39;")}';document.getElementById('sweResults').innerHTML=''" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:12px" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='var(--surface)'">
+        <strong>${esc(e.name)}</strong> (#${e.id}) · ${esc(e.date)} · ${esc(e.zipcode||'')} ${e.statewide_state?'<strong style="color:var(--amber-dk)">[STATE: '+esc(e.statewide_state)+']</strong>':''}
+      </div>`).join('');
+  } catch(err){}
+}
+async function applyStatewideEvent() {
+  const state = document.getElementById('sweState').value.trim().toUpperCase();
+  if (!_sweSelectedId) { document.getElementById('sweErr').textContent = 'Please pick an event from the search.'; return; }
+  if (!/^[A-Z]{2}$/.test(state)) { document.getElementById('sweErr').textContent = 'Please enter a valid 2-letter state code.'; return; }
+  try {
+    await api(`/api/admin/events/${_sweSelectedId}/statewide`, { method:'PUT', body: JSON.stringify({ state })});
+    adminToast(`✓ Event now state-wide in ${state}`);
+    closeAdminModal('statewideEventModal'); _sweSelectedId = null;
+    loadDashboard();
+  } catch(e) { document.getElementById('sweErr').textContent = e.message; }
 }
 
 // Boot
