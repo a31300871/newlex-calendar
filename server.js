@@ -1404,6 +1404,267 @@ app.post('/api/admin/bulk-remove-by-user', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// ============================================================
+// MODERATOR ROLE — middleware + endpoints
+// ============================================================
+function requireModerator(req, res, next) {
+  requireAuth(req, res, () => {
+    if (!req.user.is_admin && !req.user.is_moderator) return res.status(403).json({ error: 'Moderator access required.' });
+    next();
+  });
+}
+
+// Combined pending queue for mod review (same as admin's but mod-permission)
+app.get('/api/mod/pending', requireModerator, async (req, res) => {
+  try {
+    const db = await getDb();
+    const events   = await db.all("SELECT id, name, location, date, cat, zipcode, statewide_state, added_by, contact FROM events WHERE status='pending' ORDER BY id DESC LIMIT 200");
+    const listings = await db.all("SELECT id, business_name AS name, category, zipcode, statewide_state, phone, website FROM listings WHERE status='pending' ORDER BY id DESC LIMIT 200");
+    const insiders = await db.all("SELECT id, name, email, zipcode, town_crier_reason FROM users WHERE town_crier_status='pending' ORDER BY id DESC LIMIT 200");
+    res.json({ events, listings, insiders });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Approve event (mod path)
+app.post('/api/mod/events/:id/approve', requireModerator, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE events SET status='approved', approved_by=? WHERE id=?", [req.user.id, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reject event (mod path — logs to removed_items with reason)
+app.post('/api/mod/events/:id/reject', requireModerator, async (req, res) => {
+  try {
+    const { reason } = req.body || {};
+    const db = await getDb();
+    const ev = await db.get("SELECT id, name, date, zipcode, added_by FROM events WHERE id=? AND status='pending'", [req.params.id]);
+    if (!ev) return res.status(404).json({ error: 'Event not found or not pending.' });
+    const owner = await db.get("SELECT name, email FROM users WHERE id=?", [ev.added_by]);
+    await db.run("INSERT INTO removed_items (item_type, original_id, item_name, item_date, item_zipcode, owner_user_id, owner_name, owner_email, removed_by, removed_by_name, reason) VALUES ('event',?,?,?,?,?,?,?,?,?,?)",
+      [ev.id, ev.name, ev.date, ev.zipcode, ev.added_by, owner?.name||'', owner?.email||'', req.user.id, req.user.name, (reason||'Rejected by moderator').slice(0,500)]);
+    await db.run("DELETE FROM events WHERE id=?", [ev.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Approve / reject listing (mod path)
+app.post('/api/mod/listings/:id/approve', requireModerator, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE listings SET status='active', approved_by=? WHERE id=?", [req.user.id, req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/mod/listings/:id/reject', requireModerator, async (req, res) => {
+  try {
+    const { reason } = req.body || {};
+    const db = await getDb();
+    const l = await db.get("SELECT id, business_name, zipcode, added_by FROM listings WHERE id=? AND status='pending'", [req.params.id]);
+    if (!l) return res.status(404).json({ error: 'Listing not found or not pending.' });
+    const owner = await db.get("SELECT name, email FROM users WHERE id=?", [l.added_by]);
+    await db.run("INSERT INTO removed_items (item_type, original_id, item_name, item_zipcode, owner_user_id, owner_name, owner_email, removed_by, removed_by_name, reason) VALUES ('listing',?,?,?,?,?,?,?,?,?)",
+      [l.id, l.business_name, l.zipcode, l.added_by, owner?.name||'', owner?.email||'', req.user.id, req.user.name, (reason||'Rejected by moderator').slice(0,500)]);
+    await db.run("DELETE FROM listings WHERE id=?", [l.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Approve / reject Local Insider request (mod path)
+app.post('/api/mod/insiders/:id/approve', requireModerator, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE users SET town_crier_status='approved', is_town_crier=1 WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/mod/insiders/:id/reject', requireModerator, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE users SET town_crier_status='rejected', is_town_crier=0 WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Rejection reason templates (per moderator)
+app.get('/api/mod/rejection-templates', requireModerator, async (req, res) => {
+  try {
+    const db = await getDb();
+    let rows = await db.all("SELECT id, label, text FROM mod_rejection_templates WHERE user_id=? ORDER BY id ASC", [req.user.id]);
+    // Seed with sensible defaults if empty
+    if (!rows.length) {
+      const defaults = [
+        ['Spam',              'This submission appears to be spam or promotional content unrelated to local community events.'],
+        ['Duplicate',         'An event matching this description has already been submitted.'],
+        ['Missing details',   'Submission is missing key details (date, location, or accurate description). Please resubmit with complete information.'],
+        ['Off-topic',         'This event/business doesn\'t match the focus of our community calendar.'],
+        ['Inappropriate',     'This submission doesn\'t meet our community guidelines.'],
+      ];
+      for (const [label, text] of defaults) {
+        await db.run("INSERT INTO mod_rejection_templates (user_id, label, text) VALUES (?,?,?)", [req.user.id, label, text]);
+      }
+      rows = await db.all("SELECT id, label, text FROM mod_rejection_templates WHERE user_id=? ORDER BY id ASC", [req.user.id]);
+    }
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/mod/rejection-templates', requireModerator, async (req, res) => {
+  try {
+    const { label, text } = req.body || {};
+    if (!label?.trim() || !text?.trim()) return res.status(400).json({ error: 'Label and text required.' });
+    const db = await getDb();
+    const r = await db.run("INSERT INTO mod_rejection_templates (user_id, label, text) VALUES (?,?,?)",
+      [req.user.id, label.trim().slice(0,80), text.trim().slice(0,500)]);
+    res.json({ id: r.lastID, label: label.trim(), text: text.trim() });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/mod/rejection-templates/:id', requireModerator, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("DELETE FROM mod_rejection_templates WHERE id=? AND user_id=?", [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Flag an item for admin review (escalation)
+app.post('/api/mod/flag', requireModerator, async (req, res) => {
+  try {
+    const { item_type, item_id, item_name, note } = req.body || {};
+    if (!item_type || !item_id) return res.status(400).json({ error: 'item_type and item_id required.' });
+    const db = await getDb();
+    await db.run("INSERT INTO mod_flagged_items (item_type, item_id, item_name, flagged_by, flagged_by_name, note) VALUES (?,?,?,?,?,?)",
+      [item_type, item_id, (item_name||'').slice(0,200), req.user.id, req.user.name, (note||'').slice(0,500)]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN-ONLY moderator management ──
+app.get('/api/admin/moderators', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const mods = await db.all("SELECT id, name, email, is_admin, is_moderator FROM users WHERE is_moderator=1 OR is_admin=1 ORDER BY is_admin DESC, name ASC");
+    // Augment with activity counts
+    for (const m of mods) {
+      const approvedEvents   = (await db.get("SELECT COUNT(*) AS c FROM events WHERE approved_by=?", [m.id])).c;
+      const approvedListings = (await db.get("SELECT COUNT(*) AS c FROM listings WHERE approved_by=?", [m.id])).c;
+      const rejections       = (await db.get("SELECT COUNT(*) AS c FROM removed_items WHERE removed_by=?", [m.id])).c;
+      m.approved_count = approvedEvents + approvedListings;
+      m.rejected_count = rejections;
+    }
+    res.json(mods);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/moderators/promote', requireAdmin, async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email?.trim()) return res.status(400).json({ error: 'Email required.' });
+    const db = await getDb();
+    const u = await db.get("SELECT id, name, is_moderator, is_admin FROM users WHERE LOWER(email)=LOWER(?)", [email.trim()]);
+    if (!u) return res.status(404).json({ error: 'No user with that email. They must register an account first.' });
+    if (u.is_admin) return res.status(409).json({ error: u.name + ' is already an admin (which includes moderator powers).' });
+    if (u.is_moderator) return res.status(409).json({ error: u.name + ' is already a moderator.' });
+    await db.run("UPDATE users SET is_moderator=1 WHERE id=?", [u.id]);
+    res.json({ success: true, user: { id: u.id, name: u.name }});
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/moderators/:id/demote', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE users SET is_moderator=0 WHERE id=? AND is_admin=0", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── ADMIN-ONLY flagged items queue (the escalation endpoint) ──
+app.get('/api/admin/flagged-items', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all("SELECT * FROM mod_flagged_items WHERE resolved=0 ORDER BY created_at DESC LIMIT 200");
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/flagged-items/:id/resolve', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE mod_flagged_items SET resolved=1, resolved_at=datetime('now') WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Update /me endpoint to include is_moderator in user payload
+
+
+// ── Pre-launch checklist: real-time status of env vars + content seed ──
+app.get('/api/admin/launch-checklist', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    // Env var checks
+    const jwt_secret_set      = !!process.env.JWT_SECRET && process.env.JWT_SECRET !== 'newlex-secret-change-me';
+    const resend_set          = !!process.env.RESEND_API_KEY;
+    const stripe_key_set      = !!process.env.STRIPE_SECRET_KEY;
+    const stripe_basic_set    = !!process.env.STRIPE_PRICE_ID;
+    const stripe_featured_set = !!process.env.STRIPE_PRICE_FEATURED;
+    const stripe_premium_set  = !!process.env.STRIPE_PRICE_PREMIUM;
+    const site_url_set        = !!process.env.SITE_URL;
+    const ga_real             = !!process.env.GA_MEASUREMENT_ID;
+    // Content seed checks
+    const eventCount    = (await db.get("SELECT COUNT(*) AS c FROM events WHERE status='approved' AND date>=date('now')").catch(()=>({c:0}))).c;
+    const listingCount  = (await db.get("SELECT COUNT(*) AS c FROM listings WHERE status='active'").catch(()=>({c:0}))).c;
+    const userCount     = (await db.get("SELECT COUNT(*) AS c FROM users").catch(()=>({c:0}))).c;
+    const adminCount    = (await db.get("SELECT COUNT(*) AS c FROM users WHERE is_admin=1").catch(()=>({c:0}))).c;
+
+    const items = [
+      // CRITICAL — must be done before launch
+      { key:'jwt_secret',      label:'JWT_SECRET environment variable',          status: jwt_secret_set ? 'ok' : 'critical', tier:'critical',
+        help: 'Generate with: openssl rand -hex 32 — then set as JWT_SECRET in Render → Environment. Without this, default value is vulnerable.' },
+      { key:'stripe_key',      label:'Stripe secret key',                         status: stripe_key_set ? 'ok' : 'critical', tier:'critical',
+        help: 'Set STRIPE_SECRET_KEY in Render env vars. Without this, all payment flows fail.' },
+      { key:'resend',          label:'Resend email API',                          status: resend_set ? 'ok' : 'critical', tier:'critical',
+        help: 'Sign up at resend.com (free tier). Add domain, verify DNS, set RESEND_API_KEY in Render. Required for user verification emails.' },
+      { key:'site_url',        label:'SITE_URL environment variable',             status: site_url_set ? 'ok' : 'warning', tier:'critical',
+        help: 'Set SITE_URL to https://www.nearandfarevents.com in Render. Used for Stripe redirect URLs + email links.' },
+
+      // STRIPE PRICES — needed for paid tiers to function
+      { key:'stripe_basic',    label:'Basic tier price ($25/mo)',                 status: stripe_basic_set ? 'ok' : 'warning', tier:'stripe',
+        help: 'Create Stripe Product → "Sponsor Bar — $25/mo" → copy price ID → set STRIPE_PRICE_ID in Render.' },
+      { key:'stripe_featured', label:'Featured tier price ($30/mo)',              status: stripe_featured_set ? 'ok' : 'warning', tier:'stripe',
+        help: 'Create Stripe Product → "Featured Directory — $30/mo" → copy price ID → set STRIPE_PRICE_FEATURED in Render. Without this, Featured tier purchases silently fail.' },
+      { key:'stripe_premium',  label:'Premium tier price ($50/mo)',               status: stripe_premium_set ? 'ok' : 'warning', tier:'stripe',
+        help: 'Create Stripe Product → "Event Popup Ad — $50/mo" → copy price ID → set STRIPE_PRICE_PREMIUM in Render.' },
+
+      // OPTIONAL
+      { key:'ga_real',         label:'Real Google Analytics ID (optional)',       status: ga_real ? 'ok' : 'info', tier:'optional',
+        help: 'Replace placeholder G-XXXXXXXXXX with real Measurement ID, or switch to Plausible ($9/mo).' },
+
+      // CONTENT SEED — what visitors actually see
+      { key:'events_seeded',   label:'At least 20 upcoming events visible',       status: eventCount >= 20 ? 'ok' : eventCount >= 5 ? 'warning' : 'critical', tier:'content',
+        meta: `Currently: ${eventCount}`, help: 'Bulk-import events from local sources (church bulletins, library calendars, school district sites). Visitors who land on an empty calendar bounce immediately.' },
+      { key:'listings_seeded', label:'At least 10 business listings',             status: listingCount >= 10 ? 'ok' : listingCount >= 3 ? 'warning' : 'critical', tier:'content',
+        meta: `Currently: ${listingCount}`, help: 'Personally onboard local businesses you know. Use Directory → + List Business. Free for them; takes 2 minutes each.' },
+      { key:'admin_count',     label:'Admin account exists',                      status: adminCount >= 1 ? 'ok' : 'critical', tier:'content',
+        meta: `Currently: ${adminCount} admin(s)`, help: 'Make sure your account has is_admin=1 in the database. Without an admin, the site cannot be moderated.' },
+    ];
+
+    const counts = {
+      ok:       items.filter(i => i.status === 'ok').length,
+      warning:  items.filter(i => i.status === 'warning').length,
+      critical: items.filter(i => i.status === 'critical').length,
+      info:     items.filter(i => i.status === 'info').length,
+      total:    items.length,
+    };
+    const launchReady = counts.critical === 0 && counts.warning === 0;
+    res.json({ items, counts, launchReady, content: { events: eventCount, listings: listingCount, users: userCount } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+
 // ============================================================
 // ADMIN DASHBOARD — checklist tasks + live counts
 // ============================================================
@@ -1676,11 +1937,18 @@ app.post('/api/advertiser/register', async (req, res) => {
     const zipClean = (zipcode || '').toString().trim();
     if (!zipClean || zipClean.length !== 5) return res.status(400).json({ error: 'A 5-digit target zipcode is required so we know where to show your ad.' });
     const db = await getDb();
-    if (await db.get('SELECT id FROM advertisers WHERE email=?', [email.toLowerCase()]))
-      return res.status(409).json({ error: 'That email is already registered.' });
-    // Enforce 5-spot limit for event popup ads
-    const activeCount = (await db.get("SELECT COUNT(*) AS c FROM advertisers WHERE status='active'")).c;
-    const hash = bcrypt.hashSync(password, 10);
+    // Multiple ads per email allowed — but if email exists, verify password matches an existing row
+    const existing = await db.get('SELECT id, password_hash, name, business_name FROM advertisers WHERE email=? ORDER BY id ASC LIMIT 1', [email.toLowerCase()]);
+    let hash;
+    if (existing) {
+      // Email exists — this must be an authenticated attempt with correct password
+      if (!bcrypt.compareSync(password, existing.password_hash)) {
+        return res.status(409).json({ error: 'That email is already registered. Sign in to add more ads to your account.' });
+      }
+      hash = existing.password_hash; // reuse same hash so all rows for same email match
+    } else {
+      hash = bcrypt.hashSync(password, 10);
+    }
     const r = await db.run(
       'INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url,phone,zipcode) VALUES (?,?,?,?,?,?,?,?)',
       [name.trim(), email.toLowerCase(), hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'', zipClean]
@@ -1723,6 +1991,54 @@ app.put('/api/advertiser/me', requireAdvertiser, async (req, res) => {
     res.json(safeAdv(adv));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+
+// Multiple-ads-per-account: list ALL ads belonging to the logged-in advertiser's email
+app.get('/api/advertiser/my-ads', requireAdvertiser, async (req, res) => {
+  try {
+    const db = await getDb();
+    const rows = await db.all(
+      'SELECT id,business_name,tagline,url,phone,tier,status,zipcode,statewide_state,address,description,stripe_subscription_id,created_at FROM advertisers WHERE email=? ORDER BY created_at DESC',
+      [req.advertiser.email]
+    );
+    res.json(rows.map(r => safeAdv(r)));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Create a new ad for an existing logged-in advertiser (reuses email + password)
+app.post('/api/advertiser/new-ad', requireAdvertiser, async (req, res) => {
+  try {
+    const { business_name, tagline, url, phone, zipcode, address, description } = req.body || {};
+    if (!business_name?.trim()) return res.status(400).json({ error: 'Business name is required.' });
+    const zipClean = (zipcode || '').toString().trim();
+    if (!zipClean || zipClean.length !== 5) return res.status(400).json({ error: 'A 5-digit target zipcode is required.' });
+    const db = await getDb();
+    // Look up the primary advertiser to copy name + password
+    const primary = await db.get('SELECT name, password_hash FROM advertisers WHERE email=? ORDER BY id ASC LIMIT 1', [req.advertiser.email]);
+    if (!primary) return res.status(404).json({ error: 'Account not found.' });
+    const r = await db.run(
+      "INSERT INTO advertisers (name,email,password_hash,business_name,tagline,url,phone,zipcode,address,description,status,tier) VALUES (?,?,?,?,?,?,?,?,?,?,'pending','basic')",
+      [primary.name, req.advertiser.email, primary.password_hash, business_name.trim(), tagline?.trim()||'', url?.trim()||'', phone?.trim()||'', zipClean, address?.trim()||'', description?.trim()||'']
+    );
+    const adv = await db.get('SELECT * FROM advertisers WHERE id=?', [r.lastID]);
+    // Reissue token scoped to this new ad row so subsequent checkout uses it
+    const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
+    res.status(201).json({ ad: safeAdv(adv), token });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Switch the active ad context (when advertiser clicks "Manage" on a specific ad in their list)
+app.post('/api/advertiser/switch-ad', requireAdvertiser, async (req, res) => {
+  try {
+    const { ad_id } = req.body || {};
+    const db = await getDb();
+    const adv = await db.get('SELECT id,email,business_name FROM advertisers WHERE id=? AND email=?', [ad_id, req.advertiser.email]);
+    if (!adv) return res.status(404).json({ error: 'Ad not found or not yours.' });
+    const token = jwt.sign({ type:'advertiser', id: adv.id, email: adv.email, business_name: adv.business_name }, SECRET, { expiresIn: '30d' });
+    res.json({ token, ad: safeAdv(adv) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 // Create Stripe checkout session
 app.post('/api/advertiser/checkout', requireAdvertiser, async (req, res) => {
@@ -1838,6 +2154,7 @@ app.get('/advertise',  (_req, res) => res.sendFile(path.join(__dirname, 'public'
 app.get('/directory',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'directory.html')));
 app.get('/help',       (_req, res) => res.sendFile(path.join(__dirname, 'public', 'help.html')));
 app.get('/admin',      (_req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/moderator',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'moderator.html')));
 
 // ── Footer links: shorthand routes that serve the /legal/*.html files ──
 app.get('/terms',                  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'legal', 'terms.html')));
