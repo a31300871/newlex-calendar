@@ -56,6 +56,27 @@ h1 .grad { background: var(--gradient); -webkit-background-clip: text; backgroun
 
 /* Category sections */
 .section { margin-bottom: 32px; }
+/* Pre-launch checklist banner */
+.launch-banner { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 28px; box-shadow: 0 4px 16px rgba(0,0,0,.04); position: relative; overflow: hidden; }
+.launch-banner.ready { border-left: 4px solid var(--green); }
+.launch-banner.warning { border-left: 4px solid var(--amber); }
+.launch-banner.critical { border-left: 4px solid var(--red); }
+.launch-banner-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; cursor: pointer; }
+.launch-banner-title { font-family: var(--font-head); font-size: 19px; font-weight: 800; color: var(--text); }
+.launch-banner-summary { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.launch-banner-toggle { background: var(--surface2); border: 1.5px solid var(--border-md); color: var(--text); padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.launch-items { display: none; margin-top: 16px; padding-top: 16px; border-top: 1.5px solid var(--border); }
+.launch-items.open { display: block; }
+.launch-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.launch-item:last-child { border-bottom: none; }
+.launch-item-icon { font-size: 16px; flex-shrink: 0; line-height: 1.3; }
+.launch-item-body { flex: 1; min-width: 0; }
+.launch-item-label { font-weight: 700; color: var(--text); }
+.launch-item-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.launch-item-help { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+.launch-item.ok .launch-item-label { color: var(--green-dk); text-decoration: line-through; opacity: .65; }
+.launch-tier-divider { font-size: 11px; font-weight: 800; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; margin: 16px 0 6px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.launch-tier-divider:first-child { border-top: none; padding-top: 0; margin-top: 0; }
 .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .section-head h2 { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--text); }
 .section-head .cat-tag { background: var(--gradient); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 3px 10px; border-radius: 100px; text-transform: uppercase; }
@@ -143,11 +164,23 @@ textarea.notes { width: 100%; padding: 10px 12px; font-size: 13px; font-family: 
     <h1>🎯 Admin <span class="grad">Dashboard</span></h1>
     <p class="sub">Operations status, business checklist, and to-dos — all in one place.</p>
 
+    <div id="launchChecklist"></div>
     <div id="statsStrip" class="stats-strip"></div>
     <div id="sectionsContainer"></div>
   </div>
 </div>
 
+
+
+<!-- ── Manage Moderators ── -->
+<div id="manageModsModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('manageModsModal')">
+  <div class="modal" style="max-width:680px"><div id="manageModsContent"></div></div>
+</div>
+
+<!-- ── Flagged Items ── -->
+<div id="flaggedItemsModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('flaggedItemsModal')">
+  <div class="modal" style="max-width:680px"><div id="flaggedItemsContent"></div></div>
+</div>
 
 <!-- ── Approvals Panel ── -->
 <div id="approvalsModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('approvalsModal')">
@@ -239,6 +272,7 @@ const SITE_OPS_TILES = [
   { key:'pendingInsiders',   title:'Pending Local Insider Requests', action:{label:'Review', fn:'openApprovalsPanel()'}, alertWhen: c=>c>0, meta:'User upgrade requests' },
   { key:'pendingListings',   title:'Pending Business Listings', action:{label:'Review',  fn:'openApprovalsPanel()'}, alertWhen: c=>c>0, meta:'Business directory submissions' },
   { key:'recentRemovals',    title:'Removed Items (last 30d)',  action:{label:'View Log', fn:'openRemovedLog()'}, alertWhen: ()=>false, warnWhen: c=>c>0, meta:'Auto-purges at 24 months' },
+  { key:'flaggedCount',      title:'🚩 Flagged by Moderators',   action:{label:'Review',  fn:'openFlaggedItems()'}, alertWhen: c=>c>0,  meta:'Items mods escalated to you' },
 ];
 const REVENUE_TILES = [
   { key:'activeBasic',       title:'Active Sponsor Bar Ads',   action:{label:'Manage', fn:'openManageAdsModal()'}, goodWhen: c=>c>0, meta:'$25/mo · Bottom banner placements' },
@@ -252,7 +286,17 @@ const QUICK_ACTION_TILES = [
   { title:'👤 Bulk Remove by User',       desc:'Find a user, remove all their content', fn:'openBulkRemove()' },
   { title:'🌎 Make Listing State-Wide',   desc:'Promote a listing across an entire state', fn:'openStatewideListing()' },
   { title:'📅 Make Event State-Wide',     desc:'Promote an event across an entire state', fn:'openStatewideEvent()' },
+  { title:'👥 Manage Moderators',          desc:'Promote trusted users to moderator role', fn:'openManageMods()' },
 ];
+// Add flaggedCount to counts after data loads
+function _augmentCounts(data) {
+  return Promise.all([
+    fetch('/api/admin/flagged-items', { headers: { 'Authorization': 'Bearer ' + TOKEN }}).then(r=>r.json()).catch(()=>[]),
+  ]).then(([flagged]) => {
+    data.counts.flaggedCount = Array.isArray(flagged) ? flagged.length : 0;
+    return data;
+  });
+}
 const STATS_TILES = [
   { key:'totalEvents',       label:'Upcoming Events' },
   { key:'totalListings',     label:'Business Listings' },
@@ -271,8 +315,10 @@ let _currentTask = null;
 
 async function loadDashboard() {
   try {
-    const data = await api('/api/admin/dashboard');
+    let data = await api('/api/admin/dashboard');
+    data = await _augmentCounts(data);
     _dashboardData = data;
+    loadLaunchChecklist();  // fire-and-forget
     renderDashboard();
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
@@ -458,6 +504,107 @@ function adminToast(msg, ms) {
   el.textContent = msg; el.style.display = 'block';
   clearTimeout(window._adminToastT);
   window._adminToastT = setTimeout(() => el.style.display = 'none', ms || 3000);
+}
+
+
+
+// ────────────────────────────────────────────────────────────
+// MANAGE MODERATORS
+// ────────────────────────────────────────────────────────────
+async function openManageMods() {
+  document.getElementById('manageModsContent').innerHTML = '<div class="modal-title">👥 Manage Moderators</div><div style="text-align:center;padding:30px;color:var(--text3)">Loading…</div>';
+  openAdminModal('manageModsModal');
+  try {
+    const mods = await api('/api/admin/moderators');
+    let html = `<div class="modal-title">👥 Manage Moderators <span style="font-size:13px;color:var(--text3);font-weight:500">(${mods.length})</span></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Moderators can review pending events, listings, and Local Insider requests — but cannot see financial info or business operations.</p>
+      <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px">Promote a user</div>
+        <div style="display:flex;gap:6px"><input type="email" id="promEmail" placeholder="user@example.com" style="flex:1;padding:8px 10px;border:1.5px solid var(--border-md);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text)">
+          <button onclick="doPromoteMod()" class="btn-amber" style="padding:8px 16px">Promote</button></div>
+        <div id="promErr" style="color:var(--red);font-size:12px;margin-top:6px"></div>
+      </div>`;
+    if (!mods.length) {
+      html += '<div style="padding:20px;text-align:center;color:var(--text3)">No moderators yet. Promote a user above to start.</div>';
+    } else {
+      html += '<div style="max-height:50vh;overflow-y:auto">';
+      mods.forEach(m => {
+        const isAdmin = m.is_admin;
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px">${esc(m.name)} ${isAdmin?'<span style="font-size:10px;background:var(--gradient);color:#fff;padding:2px 8px;border-radius:100px;font-weight:800;margin-left:6px">🎯 ADMIN</span>':'<span style="font-size:10px;background:var(--amber);color:#fff;padding:2px 8px;border-radius:100px;font-weight:800;margin-left:6px">🛡️ MOD</span>'}</div>
+            <div style="font-size:11px;color:var(--text3)">${esc(m.email)} · ${m.approved_count||0} approved · ${m.rejected_count||0} rejected</div>
+          </div>
+          ${isAdmin ? '<span style="font-size:11px;color:var(--text3);font-style:italic">Admin — cannot demote</span>' : `<button onclick="doDemoteMod(${m.id},'${esc(m.name).replace(/'/g,"&#39;")}')" class="tile-btn" style="background:var(--red-lt);color:var(--red-dk);border-color:var(--red);font-size:11px">Demote</button>`}
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '<div class="modal-actions"><button class="btn-ghost" onclick="closeAdminModal(\'manageModsModal\')">Close</button></div>';
+    document.getElementById('manageModsContent').innerHTML = html;
+  } catch(e) { document.getElementById('manageModsContent').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
+
+async function doPromoteMod() {
+  const email = document.getElementById('promEmail').value.trim();
+  const errEl = document.getElementById('promErr'); errEl.textContent = '';
+  if (!email) { errEl.textContent = 'Email required.'; return; }
+  try {
+    const r = await api('/api/admin/moderators/promote', { method:'POST', body: JSON.stringify({ email })});
+    adminToast('✓ Promoted ' + r.user.name);
+    openManageMods();
+  } catch(e) { errEl.textContent = e.message; }
+}
+
+async function doDemoteMod(id, name) {
+  if (!confirm(`Demote ${name}? They will lose moderator access immediately.`)) return;
+  try {
+    await api('/api/admin/moderators/' + id + '/demote', { method:'POST' });
+    adminToast('✓ Demoted');
+    openManageMods();
+  } catch(e) { alert(e.message); }
+}
+
+// ────────────────────────────────────────────────────────────
+// FLAGGED ITEMS (escalated from moderators)
+// ────────────────────────────────────────────────────────────
+async function openFlaggedItems() {
+  document.getElementById('flaggedItemsContent').innerHTML = '<div class="modal-title">🚩 Flagged Items</div><div style="text-align:center;padding:30px;color:var(--text3)">Loading…</div>';
+  openAdminModal('flaggedItemsModal');
+  try {
+    const items = await api('/api/admin/flagged-items');
+    let html = `<div class="modal-title">🚩 Flagged Items <span style="font-size:13px;color:var(--text3);font-weight:500">(${items.length})</span></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Items moderators escalated to you for a final decision. Resolve them by handling the underlying item (approve/reject via Approvals), then mark resolved here.</p>`;
+    if (!items.length) {
+      html += '<div style="padding:30px;text-align:center;color:var(--text3)">No flagged items pending review.</div>';
+    } else {
+      html += '<div style="max-height:60vh;overflow-y:auto">';
+      items.forEach(f => {
+        html += `<div style="padding:12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:6px">
+            <div>
+              <strong style="font-size:13px">${esc(f.item_type)} #${f.item_id}: ${esc(f.item_name||'')}</strong>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Flagged by: ${esc(f.flagged_by_name)} · ${esc(f.created_at)}</div>
+            </div>
+            <button onclick="resolveFlagged(${f.id})" class="tile-btn" style="font-size:11px;background:var(--green-lt);color:var(--green-dk);border-color:var(--green)">Mark Resolved</button>
+          </div>
+          ${f.note ? `<div style="font-size:12px;color:var(--text2);background:var(--surface2);padding:8px 10px;border-radius:6px;font-style:italic">"${esc(f.note)}"</div>` : ''}
+        </div>`;
+      });
+      html += '</div>';
+    }
+    html += '<div class="modal-actions"><button class="btn-ghost" onclick="closeAdminModal(\'flaggedItemsModal\')">Close</button></div>';
+    document.getElementById('flaggedItemsContent').innerHTML = html;
+  } catch(e) { document.getElementById('flaggedItemsContent').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
+
+async function resolveFlagged(id) {
+  try {
+    await api('/api/admin/flagged-items/' + id + '/resolve', { method:'POST' });
+    adminToast('✓ Resolved');
+    openFlaggedItems();
+    loadDashboard();
+  } catch(e) { alert(e.message); }
 }
 
 // ────────────────────────────────────────────────────────────
@@ -845,6 +992,87 @@ async function applyStatewideEvent() {
     closeAdminModal('statewideEventModal'); _sweSelectedId = null;
     loadDashboard();
   } catch(e) { document.getElementById('sweErr').textContent = e.message; }
+}
+
+
+// ────────────────────────────────────────────────────────────
+// PRE-LAUNCH CHECKLIST WIDGET
+// ────────────────────────────────────────────────────────────
+async function loadLaunchChecklist() {
+  try {
+    const data = await api('/api/admin/launch-checklist');
+    renderLaunchChecklist(data);
+  } catch(e) { console.error('Launch checklist load:', e); }
+}
+
+function renderLaunchChecklist(data) {
+  const { items, counts, launchReady } = data;
+  const incompleteCount = counts.critical + counts.warning;
+  const bannerClass = launchReady ? 'ready' : counts.critical > 0 ? 'critical' : 'warning';
+  const titleIcon = launchReady ? '🚀' : counts.critical > 0 ? '⚠️' : '🛠️';
+  const titleText = launchReady ? 'Ready to Launch!' : 'Pre-Launch Checklist';
+  let summary;
+  if (launchReady) summary = `All ${counts.total} items complete. You're ready to announce the site to your community.`;
+  else if (counts.critical > 0) summary = `${counts.critical} critical item${counts.critical>1?'s':''} blocking launch · ${counts.warning} other warning${counts.warning!==1?'s':''} · ${counts.ok}/${counts.total} complete`;
+  else summary = `${counts.warning} item${counts.warning>1?'s':''} need attention · ${counts.ok}/${counts.total} complete`;
+
+  // Group items by tier
+  const tierOrder = ['critical', 'stripe', 'content', 'optional'];
+  const tierLabels = {
+    critical: 'Critical Infrastructure (must be done)',
+    stripe:   'Stripe Tier Pricing',
+    content:  'Content Seeding',
+    optional: 'Optional / Nice-to-have'
+  };
+
+  const itemsByTier = {};
+  items.forEach(it => { (itemsByTier[it.tier] = itemsByTier[it.tier] || []).push(it); });
+
+  let itemsHtml = '';
+  tierOrder.forEach(tier => {
+    if (!itemsByTier[tier]) return;
+    itemsHtml += `<div class="launch-tier-divider">${tierLabels[tier]}</div>`;
+    itemsByTier[tier].forEach(it => {
+      const icon = it.status === 'ok' ? '✅' : it.status === 'critical' ? '🔴' : it.status === 'warning' ? '🟡' : 'ℹ️';
+      itemsHtml += `<div class="launch-item ${it.status}">
+        <div class="launch-item-icon">${icon}</div>
+        <div class="launch-item-body">
+          <div class="launch-item-label">${esc(it.label)}</div>
+          ${it.meta ? `<div class="launch-item-meta">${esc(it.meta)}</div>` : ''}
+          ${it.status !== 'ok' ? `<div class="launch-item-help">${esc(it.help||'')}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('launchChecklist').innerHTML = `
+    <div class="launch-banner ${bannerClass}">
+      <div class="launch-banner-head" onclick="toggleLaunchItems()">
+        <div>
+          <div class="launch-banner-title">${titleIcon} ${titleText}</div>
+          <div class="launch-banner-summary">${summary}</div>
+        </div>
+        <button class="launch-banner-toggle" id="lcToggleBtn">${incompleteCount > 0 ? 'Show details ↓' : 'Show ↓'}</button>
+      </div>
+      <div class="launch-items ${incompleteCount > 0 ? 'open' : ''}" id="launchItems">
+        ${itemsHtml}
+        ${launchReady ? '<div style="text-align:center;padding:14px;color:var(--green-dk);font-weight:700;font-size:14px;background:var(--green-lt);border-radius:8px;margin-top:14px">🎉 You\'ve completed every pre-launch task. Time to announce!</div>' : ''}
+      </div>
+    </div>`;
+  // If incomplete items exist, auto-expand. If all complete, default collapsed.
+  if (incompleteCount > 0) document.getElementById('lcToggleBtn').textContent = 'Hide details ↑';
+}
+
+function toggleLaunchItems() {
+  const items = document.getElementById('launchItems');
+  const btn = document.getElementById('lcToggleBtn');
+  if (items.classList.contains('open')) {
+    items.classList.remove('open');
+    btn.textContent = 'Show details ↓';
+  } else {
+    items.classList.add('open');
+    btn.textContent = 'Hide details ↑';
+  }
 }
 
 // Boot
