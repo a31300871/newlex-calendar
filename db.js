@@ -224,6 +224,85 @@ async function getDb() {
   try { await _db.run("CREATE INDEX IF NOT EXISTS idx_sponsorships_zip_status_exp ON calendar_sponsorships(zipcode, status, expires_at)"); } catch(_) {}
 
 
+
+  // Migration: allow multiple ads per advertiser account (drop UNIQUE on email)
+  try {
+    const cols = await _db.all("PRAGMA table_info(advertisers)");
+    // Get indexes — if there's an auto-unique on email, we recreate
+    const idxList = await _db.all("PRAGMA index_list(advertisers)");
+    const hasUniqueEmail = idxList.some(ix => ix.unique && ix.origin === 'u');
+    if (hasUniqueEmail) {
+      console.log('[migration] Dropping UNIQUE constraint on advertisers.email to support multiple ads per account');
+      await _db.run("BEGIN TRANSACTION");
+      await _db.run(`CREATE TABLE advertisers_new (
+        id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+        name                   TEXT NOT NULL,
+        email                  TEXT NOT NULL COLLATE NOCASE,
+        password_hash          TEXT NOT NULL DEFAULT '',
+        business_name          TEXT NOT NULL,
+        tagline                TEXT DEFAULT '',
+        url                    TEXT DEFAULT '',
+        status                 TEXT NOT NULL DEFAULT 'pending',
+        tier                   TEXT NOT NULL DEFAULT 'basic',
+        phone                  TEXT DEFAULT '',
+        stripe_customer_id     TEXT DEFAULT '',
+        stripe_subscription_id TEXT DEFAULT '',
+        zipcode                TEXT DEFAULT '',
+        statewide_state        TEXT DEFAULT '',
+        address                TEXT DEFAULT '',
+        description            TEXT DEFAULT '',
+        created_at             TEXT NOT NULL DEFAULT (datetime('now'))
+      )`);
+      // Copy data — handle case where some new columns may not exist on old table
+      const colsInOld = cols.map(c => c.name);
+      const copyCols = ['id','name','email','password_hash','business_name','tagline','url','status','tier','phone','stripe_customer_id','stripe_subscription_id','created_at'];
+      const optionalCols = ['zipcode','statewide_state','address','description'];
+      const allCopyCols = [...copyCols, ...optionalCols.filter(c => colsInOld.includes(c))];
+      await _db.run(`INSERT INTO advertisers_new (${allCopyCols.join(',')}) SELECT ${allCopyCols.join(',')} FROM advertisers`);
+      await _db.run("DROP TABLE advertisers");
+      await _db.run("ALTER TABLE advertisers_new RENAME TO advertisers");
+      // Re-create email index (not UNIQUE) for fast lookups
+      await _db.run("CREATE INDEX IF NOT EXISTS idx_advertisers_email ON advertisers(email)");
+      await _db.run("COMMIT");
+      console.log('[migration] ✓ advertisers table rebuilt — multiple ads per email now supported');
+    }
+  } catch(e) {
+    console.error('[migration] advertisers UNIQUE drop failed:', e.message);
+    try { await _db.run("ROLLBACK"); } catch(_) {}
+  }
+
+
+  // ── MODERATOR ROLE SUPPORT ──
+  try { await _db.run("ALTER TABLE users ADD COLUMN is_moderator INTEGER DEFAULT 0"); } catch(_) {}
+  try { await _db.run("ALTER TABLE events ADD COLUMN approved_by INTEGER DEFAULT NULL"); } catch(_) {}
+  try { await _db.run("ALTER TABLE listings ADD COLUMN approved_by INTEGER DEFAULT NULL"); } catch(_) {}
+
+  // Rejection reason templates (per moderator, for fast routine rejection)
+  await _db.run(`CREATE TABLE IF NOT EXISTS mod_rejection_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    label TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )`);
+
+  // Flagged items — mod can escalate to admin without taking action
+  await _db.run(`CREATE TABLE IF NOT EXISTS mod_flagged_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type TEXT NOT NULL,        -- event | listing | insider
+    item_id INTEGER NOT NULL,
+    item_name TEXT DEFAULT '',
+    flagged_by INTEGER NOT NULL,
+    flagged_by_name TEXT DEFAULT '',
+    note TEXT DEFAULT '',
+    resolved INTEGER DEFAULT 0,
+    resolved_at TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (flagged_by) REFERENCES users(id)
+  )`);
+  await _db.run("CREATE INDEX IF NOT EXISTS idx_flagged_unresolved ON mod_flagged_items(resolved, created_at)");
+
   // Admin Dashboard — checklist tasks (legal, business, marketing, technical)
   await _db.run(`CREATE TABLE IF NOT EXISTS admin_tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
