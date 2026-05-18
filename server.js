@@ -1306,6 +1306,104 @@ app.post('/api/sponsorship/checkout', spamGuardSponsorship, async (req, res) => 
 
 
 
+
+// ─── Combined pending feed for the admin approvals modal ───
+app.get('/api/admin/pending', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const events   = await db.all("SELECT id, name, location, date, cat, zipcode, statewide_state, added_by FROM events WHERE status='pending' ORDER BY id DESC LIMIT 200");
+    const listings = await db.all("SELECT id, name, category, zipcode, statewide_state, phone, url FROM listings WHERE status='pending' ORDER BY id DESC LIMIT 200");
+    const insiders = await db.all("SELECT id, name, email, zipcode, town_crier_reason FROM users WHERE town_crier_status='pending' ORDER BY id DESC LIMIT 200");
+    res.json({ events, listings, insiders });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Get single advertiser (for edit modal) ───
+app.get('/api/admin/advertisers/:id', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    const ad = await db.get("SELECT * FROM advertisers WHERE id=?", [req.params.id]);
+    if (!ad) return res.status(404).json({ error: 'Not found' });
+    res.json(ad);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Local Insider approve/reject ───
+app.post('/api/admin/insiders/:id/approve', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE users SET town_crier_status='approved', is_town_crier=1 WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/admin/insiders/:id/reject', requireAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await db.run("UPDATE users SET town_crier_status='rejected', is_town_crier=0 WHERE id=?", [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Find a user's posts (for bulk remove) ───
+app.get('/api/admin/user-items', requireAdmin, async (req, res) => {
+  try {
+    const email = (req.query.email || '').toLowerCase().trim();
+    if (!email) return res.json({ user:null, events:[], listings:[] });
+    const db = await getDb();
+    const user = await db.get("SELECT id, name, email FROM users WHERE LOWER(email)=?", [email]);
+    if (!user) {
+      // Still check for guest events with this email
+      const events = await db.all("SELECT id, name, date FROM events WHERE LOWER(guest_email)=? OR LOWER(contact)=?", [email, email]);
+      return res.json({ user:null, events, listings:[] });
+    }
+    const events   = await db.all("SELECT id, name, date FROM events WHERE added_by=? OR LOWER(guest_email)=?", [user.id, email]);
+    const listings = await db.all("SELECT id, name FROM listings WHERE added_by=?", [user.id]);
+    res.json({ user, events, listings });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Bulk remove all of a user's posts ───
+app.post('/api/admin/bulk-remove-by-user', requireAdmin, async (req, res) => {
+  try {
+    const { email, reason } = req.body || {};
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const emailLower = email.toLowerCase().trim();
+    const db = await getDb();
+    const user = await db.get("SELECT id, name, email FROM users WHERE LOWER(email)=?", [emailLower]);
+    // Get all events to remove (account events + guest events with that email)
+    let events = [];
+    if (user) {
+      events = await db.all("SELECT id, name, date, zipcode FROM events WHERE added_by=? OR LOWER(guest_email)=?", [user.id, emailLower]);
+    } else {
+      events = await db.all("SELECT id, name, date, zipcode FROM events WHERE LOWER(guest_email)=? OR LOWER(contact)=?", [emailLower, emailLower]);
+    }
+    // Log + delete each event
+    let eventsRemoved = 0;
+    for (const e of events) {
+      try {
+        await db.run("INSERT INTO removed_items (item_type, original_id, item_name, item_date, item_zipcode, owner_user_id, owner_name, owner_email, removed_by, removed_by_name, reason) VALUES ('event',?,?,?,?,?,?,?,?,?,?)",
+          [e.id, e.name, e.date, e.zipcode, user?.id||null, user?.name||'', email, req.user.id, req.user.name, (reason||'Bulk-removed by user').slice(0,500)]);
+        await db.run("DELETE FROM events WHERE id=?", [e.id]);
+        eventsRemoved++;
+      } catch(_){}
+    }
+    // Same for listings
+    let listingsRemoved = 0;
+    if (user) {
+      const listings = await db.all("SELECT id, name, zipcode FROM listings WHERE added_by=?", [user.id]);
+      for (const l of listings) {
+        try {
+          await db.run("INSERT INTO removed_items (item_type, original_id, item_name, item_zipcode, owner_user_id, owner_name, owner_email, removed_by, removed_by_name, reason) VALUES ('listing',?,?,?,?,?,?,?,?,?)",
+            [l.id, l.name, l.zipcode, user.id, user.name, email, req.user.id, req.user.name, (reason||'Bulk-removed by user').slice(0,500)]);
+          await db.run("DELETE FROM listings WHERE id=?", [l.id]);
+          listingsRemoved++;
+        } catch(_){}
+      }
+    }
+    res.json({ events_removed: eventsRemoved, listings_removed: listingsRemoved });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ============================================================
 // ADMIN DASHBOARD — checklist tasks + live counts
 // ============================================================
