@@ -133,7 +133,11 @@ textarea.notes { width: 100%; padding: 10px 12px; font-size: 13px; font-family: 
   <div id="accessDenied" class="access-denied" style="display:none">
     <h2>🔒 Admin Access Required</h2>
     <p>Sign in as an admin to view this dashboard.</p>
-    <a href="/" class="btn-amber">Go to Calendar →</a>
+    <p id="errDetail" style="font-size:12px;color:var(--text3);margin-top:12px;font-family:Menlo,monospace"></p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap">
+      <a href="/" class="btn-amber">Go to Calendar → Sign In</a>
+      <button class="btn-ghost" onclick="location.reload()">🔄 Reload</button>
+    </div>
   </div>
   <div id="dashboard" style="display:none">
     <h1>🎯 Admin <span class="grad">Dashboard</span></h1>
@@ -275,6 +279,10 @@ async function loadDashboard() {
   } catch(e) {
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('accessDenied').style.display = 'block';
+    // Show the actual error so we can diagnose 403 vs 500 vs network
+    const detailEl = document.getElementById('errDetail');
+    if (detailEl) detailEl.textContent = 'Details: ' + (e?.message || 'Unknown error');
+    console.error('Admin dashboard load error:', e);
   }
 }
 
