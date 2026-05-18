@@ -182,6 +182,12 @@ textarea.notes { width: 100%; padding: 10px 12px; font-size: 13px; font-family: 
   <div class="modal" style="max-width:680px"><div id="flaggedItemsContent"></div></div>
 </div>
 
+
+<!-- ── Bulk Import Events ── -->
+<div id="bulkImportModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('bulkImportModal')">
+  <div class="modal" style="max-width:680px"><div id="bulkImportContent"></div></div>
+</div>
+
 <!-- ── Approvals Panel ── -->
 <div id="approvalsModal" class="modal-bg" onclick="if(event.target===this)closeAdminModal('approvalsModal')">
   <div class="modal" style="max-width:720px"><div id="approvalsContent"></div></div>
@@ -287,6 +293,8 @@ const QUICK_ACTION_TILES = [
   { title:'🌎 Make Listing State-Wide',   desc:'Promote a listing across an entire state', fn:'openStatewideListing()' },
   { title:'📅 Make Event State-Wide',     desc:'Promote an event across an entire state', fn:'openStatewideEvent()' },
   { title:'👥 Manage Moderators',          desc:'Promote trusted users to moderator role', fn:'openManageMods()' },
+  { title:'📋 Bulk Import Events',         desc:'Paste/upload a CSV to add many events at once', fn:'openBulkImportEvents()' },
+  { title:'🛡️ View as Moderator',          desc:'Preview the moderator dashboard (admins have all mod powers)', fn:'window.location.href="/moderator"' },
 ];
 // Add flaggedCount to counts after data loads
 function _augmentCounts(data) {
@@ -507,6 +515,118 @@ function adminToast(msg, ms) {
 }
 
 
+
+
+
+// ────────────────────────────────────────────────────────────
+// BULK IMPORT EVENTS (admin: paste CSV, preview, import all)
+// ────────────────────────────────────────────────────────────
+let _bulkParsedEvents = [];
+function openBulkImportEvents() {
+  _bulkParsedEvents = [];
+  document.getElementById('bulkImportContent').innerHTML = `
+    <div class="modal-title">📋 Bulk Import Events</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.55">Paste a CSV with these columns: <strong>name, location, date, time, price, contact, category, zipcode</strong>. Required: name, location, date.</p>
+    <div style="background:var(--surface2);border:1.5px solid var(--border-md);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--text2);font-family:Menlo,monospace;line-height:1.5">
+      name,location,date,time,price,contact,category,zipcode<br>
+      "Annual Bake Sale","First Baptist",2026-06-15,10:00 AM,Free,(740) 555-1234,church,43764<br>
+      "Farmers Market","Main St",2026-06-20,8:00 AM,Free,info@market.org,food,43764
+    </div>
+    <textarea id="bulkCsv" rows="8" placeholder="Paste CSV here..." style="width:100%;padding:10px;border:1.5px solid var(--border-md);border-radius:8px;background:var(--surface);color:var(--text);font-family:Menlo,monospace;font-size:12px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <label style="flex:1;background:var(--surface2);border:1.5px dashed var(--border-md);border-radius:8px;padding:10px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;color:var(--text2)">
+        📁 Or choose .csv file
+        <input type="file" id="bulkFile" accept=".csv,.txt" style="display:none" onchange="loadBulkFile(this)">
+      </label>
+      <button onclick="previewBulkImport()" class="btn-amber" style="flex:1">Preview Events →</button>
+    </div>
+    <div id="bulkPreview" style="margin-top:14px"></div>
+    <div class="modal-actions"><button class="btn-ghost" onclick="closeAdminModal('bulkImportModal')">Close</button></div>`;
+  openAdminModal('bulkImportModal');
+}
+
+function loadBulkFile(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => { document.getElementById('bulkCsv').value = e.target.result; previewBulkImport(); };
+  reader.readAsText(input.files[0]);
+}
+
+function parseCsv(text) {
+  // Simple CSV parser handling quoted fields
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return { headers: [], rows: [] };
+  function parseLine(line) {
+    const fields = []; let cur = ''; let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') inQuotes = false;
+        else cur += ch;
+      } else {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ',') { fields.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+    }
+    fields.push(cur.trim());
+    return fields;
+  }
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase());
+  const rows = lines.slice(1).map(l => {
+    const fields = parseLine(l);
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = fields[i] || '');
+    return obj;
+  });
+  return { headers, rows };
+}
+
+function previewBulkImport() {
+  const csv = document.getElementById('bulkCsv').value.trim();
+  const preview = document.getElementById('bulkPreview');
+  if (!csv) { preview.innerHTML = '<p style="font-size:13px;color:var(--text3)">Paste a CSV or upload a file first.</p>'; return; }
+  try {
+    const { headers, rows } = parseCsv(csv);
+    if (!rows.length) { preview.innerHTML = '<p style="color:var(--red);font-size:13px">No data rows found.</p>'; return; }
+    // Validate required fields
+    const valid = [], errors = [];
+    rows.forEach((r, i) => {
+      if (!r.name) errors.push(`Row ${i+2}: missing name`);
+      else if (!r.location) errors.push(`Row ${i+2}: missing location`);
+      else if (!r.date) errors.push(`Row ${i+2}: missing date`);
+      else if (!/^\d{4}-\d{2}-\d{2}$/.test(r.date)) errors.push(`Row ${i+2}: invalid date format "${r.date}" (use YYYY-MM-DD)`);
+      else valid.push(r);
+    });
+    _bulkParsedEvents = valid;
+    let html = `<div style="background:var(--green-lt);border:1.5px solid var(--green);border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px;color:var(--green-dk);font-weight:700">✓ ${valid.length} event${valid.length!==1?'s':''} ready to import</div>`;
+    if (errors.length) {
+      html += `<div style="background:var(--amber-lt);border:1.5px solid var(--amber);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:var(--amber-dk)">⚠️ ${errors.length} row${errors.length!==1?'s':''} skipped:<br>${errors.slice(0,5).map(e=>'• '+esc(e)).join('<br>')}${errors.length>5?'<br>…and '+(errors.length-5)+' more':''}</div>`;
+    }
+    if (valid.length) {
+      html += '<div style="max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px;margin-bottom:10px">';
+      valid.slice(0, 10).forEach(r => {
+        html += `<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)"><strong>${esc(r.name)}</strong> · ${esc(r.date)} · ${esc(r.location)} · zip ${esc(r.zipcode||'(none)')}</div>`;
+      });
+      if (valid.length > 10) html += `<div style="font-size:11px;color:var(--text3);padding:5px 0">…and ${valid.length-10} more</div>`;
+      html += '</div>';
+      html += `<button onclick="doBulkImportEvents()" class="btn-amber" style="width:100%;font-size:14px;padding:12px">📤 Import All ${valid.length} Event${valid.length!==1?'s':''} →</button>`;
+    }
+    preview.innerHTML = html;
+  } catch(e) { preview.innerHTML = '<p style="color:var(--red);font-size:13px">Parse error: ' + esc(e.message) + '</p>'; }
+}
+
+async function doBulkImportEvents() {
+  if (!_bulkParsedEvents.length) return;
+  if (!confirm(`Import ${_bulkParsedEvents.length} events? They\'ll be added with status='approved' since you\'re admin.`)) return;
+  try {
+    const r = await api('/api/events/bulk', { method:'POST', body: JSON.stringify({ events: _bulkParsedEvents })});
+    adminToast('✓ Imported ' + (r.imported || _bulkParsedEvents.length) + ' events');
+    closeAdminModal('bulkImportModal');
+    loadDashboard();
+  } catch(e) { alert(e.message); }
+}
 
 // ────────────────────────────────────────────────────────────
 // MANAGE MODERATORS
