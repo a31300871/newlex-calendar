@@ -1627,14 +1627,9 @@ function renderAuth(){
       <button class="sign-out-btn" onclick="toggleAcctMenu(event)" style="padding-right:6px" title="Account menu">▾</button>
       <div id="acctMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:220px;z-index:1000;color:var(--text);font-family:var(--font-body);overflow:hidden">
         ${authUser.is_admin ? `
-          <a href="/admin" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:var(--gradient);color:#fff;text-decoration:none;font-weight:700">🎯 Admin Dashboard</a>
-          <button onclick="openApprovalsPanel()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:600">📋 <span id="pendingCountBadge"></span>Approvals & Local Insiders</button>
-          <button onclick="openBulkRemove()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">👤 Bulk Remove by User</button>
-          <button onclick="openManualAdvertiser()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📢 Add Business Ad</button>
-          <button onclick="openStatewideListing()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🌎 Make Listing State-Wide</button>
-          <button onclick="openStatewideEvent()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📅 Make Event State-Wide</button>
+          <a href="/admin" style="display:block;width:100%;text-align:left;padding:12px 14px;font-size:13px;background:var(--gradient);color:#fff;text-decoration:none;font-weight:700">🎯 Admin Dashboard →</a>
+          <div style="padding:8px 14px;font-size:11px;color:var(--text3);background:var(--surface2);font-style:italic">All admin tools have moved to the dashboard</div>
           <!-- Bulk-Add Businesses moved to directory page admin menu (more contextual) -->
-          <button onclick="openManageAds()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">🛠 Manage Business Ads</button>
           <button onclick="openRemovedItemsLog()" style="display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;background:transparent;border:none;cursor:pointer;color:var(--text);font-weight:500;border-top:1px solid var(--border)">📜 Removed Items Log</button>
           <div style="height:1px;background:var(--border)"></div>
         ` : ''}
