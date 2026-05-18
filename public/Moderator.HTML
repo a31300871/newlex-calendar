@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Moderator · Near and Far Events</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23F59E0B' d='M50 8 60 35 90 38 67 56 75 87 50 70 25 87 33 56 10 38 40 35z'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #FAFAF9; --surface: #FFFFFF; --surface2: #F5F5F4;
+  --text: #1C1917; --text2: #57534E; --text3: #78716C;
+  --border: #E7E5E4; --border-md: #D6D3D1;
+  --amber: #F59E0B; --amber-lt: #FEF3C7; --amber-dk: #92400E;
+  --green: #10B981; --green-lt: #D1FAE5; --green-dk: #065F46;
+  --red: #DC2626; --red-lt: #FEE2E2; --red-dk: #991B1B;
+  --indigo: #6366F1;
+  --gradient: linear-gradient(135deg, #6366F1, #EC4899, #F59E0B);
+  --font-head: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --r: 10px;
+}
+[data-theme="dark"] {
+  --bg: #1C1917; --surface: #292524; --surface2: #1C1917;
+  --text: #FAFAF9; --text2: #D6D3D1; --text3: #A8A29E;
+  --border: #44403C; --border-md: #57534E;
+  --amber-lt: rgba(245,158,11,.15); --green-lt: rgba(16,185,129,.15); --red-lt: rgba(220,38,38,.15);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.5; }
+a { color: var(--indigo); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+
+.site-header { background: var(--surface); border-bottom: 1.5px solid var(--border); padding: 14px 20px; position: sticky; top: 0; z-index: 100; }
+.hdr-wrap { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.logo { font-family: var(--font-head); font-size: 20px; font-weight: 800; }
+.mod-badge { background: var(--amber); color: #fff; font-size: 10px; padding: 3px 9px; border-radius: 100px; font-weight: 800; letter-spacing: .08em; margin-left: 6px; }
+.hdr-right { display: flex; align-items: center; gap: 8px; }
+.hdr-nav-link { font-size: 13px; color: var(--text2); padding: 6px 12px; border-radius: 100px; }
+.hdr-nav-link:hover { background: var(--surface2); color: var(--text); text-decoration: none; }
+.theme-toggle { background: var(--surface2); border: 1.5px solid var(--border-md); color: var(--text); padding: 6px 12px; border-radius: 100px; cursor: pointer; font-size: 12px; font-weight: 600; }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+h1 { font-family: var(--font-head); font-size: 28px; font-weight: 800; line-height: 1.15; margin-bottom: 4px; }
+h1 .grad { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.sub { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+
+.section { margin-bottom: 28px; }
+.section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.section-head h2 { font-family: var(--font-head); font-size: 20px; font-weight: 800; color: var(--text); }
+.section-head .tag { background: var(--amber); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 100px; letter-spacing: .08em; }
+
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1.5px solid var(--border); border-left: 4px solid var(--amber); border-radius: var(--r); padding: 16px 18px; }
+.tile-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+.tile-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.tile-count { font-family: var(--font-head); font-size: 28px; font-weight: 800; line-height: 1; color: var(--text); }
+.tile-count.alert { color: var(--red); }
+.tile-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.tile-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.tile-btn { background: var(--surface2); border: 1.5px solid var(--border-md); color: var(--text); font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 100px; cursor: pointer; font-family: var(--font-body); }
+.tile-btn:hover { background: var(--amber-lt); border-color: var(--amber); color: var(--amber-dk); }
+.tile-btn.primary { background: var(--gradient); color: #fff; border: none; }
+
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+.modal-bg.on { display: flex; }
+.modal { background: var(--surface); border-radius: 14px; max-width: 720px; width: 100%; padding: 26px 30px; box-shadow: 0 20px 60px rgba(0,0,0,.30); max-height: 90vh; overflow-y: auto; }
+.modal-title { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.btn-amber { background: var(--gradient); color: #fff; border: none; padding: 10px 18px; border-radius: 100px; font-weight: 700; cursor: pointer; font-size: 13px; font-family: var(--font-body); }
+.btn-ghost { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border-md); padding: 10px 18px; border-radius: 100px; font-weight: 700; cursor: pointer; font-size: 13px; font-family: var(--font-body); }
+input[type=text], input[type=email], textarea { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border-md); border-radius: 8px; background: var(--surface); color: var(--text); font-family: var(--font-body); font-size: 13px; }
+
+.loading { text-align: center; padding: 40px; color: var(--text3); }
+.access-denied { text-align: center; padding: 60px 20px; }
+.access-denied h2 { font-family: var(--font-head); font-size: 28px; margin-bottom: 12px; }
+
+#modToast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--surface); padding: 11px 22px; border-radius: 100px; font-size: 13px; font-weight: 600; z-index: 5000; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+
+.training-step { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 12px; }
+.training-step h3 { font-family: var(--font-head); font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.training-step ul { padding-left: 22px; color: var(--text2); margin-top: 4px; }
+.training-step li { margin-bottom: 4px; font-size: 13.5px; line-height: 1.55; }
+.training-step .good { color: var(--green-dk); font-weight: 600; }
+.training-step .bad { color: var(--red-dk); font-weight: 600; }
+.training-step .tip { background: var(--amber-lt); border-left: 3px solid var(--amber); padding: 10px 12px; border-radius: var(--r); margin: 10px 0; font-size: 13px; color: var(--amber-dk); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="hdr-wrap">
+    <a href="/" class="logo">Near and Far Events <span class="mod-badge">🛡️ MOD</span></a>
+    <nav class="hdr-right">
+      <a href="/" class="hdr-nav-link">Calendar</a>
+      <a href="/help" class="hdr-nav-link">Help</a>
+      <button class="theme-toggle" onclick="toggleTheme()"><span id="themeIcon">🌙</span><span id="themeLabel" style="margin-left:4px">Dark</span></button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="loadingState" class="loading">Loading…</div>
+  <div id="accessDenied" class="access-denied" style="display:none">
+    <h2>🛡️ Moderator Access Required</h2>
+    <p>This page is for community moderators. Sign in via the main calendar page.</p>
+    <a href="/" class="btn-amber" style="display:inline-block;margin-top:14px;text-decoration:none">Go to Calendar →</a>
+  </div>
+  <div id="dashboard" style="display:none">
+    <h1>🛡️ Moderator <span class="grad">Dashboard</span></h1>
+    <p class="sub">Thanks for helping keep the community calendar clean and useful.</p>
+    <div id="tilesContainer"></div>
+  </div>
+</div>
+
+<!-- Approvals Modal -->
+<div id="approvalsModal" class="modal-bg" onclick="if(event.target===this)closeModalEl('approvalsModal')">
+  <div class="modal"><div id="approvalsContent"></div></div>
+</div>
+
+<!-- Reject with Template -->
+<div id="rejectModal" class="modal-bg" onclick="if(event.target===this)closeModalEl('rejectModal')">
+  <div class="modal" style="max-width:520px"><div id="rejectContent"></div></div>
+</div>
+
+<!-- Flag for Admin -->
+<div id="flagModal" class="modal-bg" onclick="if(event.target===this)closeModalEl('flagModal')">
+  <div class="modal" style="max-width:480px"><div id="flagContent"></div></div>
+</div>
+
+<!-- My Templates -->
+<div id="templatesModal" class="modal-bg" onclick="if(event.target===this)closeModalEl('templatesModal')">
+  <div class="modal" style="max-width:560px"><div id="templatesContent"></div></div>
+</div>
+
+<!-- Training -->
+<div id="trainingModal" class="modal-bg" onclick="if(event.target===this)closeModalEl('trainingModal')">
+  <div class="modal" style="max-width:680px"><div id="trainingContent"></div></div>
+</div>
+
+<div id="modToast"></div>
+
+<script>
+// Theme
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('nf_theme', next); } catch(_) {}
+  document.getElementById('themeIcon').textContent = next === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent = next === 'dark' ? 'Light' : 'Dark';
+}
+(function() {
+  try {
+    const saved = localStorage.getItem('nf_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('themeIcon').textContent = saved === 'dark' ? '☀️' : '🌙';
+    document.getElementById('themeLabel').textContent = saved === 'dark' ? 'Light' : 'Dark';
+  } catch(_) {}
+})();
+
+const TOKEN = localStorage.getItem('nlcc_token');
+async function api(path, opts) {
+  const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, ...(opts?.headers || {}) }});
+  if (!res.ok) throw new Error((await res.json().catch(()=>({error:'Network error'}))).error || ('HTTP ' + res.status));
+  return res.json();
+}
+function esc(s) { return String(s||'').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function openModalEl(id) { document.getElementById(id).classList.add('on'); }
+function closeModalEl(id) { document.getElementById(id).classList.remove('on'); }
+function modToast(msg) { const el = document.getElementById('modToast'); el.textContent = msg; el.style.display = 'block'; clearTimeout(window._t); window._t = setTimeout(()=>el.style.display='none', 2800); }
+
+let _myTemplates = [];
+
+async function load() {
+  try {
+    const pending = await api('/api/mod/pending');
+    const events = pending.events || [], listings = pending.listings || [], insiders = pending.insiders || [];
+    document.getElementById('tilesContainer').innerHTML = `
+      <div class="section">
+        <div class="section-head"><span style="font-size:22px">📋</span><h2>Review Queue</h2><span class="tag">MODERATION</span></div>
+        <div class="tile-grid">
+          <div class="tile">
+            <div class="tile-head"><div class="tile-title">Pending Events</div><div class="tile-count ${events.length?'alert':''}">${events.length}</div></div>
+            <div class="tile-meta">Events awaiting your review</div>
+            <div class="tile-actions"><button onclick="openApprovals()" class="tile-btn primary">Review →</button></div>
+          </div>
+          <div class="tile">
+            <div class="tile-head"><div class="tile-title">Pending Business Listings</div><div class="tile-count ${listings.length?'alert':''}">${listings.length}</div></div>
+            <div class="tile-meta">Business directory submissions</div>
+            <div class="tile-actions"><button onclick="openApprovals()" class="tile-btn primary">Review →</button></div>
+          </div>
+          <div class="tile">
+            <div class="tile-head"><div class="tile-title">Local Insider Requests</div><div class="tile-count ${insiders.length?'alert':''}">${insiders.length}</div></div>
+            <div class="tile-meta">User upgrade requests</div>
+            <div class="tile-actions"><button onclick="openApprovals()" class="tile-btn primary">Review →</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><span style="font-size:22px">🛠️</span><h2>Your Tools</h2><span class="tag">SETTINGS</span></div>
+        <div class="tile-grid">
+          <div class="tile">
+            <div class="tile-head"><div class="tile-title">📝 Rejection Templates</div></div>
+            <div class="tile-meta">Pre-written reasons to speed up routine rejections</div>
+            <div class="tile-actions"><button onclick="openTemplates()" class="tile-btn primary">Manage →</button></div>
+          </div>
+          <div class="tile">
+            <div class="tile-head"><div class="tile-title">📖 Training Guide</div></div>
+            <div class="tile-meta">How to moderate — approval criteria, escalation, examples</div>
+            <div class="tile-actions"><button onclick="openTraining()" class="tile-btn primary">Open →</button></div>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('accessDenied').style.display = 'block';
+    console.error('Mod dashboard load:', e);
+  }
+}
+
+// ─── APPROVALS ───
+async function openApprovals() {
+  if (!_myTemplates.length) { try { _myTemplates = await api('/api/mod/rejection-templates'); } catch(_){} }
+  document.getElementById('approvalsContent').innerHTML = '<div class="modal-title">📋 Review Queue</div><div style="padding:30px;text-align:center;color:var(--text3)">Loading…</div>';
+  openModalEl('approvalsModal');
+  try {
+    const { events, listings, insiders } = await api('/api/mod/pending');
+    const total = (events?.length || 0) + (listings?.length || 0) + (insiders?.length || 0);
+    let html = `<div class="modal-title">📋 Review Queue <span style="font-size:13px;color:var(--text3);font-weight:500">(${total} pending)</span></div>`;
+    if (!total) html += '<div style="padding:30px;text-align:center;color:var(--text3)">🎉 All caught up. Nothing pending.</div>';
+
+    function rowFor(type, item, sub) {
+      return `<div style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px">${esc(item.name)}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${sub}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button onclick="approve('${type}',${item.id})" class="tile-btn" style="background:var(--green-lt);color:var(--green-dk);border-color:var(--green);font-size:11px">✓</button>
+            <button onclick="openReject('${type}',${item.id},'${esc(item.name).replace(/'/g,"&#39;")}')" class="tile-btn" style="background:var(--red-lt);color:var(--red-dk);border-color:var(--red);font-size:11px">✗</button>
+            <button onclick="openFlag('${type}',${item.id},'${esc(item.name).replace(/'/g,"&#39;")}')" class="tile-btn" style="font-size:11px" title="Flag for admin review">🚩</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    if (events?.length) {
+      html += `<h3 style="font-family:var(--font-head);font-size:16px;margin:14px 0 8px;font-weight:700">📅 Events (${events.length})</h3>`;
+      events.forEach(e => { html += rowFor('event', e, `📅 ${esc(e.date)} · 📍 ${esc(e.location)} · ${esc(e.cat||'other')}${e.statewide_state?' · STATE: '+esc(e.statewide_state):' · zip '+esc(e.zipcode||'')}`); });
+    }
+    if (listings?.length) {
+      html += `<h3 style="font-family:var(--font-head);font-size:16px;margin:14px 0 8px;font-weight:700">🏪 Business Listings (${listings.length})</h3>`;
+      listings.forEach(l => { html += rowFor('listing', l, `${esc(l.category||'')} · zip ${esc(l.zipcode||'')}`); });
+    }
+    if (insiders?.length) {
+      html += `<h3 style="font-family:var(--font-head);font-size:16px;margin:14px 0 8px;font-weight:700">⭐ Local Insider Requests (${insiders.length})</h3>`;
+      insiders.forEach(u => { html += rowFor('insider', u, `${esc(u.email)} · zip ${esc(u.zipcode||'')}`); });
+    }
+    html += '<div class="modal-actions"><button class="btn-ghost" onclick="closeModalEl("approvalsModal")">Close</button></div>';
+    document.getElementById('approvalsContent').innerHTML = html;
+  } catch(e) { document.getElementById('approvalsContent').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
+
+async function approve(type, id) {
+  try {
+    if (type === 'event')   await api(`/api/mod/events/${id}/approve`, { method:'POST' });
+    if (type === 'listing') await api(`/api/mod/listings/${id}/approve`, { method:'POST' });
+    if (type === 'insider') await api(`/api/mod/insiders/${id}/approve`, { method:'POST' });
+    modToast('✓ Approved');
+    openApprovals();
+  } catch(e) { alert(e.message); }
+}
+
+// ─── REJECT WITH TEMPLATE ───
+function openReject(type, id, name) {
+  const tpls = _myTemplates;
+  document.getElementById('rejectContent').innerHTML = `
+    <div class="modal-title">✗ Reject "${esc(name)}"</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Pick a template or write a custom reason:</p>
+    <div style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:10px">
+      ${tpls.map(t => `<button onclick="useTemplate(${t.id})" style="text-align:left;padding:8px 12px;background:var(--surface);border:1.5px solid var(--border-md);border-radius:8px;cursor:pointer;font-family:var(--font-body)" onmouseover="this.style.background='var(--amber-lt)';this.style.borderColor='var(--amber)'" onmouseout="this.style.background='var(--surface)';this.style.borderColor='var(--border-md)'">
+        <strong style="font-size:13px;color:var(--text)">${esc(t.label)}</strong>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(t.text.slice(0,80))}${t.text.length>80?'…':''}</div>
+      </button>`).join('')}
+    </div>
+    <textarea id="rejReason" placeholder="Or write a custom reason…" rows="3"></textarea>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModalEl('rejectModal')">Cancel</button>
+      <button class="btn-amber" onclick="doReject('${type}',${id})" style="background:var(--red);color:#fff">Reject →</button>
+    </div>`;
+  openModalEl('rejectModal');
+}
+function useTemplate(id) {
+  const t = _myTemplates.find(x => x.id === id);
+  if (t) document.getElementById('rejReason').value = t.text;
+}
+async function doReject(type, id) {
+  const reason = document.getElementById('rejReason').value.trim();
+  if (!reason) { alert('Please provide a reason.'); return; }
+  try {
+    if (type === 'event')   await api(`/api/mod/events/${id}/reject`, { method:'POST', body: JSON.stringify({ reason })});
+    if (type === 'listing') await api(`/api/mod/listings/${id}/reject`, { method:'POST', body: JSON.stringify({ reason })});
+    if (type === 'insider') await api(`/api/mod/insiders/${id}/reject`, { method:'POST' });
+    closeModalEl('rejectModal');
+    modToast('✓ Rejected');
+    openApprovals();
+  } catch(e) { alert(e.message); }
+}
+
+// ─── FLAG FOR ADMIN ───
+function openFlag(type, id, name) {
+  document.getElementById('flagContent').innerHTML = `
+    <div class="modal-title">🚩 Flag for Admin</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Send this ${esc(type)} to admin for a decision. It will be removed from your queue and added to the admin's "Flagged" review list.</p>
+    <p style="font-size:13px;font-weight:700;margin-bottom:10px">Item: ${esc(name)}</p>
+    <textarea id="flagNote" placeholder="Why are you flagging this? (e.g., 'Borderline content, want a second opinion')" rows="3"></textarea>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModalEl('flagModal')">Cancel</button>
+      <button class="btn-amber" onclick="doFlag('${type}',${id},'${esc(name).replace(/'/g,"&#39;")}')">Flag for Admin →</button>
+    </div>`;
+  openModalEl('flagModal');
+}
+async function doFlag(type, id, name) {
+  const note = document.getElementById('flagNote').value.trim();
+  try {
+    await api('/api/mod/flag', { method:'POST', body: JSON.stringify({ item_type: type, item_id: id, item_name: name, note })});
+    closeModalEl('flagModal');
+    modToast('🚩 Flagged for admin review');
+  } catch(e) { alert(e.message); }
+}
+
+// ─── REJECTION TEMPLATES ───
+async function openTemplates() {
+  document.getElementById('templatesContent').innerHTML = '<div class="modal-title">📝 Your Rejection Templates</div><div style="padding:30px;text-align:center;color:var(--text3)">Loading…</div>';
+  openModalEl('templatesModal');
+  try {
+    _myTemplates = await api('/api/mod/rejection-templates');
+    let html = `<div class="modal-title">📝 Your Rejection Templates</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Pre-written reasons appear in the rejection menu. Edit to fit your voice and common scenarios.</p>
+      <div style="max-height:50vh;overflow-y:auto;margin-bottom:14px">
+        ${_myTemplates.map(t => `<div style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+          <div style="flex:1;min-width:0">
+            <strong style="font-size:13px">${esc(t.label)}</strong>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">${esc(t.text)}</div>
+          </div>
+          <button onclick="deleteTemplate(${t.id})" class="tile-btn" style="background:var(--red-lt);color:var(--red-dk);border-color:var(--red);font-size:10px;flex-shrink:0">Delete</button>
+        </div>`).join('')}
+      </div>
+      <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:12px">
+        <strong style="font-size:13px;display:block;margin-bottom:8px">Add Template</strong>
+        <input type="text" id="ntLabel" placeholder="Short label (e.g. 'Spam')" style="margin-bottom:6px">
+        <textarea id="ntText" placeholder="Full rejection text shown to the audit log" rows="2"></textarea>
+        <button onclick="doAddTemplate()" class="btn-amber" style="margin-top:8px">+ Add Template</button>
+      </div>
+      <div class="modal-actions"><button class="btn-ghost" onclick="closeModalEl('templatesModal')">Close</button></div>`;
+    document.getElementById('templatesContent').innerHTML = html;
+  } catch(e) { document.getElementById('templatesContent').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
+async function doAddTemplate() {
+  const label = document.getElementById('ntLabel').value.trim();
+  const text = document.getElementById('ntText').value.trim();
+  if (!label || !text) { alert('Both label and text are required.'); return; }
+  try {
+    await api('/api/mod/rejection-templates', { method:'POST', body: JSON.stringify({ label, text })});
+    openTemplates();
+  } catch(e) { alert(e.message); }
+}
+async function deleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  try {
+    await api('/api/mod/rejection-templates/' + id, { method:'DELETE' });
+    openTemplates();
+  } catch(e) { alert(e.message); }
+}
+
+// ─── TRAINING ───
+function openTraining() {
+  document.getElementById('trainingContent').innerHTML = `
+    <div class="modal-title">📖 Moderator Training Guide</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.5">A quick reference for how to moderate well. Skim now, come back when in doubt.</p>
+
+    <div class="training-step">
+      <h3>1. What gets APPROVED</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:6px">Approve submissions that meet ALL of these:</p>
+      <ul>
+        <li><span class="good">✓</span> Real event happening at a real location on a real date</li>
+        <li><span class="good">✓</span> Clear, accurate description (no misleading info)</li>
+        <li><span class="good">✓</span> Open to the public OR a defined audience (e.g. "members welcome")</li>
+        <li><span class="good">✓</span> Located within the zipcode/state it was submitted for</li>
+        <li><span class="good">✓</span> Free of hate speech, discrimination, or harassment</li>
+      </ul>
+      <div class="tip">💡 When in doubt, lean toward approval. The community wants more events visible, not fewer. False rejections hurt trust more than false approvals.</div>
+    </div>
+
+    <div class="training-step">
+      <h3>2. What gets REJECTED</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:6px">Reject submissions that are:</p>
+      <ul>
+        <li><span class="bad">✗</span> <strong>Spam or promotional</strong> — multi-level marketing, crypto pitches, "make money online"</li>
+        <li><span class="bad">✗</span> <strong>Missing key details</strong> — no date, no location, or vague description</li>
+        <li><span class="bad">✗</span> <strong>Duplicates</strong> — same event already submitted by someone else</li>
+        <li><span class="bad">✗</span> <strong>Off-topic</strong> — not actually an event, or not local to the area</li>
+        <li><span class="bad">✗</span> <strong>Disrespectful</strong> — hate speech, harassment, content targeting individuals</li>
+        <li><span class="bad">✗</span> <strong>Test submissions</strong> — "test", "asdf", obviously not real</li>
+      </ul>
+      <div class="tip">💡 Always use a rejection template or write a clear reason. The submitter sees this — be respectful.</div>
+    </div>
+
+    <div class="training-step">
+      <h3>3. When to FLAG instead of decide</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:6px">Flag for admin review when you're unsure. Examples:</p>
+      <ul>
+        <li>🚩 <strong>Borderline content</strong> — controversial topic, political event, advocacy gathering</li>
+        <li>🚩 <strong>Possibly inappropriate but unclear</strong> — adult themes, alcohol-related, religious tone</li>
+        <li>🚩 <strong>Possible scam</strong> — too-good-to-be-true offers, suspicious links</li>
+        <li>🚩 <strong>You're personally involved</strong> — your church, your business, your friend's event — let someone else decide</li>
+        <li>🚩 <strong>Policy not clear yet</strong> — the rules don't cover this case</li>
+      </ul>
+      <div class="tip">💡 Flagging is NOT a sign of weakness. It's how the team builds policy clarity over time. Use it freely.</div>
+    </div>
+
+    <div class="training-step">
+      <h3>4. Local Insider requests</h3>
+      <p style="font-size:13px;color:var(--text2)">"Local Insiders" get their posts auto-approved without review. Approve insider requests for:</p>
+      <ul>
+        <li><span class="good">✓</span> Established community members who post regularly</li>
+        <li><span class="good">✓</span> Local nonprofits, government, or known organizations</li>
+        <li><span class="good">✓</span> Town newsletter contacts, church secretaries, school staff</li>
+      </ul>
+      <p style="font-size:13px;color:var(--text2);margin-top:8px">Reject (or flag) for:</p>
+      <ul>
+        <li><span class="bad">✗</span> New users with no posting history</li>
+        <li><span class="bad">✗</span> Anonymous or unverifiable identity</li>
+        <li><span class="bad">✗</span> Anyone who has had submissions rejected for spam</li>
+      </ul>
+    </div>
+
+    <div class="training-step">
+      <h3>5. Practical Tips</h3>
+      <ul>
+        <li><strong>Take your time.</strong> Better to think for 20 seconds than to misjudge in 2.</li>
+        <li><strong>Use templates.</strong> Reuse rejection reasons for common cases. Edit your templates as patterns emerge.</li>
+        <li><strong>Trust your gut.</strong> If something feels off, flag it instead of deciding.</li>
+        <li><strong>Don't burn out.</strong> If the queue is huge, do 10 at a time and take a break.</li>
+        <li><strong>Ask the admin.</strong> Email hello@nearandfarevents.com anytime with policy questions.</li>
+      </ul>
+    </div>
+
+    <div class="training-step">
+      <h3>6. Things you CAN'T do</h3>
+      <ul>
+        <li>❌ Edit existing events or listings (admin only)</li>
+        <li>❌ Manage advertisers or payment-related items (admin only)</li>
+        <li>❌ Bulk-remove all of a user's content (admin only — flag for admin instead)</li>
+        <li>❌ Make events or listings state-wide (admin only)</li>
+        <li>❌ See financial info, revenue, or business operations</li>
+      </ul>
+      <div class="tip">💡 If you need any of these, flag the item for the admin to handle.</div>
+    </div>
+
+    <div class="modal-actions"><button class="btn-ghost" onclick="closeModalEl('trainingModal')">Close</button></div>`;
+  openModalEl('trainingModal');
+}
+
+// Boot
+if (!TOKEN) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('accessDenied').style.display = 'block';
+} else {
+  load();
+}
+</script>
+</body>
+</html>
