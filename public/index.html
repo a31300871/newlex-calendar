@@ -126,8 +126,7 @@ button:active{opacity:.8}
 }
 @media(max-width:600px){
   .site-header{padding:8px 12px !important}
-  .hdr-title{font-size:16px !important;line-height:1.15}
-  .hdr-title span[style*='font-size:.6em']{font-size:.55em !important;display:block !important;margin-top:2px}
+  /* (mobile header rules consolidated below) */
   .hero,.hero-section,.page-hero{padding-top:14px !important;padding-bottom:14px !important}
   .filter-pills,.fp-row{padding:6px 8px !important;gap:6px !important;margin-bottom:8px !important}
   /* Filter pills row — compact, single row on mobile */
@@ -214,7 +213,6 @@ button:active{opacity:.8}
 @media(max-width:600px){
   .nav-btn{font-size:13px;padding:7px 12px;gap:6px}
   .nav-btn svg{width:18px;height:18px}
-  .hdr-title{font-size:17px}
 }
 
 /* ── PAGE ── */
@@ -508,8 +506,14 @@ button:active{opacity:.8}
 
 /* ── RESPONSIVE ── */
 @media(max-width:600px){
-  :root{--hdr-h:175px;--about-h:0px;--spon-h:80px}
-  .hdr-title{font-size:14px}
+  :root{--hdr-h:155px;--about-h:0px;--spon-h:80px}
+  /* Mobile header — title is a full-width banner; buttons centered in a row below */
+  #hdr .hdr-row1{display:block !important;text-align:center !important;margin-bottom:8px !important;min-height:0 !important}
+  #hdr .hdr-title{display:block !important;width:100% !important;font-size:17px !important;line-height:1.2 !important;text-align:center !important;margin-bottom:6px !important}
+  #hdr .hdr-title br{display:none !important}
+  #hdr .hdr-title span[style*='font-size:.6em']{display:block !important;width:100% !important;font-size:11px !important;margin-top:2px !important;font-weight:500 !important;opacity:.75 !important;letter-spacing:.01em}
+  #hdr .hdr-row1 > a.theme-toggle, #hdr .hdr-row1 > button.theme-toggle{display:inline-flex !important;vertical-align:middle !important;font-size:11px !important;padding:5px 10px !important;margin:0 4px 0 0 !important}
+  #hdr .hdr-row1 > .hdr-right{display:inline-flex !important;vertical-align:middle !important;justify-content:center !important;gap:6px !important;margin:0 !important}
   #addEventBtn{font-size:12px;padding:7px 11px}
   .user-name{display:none}
   .user-pill{padding:4px 10px 4px 5px}
@@ -522,7 +526,6 @@ button:active{opacity:.8}
   .about-dot{display:none}
 }
 @media(max-width:400px){
-  .hdr-title{font-size:13px}
   #addEventBtn{font-size:11px;padding:6px 9px}
 }
 
